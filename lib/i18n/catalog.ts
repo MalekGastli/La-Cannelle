@@ -114,3 +114,40 @@ export const productName = (language: Language, name?: string | null): string =>
 
 /** Localised product / dish description (the stored description is German). */
 export const productDesc = (language: Language, description?: string | null): string => lookup(DESC_INDEX, language, description || '');
+
+// Service and accessory descriptions that were entered in German in the database.
+const TEXT: Record<string, [string, string, string]> = {
+  'Kalt-warme Büffetmenüs mit einer Portion pro Person und Gang, serviert in beheizten Behältern samt Vorlegebesteck.': ['Cold and warm buffet menus with one portion per person and course, served in heated containers with serving cutlery.', 'Menus buffet froids et chauds avec une portion par personne et par plat, servis dans des bacs chauffants avec couverts de service.', 'Kişi ve yemek başına bir porsiyon, ısıtmalı kaplarda servis çatal-bıçağı ile sunulan soğuk ve sıcak büfe menüleri.'],
+  'Kalte Fingerfoodhäppchen, serviert auf nachhaltigen Einwegplatten.': ['Cold finger food bites, served on sustainable disposable platters.', 'Bouchées froides servies sur des plateaux jetables durables.', 'Sürdürülebilir tek kullanımlık tepsilerde sunulan soğuk fingerfood lokmalar.'],
+  'Wähle zwischen festlichen Set-Menüs oder einem individuell kombinierbaren À La Carte Menü – perfekt für deine Weihnachtsfeier!': ['Choose between festive set menus or an à la carte menu you can combine freely – perfect for your Christmas party!', 'Choisissez entre des menus de fête ou un menu à la carte librement composable – parfait pour votre fête de Noël !', 'Şenlikli set menüler veya istediğiniz gibi birleştirebileceğiniz à la carte menü arasından seçin – Noel kutlamanız için ideal!'],
+  'Klassische Tassen und Untertassen für den Kaffeeservice': ['Classic cups and saucers for coffee service', 'Tasses et soucoupes classiques pour le service du café', 'Kahve servisi için klasik fincan ve tabaklar'],
+  'Elegante Tischwäsche für formelle Events': ['Elegant table linen for formal events', 'Linge de table élégant pour les événements formels', 'Resmi etkinlikler için şık masa örtüleri'],
+  'Große ovale Servierplatten für Buffet-Aufbau': ['Large oval serving platters for buffet set-ups', 'Grands plats de service ovales pour l’installation du buffet', 'Büfe kurulumu için büyük oval servis tabakları'],
+  'Klassische, kristallklare Weingläser': ['Classic, crystal-clear wine glasses', 'Verres à vin classiques, d’une transparence cristalline', 'Klasik, kristal berraklığında şarap kadehleri'],
+  'Standard Besteck-Set, bestehend aus Messer, Gabel und / oder Löffel - basierend auf Bestellung. Vermietung, inkl. Reinigungskosten': ['Standard cutlery set of knife, fork and/or spoon, based on the order. Rental, including cleaning costs.', 'Set de couverts standard (couteau, fourchette et/ou cuillère) selon la commande. Location, frais de nettoyage inclus.', 'Bıçak, çatal ve/veya kaşıktan oluşan standart çatal-bıçak seti, siparişe göre. Kiralama, temizlik ücreti dahil.'],
+};
+
+/** Localised database text (service / accessory descriptions) that was stored in German. */
+export const dbText = (language: Language, text?: string | null): string => {
+  const value = text || '';
+  if (language === 'DE') return value;
+  return TEXT[value.trim()]?.[SLOT[language]] ?? value;
+};
+
+const SERVICE_NAMES: Record<string, [string, string, string]> = {
+  'Büffet Catering': ['Buffet Catering', 'Buffet traiteur', 'Büfe Catering'],
+  'Fingerfood Catering': ['Finger Food Catering', 'Traiteur bouchées', 'Fingerfood Catering'],
+  'Weihnachts Catering': ['Christmas Catering', 'Traiteur de Noël', 'Noel Catering'],
+  'Corporate Events': ['Corporate Events', 'Événements d’entreprise', 'Kurumsal Etkinlikler'],
+  'Event Catering': ['Event Catering', 'Traiteur événementiel', 'Etkinlik Catering'],
+  'Office Catering': ['Office Catering', 'Traiteur de bureau', 'Ofis Catering'],
+  'Private Dinners': ['Private Dinners', 'Dîners privés', 'Özel Akşam Yemekleri'],
+  'Weddings': ['Weddings', 'Mariages', 'Düğünler'],
+};
+
+/** Localised service name (stored names are a mix of German and English). */
+export const serviceName = (language: Language, name?: string | null): string => {
+  const value = name || '';
+  if (language === 'DE') return value;
+  return SERVICE_NAMES[value.trim()]?.[SLOT[language]] ?? value;
+};

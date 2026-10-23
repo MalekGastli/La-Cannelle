@@ -65,6 +65,18 @@ const roleDescription = (description: string | null | undefined, t: (de: string,
   return t(SYSTEM_ROLE_DE[description] ?? description, description);
 };
 
+const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => (
+  <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+        <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-gray-500 hover:bg-stone-100"><X size={18} /></button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
 export default function AdminTeam() {
   const { language, toggleLanguage } = useTranslation('admin');
   const session = useAdminSession();
@@ -436,18 +448,6 @@ export default function AdminTeam() {
       </div>
     );
   })();
-
-  const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-gray-500 hover:bg-stone-100"><X size={18} /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
 
   return (
     <AdminLayout

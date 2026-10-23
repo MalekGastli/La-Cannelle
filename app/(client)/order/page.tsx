@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Language } from '@/lib/hooks/useTranslation';
-import { productName, productDesc } from '@/lib/i18n/catalog';
+import { productName, productDesc, dbText, serviceName as serviceNameOf } from '@/lib/i18n/catalog';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
-import { L, P, localeOf, weekdaysOf } from '@/lib/i18n/inline';
+import { L, P, menuDesc, localeOf, weekdaysOf } from '@/lib/i18n/inline';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useConsent, ConsentGate } from '@/components/site/ConsentProvider';
@@ -723,11 +723,11 @@ export default function OrderPage() {
       fromPerGuest: (price: any) => {
         // Keep legacy key name but remove "Ab/From" prefix.
         const shown = Number.isFinite(Number(price)) ? Number(price).toFixed(2) : price;
-        return L(language, `€${shown}/Gast`, `€${shown}/guest`);
+        return P(language, { DE: `€${shown}/Gast`, EN: `€${shown}/guest`, FR: `€${shown}/convive`, TR: `kişi başı €${shown}` });
       },
       customPricing: L(language, 'Preis auf Anfrage', 'Custom Pricing'),
       exclVat: L(language, 'zzgl. MwSt.', 'Excl. VAT'),
-      guestMinimum: (count: any) => L(language, `${count} Gäste Minimum`, `${count} Guest Minimum`),
+      guestMinimum: (count: any) => P(language, { DE: `${count} Gäste Minimum`, EN: `${count} Guest Minimum`, FR: `Minimum ${count} convives`, TR: `En az ${count} misafir` }),
       selectFood: L(language, 'Speisen auswählen', 'Select Food'),
       optionalAccessoriesTitle: L(language, 'Optionales Zubehör', 'Optional Accessories'),
       optionalAccessoriesSubtitle: L(language, 'Wählen Sie Teller, Besteck und weiteres Zubehör für Ihr Event', 'Select plates, cutlery, and other accessories for your event'),
@@ -2385,7 +2385,7 @@ export default function OrderPage() {
     });
 
     const handleServiceClick = (service: any) => {
-      const serviceName = language === 'DE' ? (service.nameDe || service.name) : service.name;
+      const serviceName = language === 'DE' ? (service.nameDe || service.name) : serviceNameOf(language, service.name);
       const isCurrentlySelected = String(orderData.serviceId) === String(service.id);
       
       if (isCurrentlySelected) {
@@ -2470,8 +2470,8 @@ export default function OrderPage() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {fixedServices.map((service) => {
                     const selected = String(orderData.serviceId) === String(service.id);
-                    const serviceName = language === 'DE' ? (service.nameDe || service.name) : service.name;
-                    const serviceDescription = language === 'DE' ? (service.descriptionDe || service.description) : service.description;
+                    const serviceName = language === 'DE' ? (service.nameDe || service.name) : serviceNameOf(language, service.name);
+                    const serviceDescription = language === 'DE' ? (service.descriptionDe || service.description) : dbText(language, service.description);
                     
                     return (
                       <button
@@ -2567,7 +2567,7 @@ export default function OrderPage() {
                         if (selectedService) {
                           const description = language === 'DE' 
                             ? (selectedService.descriptionDe || selectedService.description)
-                            : selectedService.description;
+                            : dbText(language, selectedService.description);
                           
                           if (description) {
                             return (
@@ -2747,7 +2747,7 @@ export default function OrderPage() {
                       {menu.name}
                     </h3>
                     <p className="text-sm text-[#404040]/70 mt-1 max-h-12 overflow-hidden">
-                      {menu.description}
+                      {menuDesc(language, menu.description)}
                     </p>
                     </div>
                   <div className="space-y-2 text-sm text-[#404040]/80">
@@ -2909,7 +2909,7 @@ export default function OrderPage() {
                     <h4 className="font-bold text-gray-900">{selectedMenu.name}</h4>
                     <span className="text-amber-700 font-bold">€{Number(selectedMenu.price).toFixed(2)}</span>
                   </div>
-                  <p className="text-gray-700 text-sm mb-3">{selectedMenu.description}</p>
+                  <p className="text-gray-700 text-sm mb-3">{menuDesc(language, selectedMenu.description)}</p>
                 </div>
               )}
               
@@ -3059,7 +3059,7 @@ export default function OrderPage() {
                   {categoryTitle}
                 </h2>
                 <p className="text-gray-600">
-                  {L(language, `Wählen Sie aus den verfügbaren Optionen für ${categoryTitle.toLowerCase()}`, `Select from available options for ${categoryTitle.toLowerCase()}`)
+                  {P(language, { DE: `Wählen Sie aus den verfügbaren Optionen für ${categoryTitle.toLowerCase()}`, EN: `Select from available options for ${categoryTitle.toLowerCase()}`, FR: `Choisissez parmi les options disponibles pour ${categoryTitle.toLowerCase()}`, TR: `${categoryTitle.toLowerCase()} için mevcut seçeneklerden seçin` })
                   }
                 </p>
               </div>
@@ -3284,7 +3284,7 @@ export default function OrderPage() {
       return {
         id: a.id,
         name: language === 'DE' ? (a.nameDe || a.nameEn) : a.nameEn,
-        description: language === 'DE' ? (a.descriptionDe || a.descriptionEn) : a.descriptionEn,
+        description: language === 'DE' ? (a.descriptionDe || a.descriptionEn) : dbText(language, a.descriptionEn),
         details: language === 'DE' ? (a.detailsDe || a.detailsEn) : a.detailsEn,
         price: toPriceNumber(a.price),
         unit: (language === 'DE' ? (a.unitDe || a.unitEn) : a.unitEn) || fallbackUnit,
@@ -5155,7 +5155,7 @@ export default function OrderPage() {
                     <div className="min-w-0">
                       <div className="font-semibold text-black truncate">{selectedMenuObj.name}</div>
                       {selectedMenuObj.description ? (
-                        <div className="mt-1 text-xs text-black/60 line-clamp-2">{selectedMenuObj.description}</div>
+                        <div className="mt-1 text-xs text-black/60 line-clamp-2">{menuDesc(language, selectedMenuObj.description)}</div>
                       ) : null}
                     </div>
                     <div className="shrink-0 text-right">
@@ -5584,7 +5584,7 @@ export default function OrderPage() {
                 </button>
               </div>
 
-              <nav aria-label="Order steps" className="hidden lg:flex items-center gap-2 min-w-0">
+              <nav aria-label={L(language, 'Bestellschritte', 'Order steps')} className="hidden lg:flex items-center gap-2 min-w-0">
                 {stepsConfig.map((step, index) => {
                   const stepNumber = index + 1;
                   const isCurrent = stepNumber === currentStep;

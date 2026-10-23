@@ -1325,3 +1325,19 @@ Object.assign(INLINE_TR, {
   'Reception': 'Karşılama',
   'Get In Touch': 'Bize ulaşın',
 });
+Object.assign(INLINE_FR, {
+  'Selected items': 'Plats sélectionnés',
+  'Included': 'Inclus',
+  'In order': 'Dans la commande',
+  'Order steps': 'Étapes de la commande',
+  'Scroll to top': 'Retour en haut',
+  'Phone number is required.': 'Le numéro de téléphone est obligatoire.',
+});
+Object.assign(INLINE_TR, {
+  'Selected items': 'Seçilen yemekler',
+  'Included': 'Dahil',
+  'In order': 'Siparişte',
+  'Order steps': 'Sipariş adımları',
+  'Scroll to top': 'Yukarı çık',
+  'Phone number is required.': 'Telefon numarası zorunludur.',
+});
