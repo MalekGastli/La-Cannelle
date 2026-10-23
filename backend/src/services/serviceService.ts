@@ -42,10 +42,10 @@ export const serviceService = {
         ...(where.AND || []),
         {
           OR: [
-            { name: { contains: filters.search } },
-            { nameDe: { contains: filters.search } },
-            { description: { contains: filters.search } },
-            { descriptionDe: { contains: filters.search } }
+            { name: { contains: filters.search, mode: 'insensitive' } },
+            { nameDe: { contains: filters.search, mode: 'insensitive' } },
+            { description: { contains: filters.search, mode: 'insensitive' } },
+            { descriptionDe: { contains: filters.search, mode: 'insensitive' } }
           ]
         }
       ];

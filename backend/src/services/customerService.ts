@@ -21,9 +21,9 @@ export const customerService = {
 
     if (filters?.search) {
       where.OR = [
-        { firstName: { contains: filters.search } },
-        { lastName: { contains: filters.search } },
-        { email: { contains: filters.search } }
+        { firstName: { contains: filters.search, mode: 'insensitive' } },
+        { lastName: { contains: filters.search, mode: 'insensitive' } },
+        { email: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
 

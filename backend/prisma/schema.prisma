@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -91,7 +91,7 @@ model User {
 model Product {
   id                Int             @id @default(autoincrement())
   name              String
-  description       String          @db.Text
+  description       String
   category          ProductCategory
   customCategory    String?
   price             Float
@@ -102,7 +102,7 @@ model Product {
   ingredientsDe     Json?
   allergens         Json?
   allergensDe       Json?
-  image             String?        @db.LongText
+  image             String?
   popularity        Int             @default(0)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
@@ -118,12 +118,12 @@ model Product {
 model Menu {
   id          Int       @id @default(autoincrement())
   name        String
-  description String    @db.Text
+  description String
   isActive    Boolean   @default(true)
   startDate   DateTime?
   endDate     DateTime?
   price       Float?
-  image       String?   @db.LongText
+  image       String?
   minPeople   Int?
   steps       Json?
   createdAt   DateTime  @default(now())
@@ -141,9 +141,9 @@ model Service {
   name      String
   nameDe    String?
   occasion  ServiceOccasion
-  description String?      @db.Text
-  descriptionDe String?    @db.Text
-  image     String?        @db.LongText
+  description String?
+  descriptionDe String?
+  image     String?
   isActive  Boolean        @default(true)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
@@ -189,14 +189,14 @@ model Order {
   eventDate          DateTime
   eventTime          String
   guests             Int
-  location           String        @db.Text
+  location           String
   total              Float
   subtotal           Float
   serviceFee         Float         @default(0)
   status             OrderStatus   @default(PENDING)
   paymentStatus      PaymentStatus @default(PENDING)
-  specialRequests    String?       @db.Text
-  cancellationReason String?       @db.Text
+  specialRequests    String?
+  cancellationReason String?
   businessType       String? // B2B, B2C
   serviceType        String? // office, event, wedding, corporate
   postalCode         String?
@@ -243,7 +243,7 @@ model Favorite {
 model SystemStatus {
   id                  Int       @id @default(autoincrement())
   orderingPaused      Boolean   @default(false)
-  pauseReason         String?   @db.Text
+  pauseReason         String?
   pauseUntil          DateTime?
   capacityLimit       Int       @default(100)
   currentReservations Int       @default(0)
@@ -282,16 +282,16 @@ model Accessory {
   id            Int      @id @default(autoincrement())
   nameEn        String
   nameDe        String?
-  descriptionEn String   @db.Text
-  descriptionDe String?  @db.Text
-  detailsEn     String?  @db.Text
-  detailsDe     String?  @db.Text
+  descriptionEn String
+  descriptionDe String?
+  detailsEn     String?
+  detailsDe     String?
   unitEn        String?
   unitDe        String?
   price         Float
   quantityMode  AccessoryQuantityMode @default(GUEST_COUNT)
   fixedQuantity Int?
-  image         String?  @db.LongText
+  image         String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -301,7 +301,7 @@ model Accessory {
 
 model Todo {
   id        Int      @id @default(autoincrement())
-  text      String   @db.Text
+  text      String
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

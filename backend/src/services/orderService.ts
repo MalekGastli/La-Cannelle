@@ -135,9 +135,9 @@ export const orderService = {
 
     if (filters?.search) {
       where.OR = [
-        { clientName: { contains: filters.search } },
-        { contactEmail: { contains: filters.search } },
-        { id: { contains: filters.search } }
+        { clientName: { contains: filters.search, mode: 'insensitive' } },
+        { contactEmail: { contains: filters.search, mode: 'insensitive' } },
+        { id: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
 

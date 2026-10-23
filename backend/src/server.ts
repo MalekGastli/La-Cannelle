@@ -85,7 +85,12 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Frontend URL: ${FRONTEND_URL}`);
-});
+// On Vercel the platform invokes the exported app (see api/index.ts); only listen when self-hosted.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 Frontend URL: ${FRONTEND_URL}`);
+  });
+}
+
+export default app;

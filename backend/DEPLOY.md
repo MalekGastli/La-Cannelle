@@ -1,23 +1,15 @@
-# Deploying the backend (Railway + MySQL)
+# Deploying the backend on Vercel
 
-The API is a long-running Express server with Prisma and MySQL, and it stores uploaded
-images on disk. Railway fits that; Vercel serverless does not (no MySQL, ephemeral disk).
+The API runs as a serverless Express app (`api/index.ts`, routed by `vercel.json`) with Neon Postgres
+and Vercel Blob for image uploads. Create a second Vercel project from this repo with
+**Root Directory = `backend`**, then:
 
-1. **Create a project** at https://railway.com/new -> *Deploy from GitHub repo* -> `MalekGastli/La-Cannelle`.
-2. In the created service: **Settings -> Source -> Root Directory** = `backend`.
-   Railway then uses `backend/railway.json` and `backend/Dockerfile`.
-3. **Add a database**: *New -> Database -> MySQL*.
-4. **Service variables** (Variables tab):
-   | Name | Value |
-   |---|---|
-   | `DATABASE_URL` | `${{MySQL.MYSQL_URL}}` (reference to the MySQL service) |
-   | `JWT_SECRET` | the same value as the `JWT_SECRET` set on the Vercel project |
-   | `NODE_ENV` | `production` |
-   | `FRONTEND_URL` | `https://la-cannelle-eight.vercel.app` (CORS allow-list) |
-   | `PORT` | leave unset (Railway injects it) |
-5. **Volume**: *Settings -> Volumes -> New Volume*, mount path `/data`. Uploaded images land in `/data/uploads`.
-6. **Networking**: *Settings -> Networking -> Generate Domain*. Note the URL, e.g. `https://xxx.up.railway.app`.
-7. Migrations run automatically on every start (`prisma migrate deploy`). Check `https://xxx.up.railway.app/health`.
-8. **Seed the first admin** (once): install the Railway CLI, `railway link`, then from `backend/`:
-   `railway run npm run seed`. See `README.md` for the seeded credentials, and change the password afterwards.
-9. **Connect the frontend**: in Vercel, set `BACKEND_API_URL` = `https://xxx.up.railway.app/api` and redeploy.
+1. Storage -> create/connect a **Neon** database to the project (injects `DATABASE_URL` and `DATABASE_URL_UNPOOLED`).
+2. Storage -> create a **Blob** store and connect it (injects `BLOB_READ_WRITE_TOKEN`).
+3. Environment variables: `JWT_SECRET` (same value as the frontend project), `NODE_ENV=production`,
+   `FRONTEND_URL` (the frontend's public URL, used for CORS), and optionally `ADMIN_EMAIL` + `ADMIN_PASSWORD`
+   to create the first admin on the next build (skipped if the user already exists).
+4. Every build runs `prisma migrate deploy`, so the schema is created/updated automatically.
+5. In the frontend project set `BACKEND_API_URL` = `https://<backend-domain>/api` and redeploy.
+
+The Prisma schema targets PostgreSQL (it was MySQL before); the old MySQL migrations were replaced by a single baseline.

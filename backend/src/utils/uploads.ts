@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
+import { put } from '@vercel/blob';
 import { AppError } from '../middleware/errorHandler';
 
 const DATA_URL_PREFIX = /^data:(image\/[a-zA-Z0-9.+-]+);base64,/;
@@ -24,6 +26,9 @@ const resolveUploadsDir = () => {
       ? configuredUploadsDir
       : path.resolve(process.cwd(), configuredUploadsDir);
   }
+
+  // Serverless filesystems are read-only except /tmp; real persistence is Vercel Blob (see storeBase64ImageDataUrl).
+  if (process.env.VERCEL) return path.join(os.tmpdir(), 'uploads');
 
   const isDistBuild = __dirname.split(path.sep).includes('dist');
   const backendRootDir = isDistBuild ? path.resolve(__dirname, '../../..') : path.resolve(__dirname, '../..');
@@ -78,9 +83,19 @@ export const storeBase64ImageDataUrl = async (
     throw new AppError('Image too large', 413);
   }
 
-  const uploadsDir = ensureUploadsDir();
   const safePrefix = options.prefix.replace(/[^a-zA-Z0-9_-]+/g, '-') || 'image';
   const filename = `${safePrefix}-${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const blob = await put(`uploads/${filename}`, buffer, {
+      access: 'public',
+      contentType: mime,
+      addRandomSuffix: false,
+    });
+    return { filename, url: blob.url, mime, bytes: buffer.length };
+  }
+
+  const uploadsDir = ensureUploadsDir();
   await fs.promises.writeFile(path.join(uploadsDir, filename), buffer);
 
   return {

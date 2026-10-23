@@ -68,10 +68,10 @@ export const accessoryService = {
 
     if (filters?.search) {
       where.OR = [
-        { nameEn: { contains: filters.search } },
-        { nameDe: { contains: filters.search } },
-        { descriptionEn: { contains: filters.search } },
-        { descriptionDe: { contains: filters.search } }
+        { nameEn: { contains: filters.search, mode: 'insensitive' } },
+        { nameDe: { contains: filters.search, mode: 'insensitive' } },
+        { descriptionEn: { contains: filters.search, mode: 'insensitive' } },
+        { descriptionDe: { contains: filters.search, mode: 'insensitive' } }
       ];
     }
 
