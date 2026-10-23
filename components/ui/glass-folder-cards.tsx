@@ -916,14 +916,16 @@ const GF_CSS = `
   display: inline-block;
   flex: none;
   vertical-align: top;
-  font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --gf-display: var(--font-display), "Playfair Display", Georgia, "Times New Roman", serif;
+  --gf-body: var(--font-body), "Hanken Grotesk", "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--gf-body);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   isolation: isolate;
 }
-.gf-root[data-tone="dark"] { --gf-ink: #f5f5f7; --gf-ink-soft: rgba(245, 245, 247, .58); }
+.gf-root[data-tone="dark"] { --gf-ink: #ffffff; --gf-ink-soft: rgba(255, 255, 255, .82); }
 .gf-root:hover, .gf-root:focus-within { --gf-hinge: -11deg; --gf-lift: -34px; --gf-spread: 8px; --gf-fan: 1.4deg; --gf-stack: 10px; }
-.gf-root[data-open] { --gf-hinge: -24deg; --gf-lift: -96px; --gf-spread: 40px; --gf-fan: 5deg; --gf-stack: 30px; }
+.gf-root[data-open] { --gf-hinge: -24deg; --gf-lift: -104px; --gf-spread: 40px; --gf-fan: 5deg; --gf-stack: 38px; }
 
 .gf-stage {
   position: absolute;
@@ -1059,15 +1061,15 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(0, 0, 0, .42) 0%, rgba(0, 0, 0, 0) 34%);
+  background: linear-gradient(180deg, rgba(8, 6, 4, .78) 0%, rgba(8, 6, 4, .52) 22%, rgba(8, 6, 4, 0) 46%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2);
   pointer-events: none;
 }
 .gf-sheet-head {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  top: 11px;
+  left: 16px;
+  right: 16px;
+  top: 12px;
   z-index: 1;
   display: flex;
   align-items: baseline;
@@ -1078,20 +1080,24 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
 .gf-sheet-name {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12.5px;
-  font-weight: 560;
-  letter-spacing: -.005em;
+  font-family: var(--gf-display);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .005em;
   color: #18181b;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .45);
 }
 .gf-sheet-meta {
   flex: none;
-  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 10px;
+  font-family: var(--gf-body);
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: .02em;
-  color: rgba(24, 24, 27, .5);
+  color: rgba(24, 24, 27, .62);
 }
-.gf-root[data-tone="dark"] .gf-sheet-name, .gf-sheet--art .gf-sheet-name { color: #fafafa; }
-.gf-root[data-tone="dark"] .gf-sheet-meta, .gf-sheet--art .gf-sheet-meta { color: rgba(250, 250, 250, .66); }
+.gf-root[data-tone="dark"] .gf-sheet-name, .gf-sheet--art .gf-sheet-name { color: #ffffff; }
+.gf-root[data-tone="dark"] .gf-sheet-meta, .gf-sheet--art .gf-sheet-meta { color: rgba(255, 255, 255, .86); text-shadow: 0 1px 2px rgba(0, 0, 0, .45); }
 .gf-lines {
   position: absolute;
   left: 14px;
@@ -1179,7 +1185,7 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 200px;
+  max-width: 250px;
   pointer-events: none;
   color: var(--gf-ink);
 }
@@ -1187,18 +1193,21 @@ canvas.gf-sheet-art[data-ready] { opacity: 1; filter: none; }
 .gf-root[data-place="top-left"] .gf-label { left: 28px; top: 34px; }
 .gf-root[data-place="top-right"] .gf-label { right: 32px; top: 52px; align-items: flex-start; }
 .gf-title {
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -.012em;
+  font-family: var(--gf-display);
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: 0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .28);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .gf-meta {
-  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  letter-spacing: .03em;
+  font-family: var(--gf-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .02em;
   color: var(--gf-ink-soft);
   white-space: nowrap;
   animation: gf-roll .5s var(--gf-ease) both;

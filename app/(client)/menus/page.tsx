@@ -80,7 +80,7 @@ export default function MenusPage() {
       price: 24,
       organic: true,
       preparation: '25 min',
-      image: '/images/risotto.jpg',
+      image: '/images/buffet-fingerfood.jpg',
       popularity: 95,
       dietary: ['Vegetarian', 'Gluten-Free'],
       chefNote: 'Our signature dish featuring imported Italian truffles'

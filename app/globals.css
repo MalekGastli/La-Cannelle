@@ -376,21 +376,22 @@ html[data-theme="dark"] .bg-black\/60 {
 .lux-marquee {
   position: relative;
   overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 14%, black 86%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 14%, black 86%, transparent);
 }
 
 .lux-marquee-track {
   display: flex;
   align-items: center;
   width: max-content;
-  gap: 3rem;
+  /* spacing lives in the items so both halves of the loop are exactly equal: no jump when it restarts */
+  gap: 0;
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .lux-marquee-track {
-    animation: marqueeLtr var(--lux-marquee-duration, 28s) linear infinite;
+    animation: marqueeLtr var(--lux-marquee-duration, 48s) linear infinite;
   }
 }
 
@@ -405,50 +406,37 @@ html[data-theme="dark"] .bg-black\/60 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.35rem 1.25rem;
-  border-radius: 0;
+  height: 64px;
+  padding: 0 2.9rem;
   border: 0;
   background: transparent;
-  opacity: 0.72;
-  transition: opacity var(--lux-med) var(--lux-ease), transform var(--lux-med) var(--lux-ease);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .lux-marquee-item:hover {
-    opacity: 1;
-    transform: translate3d(0, -1px, 0);
-  }
-}
-
+/* Logos are pre-rendered as single-colour marks, so one calm treatment fits all of them. */
 .lux-marquee-item img {
-  height: 28px;
+  height: 34px;
   width: auto;
-  max-width: 200px;
+  max-width: 150px;
   object-fit: contain;
-  opacity: 0.82;
-  filter: var(--lux-marquee-logo-filter, grayscale(1) contrast(1.2));
-  transition: opacity var(--lux-med) var(--lux-ease), filter var(--lux-med) var(--lux-ease);
+  opacity: 0.5;
+  transition: opacity var(--lux-med) var(--lux-ease);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .lux-marquee-item:hover img {
-    opacity: 1;
-    filter: var(--lux-marquee-logo-filter-hover, grayscale(0) contrast(1.1));
+    opacity: 0.95;
   }
 }
 
 @media (max-width: 640px) {
-  .lux-marquee-track {
-    gap: 1.5rem;
-  }
-
   .lux-marquee-item {
-    padding: 0.25rem 0.9rem;
+    height: 52px;
+    padding: 0 1.9rem;
   }
 
   .lux-marquee-item img {
-    height: 22px;
-    max-width: 160px;
+    height: 26px;
+    max-width: 112px;
   }
 }
 

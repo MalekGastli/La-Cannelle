@@ -21,13 +21,13 @@ The privacy policy also asks you to name the database provider and its location 
 - AGB (`lib/legal/terms.ts`): the current text is the short sample from the order dialog. Cancellation and payment terms are business decisions.
 - Right of withdrawal (Widerrufsrecht) for consumer orders, and whether a notice is needed.
 - Price display for consumers (VAT included? § 3 PAngV) and allergen information for non-prepackaged food (LMIV).
-- Whether the client logos removed from the home page may be shown again (written permission from each brand needed).
+- Partner banner: the client logos are shown again on the home page on the owner's instruction. Make sure each brand has agreed to be shown (ideally in writing); remove any that haven't in `BRAND_LOGOS` in `app/(client)/home/page.tsx`.
 
 ## Images
 All photographs come from Pexels (Pexels License). Sources and photographer names: `lib/legal/imageCredits.ts`
 (also listed on /impressum). Photographer names follow the Pexels usernames and may be spelled differently there.
 Several photos show people from a distance or masked; Pexels does not guarantee model releases, so avoid using them in a way that implies a person endorses the business.
-The old copyrighted images (client logos, a Pinterest image, third-party shop and competitor photos in the default data) have been removed.
+The old copyrighted images (a Pinterest image, third-party shop and competitor photos in the default data) have been removed. The partner logos are the owner's own responsibility (see above).
 
 ## Third-party loading
 Google Maps, Instagram embeds and Cloudflare Turnstile load only after consent (`components/site/ConsentProvider.tsx`).

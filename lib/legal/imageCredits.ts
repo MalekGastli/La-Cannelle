@@ -20,6 +20,7 @@ export const IMAGE_CREDITS: ImageCredit[] = [
   { id: 31918529, photographer: 'Paolo Bici', files: ['fondant.jpg'] },
   { id: 34279952, photographer: 'Tahir Xəlfəquliyev', files: ['scallops.jpg'] },
   { id: 31779538, photographer: 'Adriano Bragi', files: ['risotto.jpg'] },
+  { id: 32611697, photographer: 'Nguyen Ngoc Tien', files: ['buffet-fingerfood.jpg'] },
   { id: 7741798, photographer: 'Emre Vonal', files: ['lamb.jpg'] },
   { id: 20095444, photographer: 'Nadin Sh', files: ['beef-wellington.jpg'] },
   { id: 5157389, photographer: 'Rene Terp', files: ['salad.jpg'] },

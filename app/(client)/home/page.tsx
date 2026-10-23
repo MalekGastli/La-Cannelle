@@ -51,6 +51,20 @@ const SERVICE_FOLDERS: { cover: string; files: { image: string; de: string; en: 
   },
 ];
 
+// Partner logos shown in the banner below the hero. Only keep brands that have given permission.
+const BRAND_LOGOS = [
+  { name: 'Montblanc', src: '/images/logos/banner/montblanc.png' },
+  { name: 'Omnicom Media Group', src: '/images/logos/banner/omnicom-media-group.png' },
+  { name: 'OMG', src: '/images/logos/banner/omg.png' },
+  { name: 'DoiT International', src: '/images/logos/banner/doit.png' },
+  { name: 'BBDO', src: '/images/logos/banner/bbdo.png' },
+  { name: 'IWC Schaffhausen', src: '/images/logos/banner/iwc.png' },
+  { name: 'RIMOWA', src: '/images/logos/banner/rimowa.png' },
+  { name: 'Ralph Lauren', src: '/images/logos/banner/ralph-lauren.png' },
+  { name: 'Samsonite', src: '/images/logos/banner/samsonite.png' },
+  { name: 'SABIC', src: '/images/logos/banner/sabic.png' },
+];
+
 export default function CateringHomepage() {
   const scrollContainer = useRef<HTMLDivElement>(null);
   const { language, toggleLanguage } = useTranslation('home');
@@ -292,6 +306,31 @@ export default function CateringHomepage() {
       </section>
 
       
+
+
+      {/* Brand Banner */}
+      <section className="border-b border-black/10 bg-[#faf6ef] py-14 sm:py-16 lux-reveal" data-lux-delay="60">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="mb-9 text-center text-[13px] font-medium tracking-[0.04em] text-black/55">
+            {t.brandBanner.title}
+          </p>
+
+          <div className="lux-marquee" style={{ ['--lux-marquee-duration' as any]: '52s' }} aria-label={t.brandBanner.title}>
+            <div className="lux-marquee-track">
+              {BRAND_LOGOS.map((logo) => (
+                <div key={logo.name} className="lux-marquee-item">
+                  <img src={logo.src} alt={`${logo.name} logo`} loading="lazy" decoding="async" />
+                </div>
+              ))}
+              {BRAND_LOGOS.map((logo) => (
+                <div key={`${logo.name}-dup`} className="lux-marquee-item" aria-hidden="true">
+                  <img src={logo.src} alt="" loading="lazy" decoding="async" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
 
       <MenuShowcaseHorizontal 
