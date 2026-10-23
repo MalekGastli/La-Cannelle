@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, { useState, useEffect } from 'react';
-import { L } from '@/lib/i18n/inline';
+import { L, menuDesc } from '@/lib/i18n/inline';
 import { ChevronRight, Phone, Mail, MapPin, Users, Award, Eye, Target, Building, Flag, Globe, Zap, ArrowUpRight, PlayCircle } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Star, Crown, Shield, Heart } from 'lucide-react';
@@ -201,7 +201,7 @@ export default function CateringHomepage() {
     ? menus.slice(0, 3).map((menu) => ({
         id: menu.id,
         name: menu.name,
-        desc: menu.description || '',
+        desc: menuDesc(language, menu.description),
         price: menu.price !== undefined ? `${menu.price.toFixed(2)} EUR` : undefined,
         productIds: menu.products,
       }))
@@ -362,7 +362,7 @@ export default function CateringHomepage() {
             {t.services.items.map((service, index) => {
               const folder = SERVICE_FOLDERS[index % SERVICE_FOLDERS.length];
               const files: FolderFile[] = folder.files.map((file) => ({
-                name: language === 'DE' ? file.de : file.en,
+                name: L(language, file.de, file.en),
                 image: file.image,
               }));
               return (

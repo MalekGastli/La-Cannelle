@@ -51,6 +51,20 @@ const ACTIONS = ['view', 'create', 'edit', 'delete'];
 
 const permKey = (p: Permission) => `${p.resource}.${p.action}`;
 
+// System roles are seeded in English; show the German text while the description is unedited.
+const SYSTEM_ROLE_DE: Record<string, string> = {
+  'Runs day-to-day operations: orders, customers and the whole catalogue. No team management.':
+    'Führt den Tagesbetrieb: Bestellungen, Kunden und der gesamte Katalog. Keine Teamverwaltung.',
+  'Sees and updates orders and can look at dishes and menus.':
+    'Sieht und aktualisiert Bestellungen und kann Gerichte und Menüs einsehen.',
+  'Read-only access to everything except the team.':
+    'Nur Lesezugriff auf alles außer dem Team.',
+};
+const roleDescription = (description: string | null | undefined, t: (de: string, en: string) => string) => {
+  if (!description) return '–';
+  return t(SYSTEM_ROLE_DE[description] ?? description, description);
+};
+
 export default function AdminTeam() {
   const { language, toggleLanguage } = useTranslation('admin');
   const session = useAdminSession();
@@ -349,7 +363,7 @@ export default function AdminTeam() {
                     <p className="font-semibold text-gray-900">
                       {r.name} {r.isSystem && <span className={`${adminPill} ml-2 border-stone-200 bg-stone-50 text-gray-600`}>{t('System', 'System')}</span>}
                     </p>
-                    <p className="text-sm text-gray-600">{r.description || '–'}</p>
+                    <p className="text-sm text-gray-600">{roleDescription(r.description, t)}</p>
                     <p className="mt-1 text-xs text-gray-500">{r.members} {t('Mitglieder', 'members')} · {r.permissions.length} {t('Rechte', 'permissions')}</p>
                   </div>
                   <div className="flex gap-2">

@@ -270,7 +270,7 @@ export default function ContactPage() {
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-            <p className="eyebrow mb-4">Get In Touch</p>
+            <p className="eyebrow mb-4">{L(language, 'Kontakt aufnehmen', 'Get In Touch')}</p>
             <SplitText as="h1" immediate delay={100} className="block text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 mb-6 font-display leading-tight" text={t.hero.title} />
           </div>
           <div className={`transition-all duration-1000 delay-200 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { L } from '@/lib/i18n/inline';
+import { L, menuDesc, minPeopleLabel } from '@/lib/i18n/inline';
 import { createPortal } from 'react-dom';
 import { X, Phone, Mail, MapPin, Check, ChevronRight } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -227,7 +227,7 @@ export default function MenusPage() {
       const productMap = new Map(products.map((product) => [product.id, product]));
       return (menus || []).map((menu) => {
         const localizedName = menu.name;
-        const localizedDescription = menu.description;
+        const localizedDescription = menuDesc(language, menu.description);
         let items: MenuHighlightItem[] = [];
         if (menu.menuProducts && menu.menuProducts.length) {
           items = menu.menuProducts
@@ -435,7 +435,7 @@ export default function MenusPage() {
             </h3>
 
             <div className="mt-4 max-h-0 overflow-hidden opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:max-h-72">
-              <p className="text-sm leading-relaxed text-white/80 line-clamp-3">{menu.description || ''}</p>
+              <p className="text-sm leading-relaxed text-white/80 line-clamp-3">{menuDesc(language, menu.description)}</p>
 
               <div className="mt-5 flex flex-wrap gap-2">
                 {steps.slice(0, 2).map((step: any, index: number) => (
@@ -457,7 +457,7 @@ export default function MenusPage() {
                 <div>
                   {priceLabel && <div className="text-2xl font-semibold text-white">€{priceLabel}</div>}
                   {priceLabel && <div className="mt-1 text-xs uppercase tracking-[0.18em] text-white/60">{t.labels.exclVat}</div>}
-                  {menu.minPeople && <div className="mt-2 text-xs uppercase tracking-[0.18em] text-white/70">{t.labels.minPeople(menu.minPeople)}</div>}
+                  {menu.minPeople && <div className="mt-2 text-xs uppercase tracking-[0.18em] text-white/70">{minPeopleLabel(language, menu.minPeople)}</div>}
                 </div>
 
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white hover:bg-white/10 transition-colors">
@@ -473,7 +473,7 @@ export default function MenusPage() {
           <div className="space-y-4 mb-6">
             <div>
               <h3 className="text-2xl font-medium font-display text-gray-900 mb-2">{menu.name}</h3>
-              <p className="line-clamp-2 text-sm text-gray-600 leading-relaxed">{menu.description || ''}</p>
+              <p className="line-clamp-2 text-sm text-gray-600 leading-relaxed">{menuDesc(language, menu.description)}</p>
             </div>
             
             <div className="space-y-3 text-sm text-gray-700">
@@ -507,7 +507,7 @@ export default function MenusPage() {
             )}
             {menu.minPeople && (
               <div className="text-sm text-gray-700">
-                {t.labels.minPeople(menu.minPeople)}
+                {minPeopleLabel(language, menu.minPeople)}
               </div>
             )}
             
@@ -567,7 +567,7 @@ export default function MenusPage() {
           <div className="p-8 overflow-y-auto max-h-[calc(90vh-320px)]">
             {selectedMenu?.description && (
               <p className="text-gray-700 leading-relaxed mb-8 text-lg">
-                {selectedMenu.description}
+                {menuDesc(language, selectedMenu.description)}
               </p>
             )}
             

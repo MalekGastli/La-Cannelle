@@ -27,3 +27,28 @@ export const weekdaysOf = (language: Language): string[] => WEEKDAYS[language];
 export function P(language: Language, copy: Record<Language, string>): string {
   return copy[language];
 }
+
+/** "N guests minimum" in all four languages. */
+export function minPeopleLabel(language: Language, count: number): string {
+  return P(language, {
+    DE: `${count} Personen Minimum`,
+    EN: `${count} guest minimum`,
+    FR: `${count} convives minimum`,
+    TR: `En az ${count} kişi`,
+  });
+}
+
+// Descriptions that come from the seeded default menus are stored in German.
+const MENU_DESCRIPTIONS: Record<string, Record<'EN' | 'FR' | 'TR', string>> = {
+  'Viel Auswahl für besondere Anlässe!': {
+    EN: 'Plenty of choice for special occasions!',
+    FR: 'Un grand choix pour les grandes occasions !',
+    TR: 'Özel günler için geniş seçenekler!',
+  },
+};
+
+export function menuDesc(language: Language, description?: string | null): string {
+  const text = description || '';
+  if (language === 'DE') return text;
+  return MENU_DESCRIPTIONS[text]?.[language] ?? text;
+}

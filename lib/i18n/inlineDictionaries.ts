@@ -1301,3 +1301,27 @@ export const INLINE_TR: Record<string, string> = {
 Object.assign(INLINE_TR, {"Allow external content": "Harici içeriğe izin ver", "Allow external content and load": "Harici içeriğe izin ver ve yükle", "Collections": "Koleksiyonlar", "Curated and inspiring": "Seçkin ve ilham verici", "Curated, seasonal, and ready to order.": "Seçkin, mevsimlik ve siparişe hazır.", "Elegant, seamless, unforgettable": "Zarif, kusursuz, unutulmaz", "Explore all highlights": "Tüm öne çıkanları keşfedin", "Explore our catering formats — flexible, elegant, reliable.": "Catering formatlarımızı keşfedin: esnek, zarif, güvenilir.", "Formats and offerings": "Formatlar ve teklifler", "Gallery and reels": "Galeri ve reels", "In a few steps": "Birkaç adımda", "Legal notice": "Yasal bildirim", "Meetings, lunch & receptions": "Toplantı, öğle yemeği ve davetler", "Necessary only": "Yalnızca gerekli olanlar", "Popular categories": "Popüler kategoriler", "Premium and polished": "Premium ve özenli", "Privacy policy": "Gizlilik politikası", "Quick curated peek": "Hızlı seçkin bir bakış", "Quick links to the highlights on our home page.": "Ana sayfamızdaki öne çıkanlara hızlı bağlantılar.", "We use no tracking or advertising cookies. Some content comes from third parties: the map (Google Maps), embedded Instagram posts and the spam protection on the order form (Cloudflare Turnstile). They load only if you agree, and data such as your IP address is then sent to those providers, partly to the USA. You can change your choice at any time in the footer.": "Takip veya reklam çerezi kullanmıyoruz. Bazı içerikler üçüncü taraflardan gelir: harita (Google Maps), gömülü Instagram paylaşımları ve sipariş formundaki spam koruması (Cloudflare Turnstile). Yalnızca onay verirseniz yüklenir; IP adresiniz gibi veriler bu sağlayıcılara, kısmen ABD'ye iletilir. Tercihinizi istediğiniz zaman alt bilgiden değiştirebilirsiniz.", "Your privacy": "Gizliliğiniz"});
 INLINE_FR['All rights reserved.'] = 'Tous droits réservés.';
 INLINE_TR['All rights reserved.'] = 'Tüm hakları saklıdır.';
+Object.assign(INLINE_FR, {
+  'From the kitchen': 'Depuis la cuisine',
+  'Finger food buffet': 'Buffet de bouchées',
+  'Evening buffet': 'Buffet du soir',
+  'Office coffee break': 'Pause-café au bureau',
+  'Delivered fresh': 'Livré frais',
+  'Breakfast buffet': 'Buffet petit-déjeuner',
+  'Glassware and table': 'Verrerie et table',
+  'Grazing table': 'Table de grignotage',
+  'Reception': 'Réception',
+  'Get In Touch': 'Contactez-nous',
+});
+Object.assign(INLINE_TR, {
+  'From the kitchen': 'Mutfaktan',
+  'Finger food buffet': 'Fingerfood büfesi',
+  'Evening buffet': 'Akşam büfesi',
+  'Office coffee break': 'Ofis kahve molası',
+  'Delivered fresh': 'Taze teslim',
+  'Breakfast buffet': 'Kahvaltı büfesi',
+  'Glassware and table': 'Bardaklar ve sofra',
+  'Grazing table': 'Atıştırmalık masası',
+  'Reception': 'Karşılama',
+  'Get In Touch': 'Bize ulaşın',
+});
