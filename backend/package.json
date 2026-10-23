@@ -14,7 +14,8 @@
     "seed": "tsx prisma/seed.ts",
     "seed:orders": "tsx prisma/seed-orders.ts",
     "seed:backup": "tsx prisma/seed-backup.ts",
-    "seed:services": "tsx prisma/seed-services.ts"
+    "seed:services": "tsx prisma/seed-services.ts",
+    "start:prod": "prisma migrate deploy && node dist/src/server.js"
   },
   "keywords": [],
   "author": "",
