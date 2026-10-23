@@ -1,0 +1,310 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CONFIRMED_PAID
+  CONFIRMED_UNPAID
+  PREPARATION
+  DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum CustomerTier {
+  REGULAR
+  PREMIUM
+  VIP
+}
+
+enum ProductCategory {
+  STARTER
+  SOUP
+  MAIN
+  FINGERFOOD
+  DESSERT
+  BEVERAGE
+  SIDE
+}
+
+enum ServiceOccasion {
+  BUSINESS
+  PRIVATE
+  BOTH
+}
+
+enum AccessoryQuantityMode {
+  GUEST_COUNT
+  FIXED
+  CLIENT
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  role      UserRole @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Client-specific fields
+  company     String?
+  position    String?
+  location    String?
+  preferences Json?
+  allergies   Json?
+  notes       String?
+  tier        CustomerTier @default(REGULAR)
+  status      String       @default("active") // active, inactive
+
+  // Relations
+  orders    Order[]
+  favorites Favorite[]
+
+  @@map("users")
+}
+
+model Product {
+  id                Int             @id @default(autoincrement())
+  name              String
+  description       String          @db.Text
+  category          ProductCategory
+  customCategory    String?
+  price             Float
+  cost              Float
+  available         Boolean         @default(true)
+  minOrderQuantity  Int //@default(5)
+  ingredients       Json?
+  ingredientsDe     Json?
+  allergens         Json?
+  allergensDe       Json?
+  image             String?        @db.LongText
+  popularity        Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  menuProducts MenuProduct[]
+  orderItems   OrderItem[]
+  favorites    Favorite[]
+
+  @@map("products")
+}
+
+model Menu {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String    @db.Text
+  isActive    Boolean   @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  price       Float?
+  image       String?   @db.LongText
+  minPeople   Int?
+  steps       Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  menuProducts MenuProduct[]
+  menuServices MenuService[]
+
+  @@map("menus")
+}
+
+model Service {
+  id        Int            @id @default(autoincrement())
+  name      String
+  nameDe    String?
+  occasion  ServiceOccasion
+  description String?      @db.Text
+  descriptionDe String?    @db.Text
+  image     String?        @db.LongText
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  menuServices MenuService[]
+  orders       Order[]
+
+  @@map("services")
+}
+
+model MenuService {
+  id        Int     @id @default(autoincrement())
+  menuId    Int
+  serviceId Int
+
+  menu    Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([menuId, serviceId])
+  @@map("menu_services")
+}
+
+model MenuProduct {
+  id        Int @id @default(autoincrement())
+  menuId    Int
+  productId Int
+
+  menu    Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([menuId, productId])
+  @@map("menu_products")
+}
+
+model Order {
+  id                 String        @id @default(uuid())
+  userId             Int?
+  serviceId          Int?
+  clientName         String
+  contactEmail       String
+  phone              String
+  eventType          String
+  eventDate          DateTime
+  eventTime          String
+  guests             Int
+  location           String        @db.Text
+  total              Float
+  subtotal           Float
+  serviceFee         Float         @default(0)
+  status             OrderStatus   @default(PENDING)
+  paymentStatus      PaymentStatus @default(PENDING)
+  specialRequests    String?       @db.Text
+  cancellationReason String?       @db.Text
+  businessType       String? // B2B, B2C
+  serviceType        String? // office, event, wedding, corporate
+  postalCode         String?
+  street             String?
+  houseNumber        String?
+  city               String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  service Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int    @id @default(autoincrement())
+  orderId   String
+  productId Int
+  quantity  Int
+  price     Float // Price at time of order
+  name      String // Product name at time of order
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Favorite {
+  id        Int @id @default(autoincrement())
+  userId    Int
+  productId Int
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+model SystemStatus {
+  id                  Int       @id @default(autoincrement())
+  orderingPaused      Boolean   @default(false)
+  pauseReason         String?   @db.Text
+  pauseUntil          DateTime?
+  capacityLimit       Int       @default(100)
+  currentReservations Int       @default(0)
+  dailyLimit          Int       @default(100)
+  perHourLimit        Int       @default(25)
+  weekendMultiplier   Float     @default(1.5)
+  enableAutoPause     Boolean   @default(true)
+  updatedAt           DateTime  @updatedAt
+
+  @@map("system_status")
+}
+
+model CapacitySetting {
+  id                Int      @id @default(autoincrement())
+  dailyLimit        Int      @default(100)
+  perHourLimit      Int      @default(25)
+  weekendMultiplier Float    @default(1.5)
+  enableAutoPause   Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("capacity_settings")
+}
+
+model ClosedDate {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @unique
+  reason    String
+  recurring Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("closed_dates")
+}
+
+model Accessory {
+  id            Int      @id @default(autoincrement())
+  nameEn        String
+  nameDe        String?
+  descriptionEn String   @db.Text
+  descriptionDe String?  @db.Text
+  detailsEn     String?  @db.Text
+  detailsDe     String?  @db.Text
+  unitEn        String?
+  unitDe        String?
+  price         Float
+  quantityMode  AccessoryQuantityMode @default(GUEST_COUNT)
+  fixedQuantity Int?
+  image         String?  @db.LongText
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("accessories")
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  text      String   @db.Text
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("todos")
+}
