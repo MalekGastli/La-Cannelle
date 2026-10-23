@@ -240,7 +240,7 @@ export default function MenusPage() {
         }
         const coverImage = menu.image
           || items.find((item) => item.image)?.image
-          || '/images/home_image.jpeg';
+          || '/images/mediterranean-buffet.jpg';
         return {
           ...menu,
           name: localizedName,
@@ -285,7 +285,7 @@ export default function MenusPage() {
     }, {} as Record<string, Array<{ id: number; name: string; description?: string; image?: string; category?: string }>>);
 
     return Object.entries(groupedItems).map(([category, items], index) => {
-      const coverImage = items.find((item) => item.image)?.image || '/images/home_image.jpeg';
+      const coverImage = items.find((item) => item.image)?.image || '/images/mediterranean-buffet.jpg';
       const description = items.length
         ? items.slice(0, 3).map((item: any) => (
           item.name
@@ -538,7 +538,7 @@ export default function MenusPage() {
         >
           <div
             className="relative h-80 bg-cover bg-center"
-            style={{ backgroundImage: `url('${selectedMenu?.coverImage || '/images/home_image.jpeg'}')` }}
+            style={{ backgroundImage: `url('${selectedMenu?.coverImage || '/images/mediterranean-buffet.jpg'}')` }}
           >
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
             <button
@@ -578,7 +578,7 @@ export default function MenusPage() {
                   {items.map((item) => (
                     <div key={item.id} className="flex gap-4 bg-white/60 backdrop-blur-sm border border-black/5 rounded-2xl p-4 hover:border-[#A69256]/25 transition-colors">
                       <img
-                        src={item.image || '/images/home_image.jpeg'}
+                        src={item.image || '/images/mediterranean-buffet.jpg'}
                         alt={item.name}
                         className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
                       />

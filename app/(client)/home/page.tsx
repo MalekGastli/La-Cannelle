@@ -29,11 +29,11 @@ const SNAPSHOT_IMAGES = ['/images/services/corporate.jpg', '/images/truffle-aran
 
 const SERVICE_FOLDERS: { cover: string; files: { image: string; de: string; en: string }[] }[] = [
   {
-    cover: '/images/home_image.jpeg',
+    cover: '/images/mediterranean-buffet.jpg',
     files: [
       { image: '/images/chef-passion.jpg', de: 'Aus der Küche', en: 'From the kitchen' },
       { image: '/images/mediterranean-buffet.jpg', de: 'Fingerfood-Buffet', en: 'Finger food buffet' },
-      { image: '/images/home_image.jpeg', de: 'Abendbuffet', en: 'Evening buffet' },
+      { image: '/images/community-feast.jpg', de: 'Abendbuffet', en: 'Evening buffet' },
     ],
   },
   {
@@ -238,7 +238,7 @@ export default function CateringHomepage() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ minHeight: '100svh' }}>
         <div
           className="absolute inset-0 bg-cover bg-center lux-hero-image"
-          style={{ backgroundImage: "url('/images/home_image.jpeg')" }}
+          style={{ backgroundImage: "url('/images/mediterranean-buffet.jpg')" }}
         >
           <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(18,13,10,0.88)_0%,rgba(18,13,10,0.55)_55%,rgba(18,13,10,0.35)_100%)]"></div>
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#120d0a]/80 to-transparent"></div>

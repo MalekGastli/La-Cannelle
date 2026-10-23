@@ -142,7 +142,7 @@ export default function MenuShowcaseHorizontal({
             .map((id) => toHighlightItem(productMap.get(id)))
             .filter(Boolean) as MenuHighlightItem[];
         }
-        const coverImage = menu.image || '/images/home_image.jpeg';
+        const coverImage = menu.image || '/images/mediterranean-buffet.jpg';
         return {
           ...menu,
           name: localizedName,
@@ -348,7 +348,7 @@ export default function MenuShowcaseHorizontal({
     }, {} as Record<string, Array<{ id: number; name: string; description?: string; image?: string; category?: string }>>);
 
     const result = Object.entries(groupedItems).map(([category, items], index) => {
-      const coverImage = items.find((item) => item.image)?.image || '/images/home_image.jpeg';
+      const coverImage = items.find((item) => item.image)?.image || '/images/mediterranean-buffet.jpg';
       const description = items.length
         ? items.slice(0, 3).map((item: any) => (
           item.name
@@ -413,7 +413,7 @@ export default function MenuShowcaseHorizontal({
         >
           <div
             className="relative h-56 md:h-72 bg-cover bg-center"
-            style={{ backgroundImage: `url('${selectedMenu?.coverImage || '/images/home_image.jpeg'}')` }}
+            style={{ backgroundImage: `url('${selectedMenu?.coverImage || '/images/mediterranean-buffet.jpg'}')` }}
           >
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pointer-events-none" />
             <button
@@ -453,7 +453,7 @@ export default function MenuShowcaseHorizontal({
                   {items.map((item) => (
                     <div key={item.id} className="flex gap-3 bg-white/60 backdrop-blur-sm border border-black/5 rounded-xl p-3 hover:border-[#A69256]/25 transition-colors">
                       <img
-                        src={item.image || '/images/home_image.jpeg'}
+                        src={item.image || '/images/mediterranean-buffet.jpg'}
                         alt={item.name}
                         className="w-12 h-12 rounded-lg object-cover"
                       />
@@ -509,7 +509,7 @@ export default function MenuShowcaseHorizontal({
         <div className="relative">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {menuHighlights.map((menu, index) => {
-              const firstImage = menu.coverImage || '/images/home_image.jpeg';
+              const firstImage = menu.coverImage || '/images/mediterranean-buffet.jpg';
               const viewDetailsLabel =
                 menuT.menuShowcase?.viewDetails || homeT.menus?.viewDetails || (L(language, 'Details ansehen', 'View details'));
               
