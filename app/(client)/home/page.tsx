@@ -25,6 +25,8 @@ import { INSTAGRAM_PROFILE_URL } from '@/lib/config/social';
 
 
 // Each service is a folder: its photographs sit inside and fan out when the folder is opened.
+const SNAPSHOT_IMAGES = ['/images/services/corporate.jpg', '/images/truffle-arancini.jpg', '/images/community-feast.jpg'];
+
 const SERVICE_FOLDERS: { cover: string; files: { image: string; de: string; en: string }[] }[] = [
   {
     cover: '/images/home_image.jpeg',
@@ -383,50 +385,76 @@ export default function CateringHomepage() {
       </section>
 
       {/* Featured Menus Section */}
-      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-[#faf6ef] border-t border-black/10">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="eyebrow mb-4">
-              {L(language, 'MENUS', 'MENUS')}
-            </p>
-            <SplitText as="h2" className="block text-4xl lg:text-5xl font-medium tracking-tight text-black mb-4 font-display" text={t.menus.title} />
-            <p className="text-black/70 text-lg">{t.menus.description}</p>
+      <section id="menu-snapshots" className="relative overflow-hidden bg-[#17120e] px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
+        <div aria-hidden className="pointer-events-none absolute -top-40 right-[-10%] h-[28rem] w-[28rem] rounded-full bg-[#A69256]/15 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl">
+          <div className="mb-14 grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <p className="eyebrow mb-4 !text-[#d6c27d]">MENUS</p>
+              <SplitText
+                as="h2"
+                className="block font-display text-4xl font-medium tracking-tight text-white lg:text-6xl"
+                text={t.menus.title}
+              />
+            </div>
+            <div className="lg:col-span-5">
+              <p className="text-lg leading-relaxed text-white/70">{t.menus.description}</p>
+              <a
+                href="/menus"
+                className="mt-6 inline-flex items-center gap-2 border-b border-[#A69256] pb-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#d6c27d] transition-all hover:gap-3"
+              >
+                {t.menus.cta}
+                <ChevronRight size={16} />
+              </a>
+            </div>
           </div>
 
-          {fetchError && !menus.length && (
-            <p className="text-center text-red-700 mb-8">{fetchError}</p>
-          )}
           {isLoadingData && !menus.length && (
-            <LoadingSpinner className="mb-8" label="Loading menus..." />
+            <LoadingSpinner className="mb-8" label={L(language, 'Menüs werden geladen...', 'Loading menus...')} />
           )}
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {featuredMenus.map((menu, index) => (
-              <Spotlight key={menu.id ?? index} className="rounded-3xl">
-              <div
-                className="group bg-white p-8 sm:p-10 rounded-3xl transition-all duration-500 border border-black/10 hover:border-[color:var(--accent)]/60 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(26,20,16,0.12)]"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-black font-display">{menu.name}</h3>
-                  {menu.price && (
-                    <span className="text-black/70 font-semibold">{menu.price}</span>
-                  )}
-                </div>
-                <p className="text-black/70 mb-6 leading-relaxed">{menu.desc}</p>
-                <button
-                  className="text-[11px] uppercase tracking-[0.2em] text-black font-semibold inline-flex items-center gap-2 transition-all group-hover:gap-3 group-hover:text-[color:var(--accent)]"
-                  onClick={() => handleOrderClick(menu.productIds)}
-                >
-                  {t.menus.cta}
-                  <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-              </Spotlight>
-            ))}
+          <div className="grid gap-6 md:grid-cols-3">
+            {featuredMenus.map((menu, index) => {
+              const image = SNAPSHOT_IMAGES[index % SNAPSHOT_IMAGES.length];
+              return (
+                <ImageReveal key={menu.id ?? index} from="bottom">
+                  <button
+                    type="button"
+                    onClick={() => handleOrderClick(menu.productIds)}
+                    className="group relative block h-[26rem] w-full overflow-hidden rounded-[22px] border border-white/10 text-left shadow-[0_30px_70px_-30px_rgba(0,0,0,0.8)] transition-all duration-500 hover:-translate-y-1.5 hover:border-[#A69256]/60"
+                  >
+                    <img
+                      src={image}
+                      alt=""
+                      aria-hidden
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-[900ms] group-hover:scale-110"
+                    />
+                    <span className="absolute inset-0 bg-gradient-to-t from-[#120d0a] via-[#120d0a]/55 to-[#120d0a]/5" />
+                    <span className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#120d0a]/70 to-transparent" />
+                    <span className="absolute left-6 top-5 font-display text-5xl text-white/60 transition-colors group-hover:text-[#d6c27d]">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    {menu.price && (
+                      <span className="absolute right-5 top-6 rounded-full border border-white/20 bg-black/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur">
+                        {menu.price}
+                      </span>
+                    )}
+                    <span className="absolute inset-x-0 bottom-0 block p-7">
+                      <span className="block font-display text-2xl text-white sm:text-[1.7rem]">{menu.name}</span>
+                      <span className="mt-2 block text-sm leading-relaxed text-white/75">{menu.desc}</span>
+                      <span className="mt-5 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d6c27d] transition-all group-hover:gap-3">
+                        {t.menus.cta}
+                        <ChevronRight size={16} />
+                      </span>
+                    </span>
+                  </button>
+                </ImageReveal>
+              );
+            })}
           </div>
         </div>
       </section>
-
 
       {/* Lookbook + Reels */}
       <section id="lookbook" className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 section-surface-sand border-t border-black/10">

@@ -479,7 +479,7 @@ export default function MenuShowcaseHorizontal({
   };
 
   return (
-    <section id="menu-snapshots" className="py-16 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden lux-reveal" data-lux-delay="40">
+    <section id="menu-highlights" className="py-16 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden lux-reveal" data-lux-delay="40">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-black/60 mb-4">
@@ -567,7 +567,7 @@ export default function MenuShowcaseHorizontal({
                       <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/70">
                         {menu.category || menu.type || menuT.categories?.all || homeT.menus?.categoryAll || (L(language, 'Menü', 'Menu'))}
                       </p>
-                      <h3 className="mt-2 text-2xl font-semibold text-white font-elegant leading-tight">
+                      <h3 className="mt-2 text-2xl font-semibold text-white font-elegant leading-tight capitalize">
                         {menu.name}
                       </h3>
                       <div className="mt-3 max-h-0 overflow-hidden opacity-0 transition-all duration-500 group-hover:opacity-100 group-hover:max-h-40">
