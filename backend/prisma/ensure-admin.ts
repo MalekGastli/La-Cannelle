@@ -35,8 +35,9 @@ async function main() {
 
   const existing = await prisma.user.findUnique({ where: { email } });
 
-  // One-time reset: set ADMIN_FORCE_PASSWORD for a single deploy, then clear it again
-  const forced = process.env.ADMIN_FORCE_PASSWORD;
+  // One-time reset: set ADMIN_FORCE_PASSWORD to "reset:<new password>" for a single deploy, then change it to anything else.
+  const forcedRaw = process.env.ADMIN_FORCE_PASSWORD || '';
+  const forced = forcedRaw.startsWith('reset:') ? forcedRaw.slice('reset:'.length) : '';
   if (existing && forced) {
     await prisma.user.update({
       where: { id: existing.id },
