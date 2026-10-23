@@ -818,3 +818,8 @@ section[id] { scroll-margin-top: 124px; }
 .order-occasion.is-active .order-occasion-check { display: inline-flex; }
 
 @media (prefers-reduced-motion: reduce) { .order-hero-img { animation: none; } .order-occasion, .order-occasion-img { transition: none; } }
+
+/* Let a revealed child fill its grid cell (home lookbook) */
+@media (min-width: 1024px) {
+  .motion-wipe-fill, .motion-wipe-fill > .motion-wipe-inner { height: 100%; }
+}

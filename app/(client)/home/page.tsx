@@ -484,12 +484,12 @@ export default function CateringHomepage() {
           </div>
 
           <div className="grid lg:grid-cols-12 gap-6">
-            <ImageReveal className="lg:col-span-7" from="left">
+            <ImageReveal className="lg:col-span-7 motion-wipe-fill" from="left">
             <a
               href={INSTAGRAM_PROFILE_URL}
               target="_blank"
               rel="noreferrer"
-              className="group relative block overflow-hidden rounded-3xl border border-black/10 bg-black aspect-[16/10] shadow-[0_24px_70px_rgba(0,0,0,0.12)]"
+              className="group relative block overflow-hidden rounded-3xl border border-black/10 bg-black aspect-[16/10] lg:aspect-auto lg:h-full lg:min-h-[30rem] shadow-[0_24px_70px_rgba(0,0,0,0.12)]"
             >
               <div
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-700 will-change-transform group-hover:scale-[1.04]"
