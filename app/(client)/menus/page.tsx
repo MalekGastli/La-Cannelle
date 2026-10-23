@@ -415,7 +415,7 @@ export default function MenusPage() {
           }
         }}
         aria-label={`${t.menuHighlights.viewDetails}: ${menu.name}`}
-        className="group relative h-full min-h-[420px] overflow-hidden rounded-2xl bg-black text-left shadow-[0_20px_60px_rgba(0,0,0,0.22)] ring-1 ring-black/10 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(0,0,0,0.32)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)] cursor-pointer"
+        className="group relative h-full min-h-[420px] overflow-hidden rounded-sm bg-black text-left shadow-[0_20px_60px_rgba(0,0,0,0.22)] ring-1 ring-black/10 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(0,0,0,0.32)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)] cursor-pointer"
       >
         <div className="relative h-[420px] bg-black overflow-hidden">
           <img 
@@ -509,7 +509,7 @@ export default function MenusPage() {
               </div>
             )}
             
-            <button className="w-full rounded-xl bg-[#A69256] hover:bg-[#0D0D0D] px-6 py-3 text-center text-sm font-semibold text-[#F2F2F2] transition-colors duration-300 group-hover:shadow-md">
+            <button className="w-full rounded bg-[#A69256] hover:bg-[#0D0D0D] px-6 py-3 text-center text-sm font-semibold text-[#F2F2F2] transition-colors duration-300 group-hover:shadow-md">
               {t.labels.selectFood}
             </button>
           </div>
@@ -532,7 +532,7 @@ export default function MenusPage() {
           onClick={closeMenuDetails}
         />
         <div
-          className={`relative bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl border border-[#A69256]/25 ring-1 ring-black/5 rounded-xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] transition-all duration-300 transform ${isOpen && !isMenuModalClosing ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}
+          className={`relative bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl border border-[#A69256]/25 ring-1 ring-black/5 rounded w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] transition-all duration-300 transform ${isOpen && !isMenuModalClosing ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}
         >
           <div
             className="relative h-80 bg-cover bg-center"
@@ -574,11 +574,11 @@ export default function MenusPage() {
               {items.length > 0 ? (
                 <div className="grid sm:grid-cols-2 gap-4">
                   {items.map((item) => (
-                    <div key={item.id} className="flex gap-4 bg-white/60 backdrop-blur-sm border border-black/5 rounded-2xl p-4 hover:border-[#A69256]/25 transition-colors">
+                    <div key={item.id} className="flex gap-4 bg-white/60 backdrop-blur-sm border border-black/5 rounded-sm p-4 hover:border-[#A69256]/25 transition-colors">
                       <img
                         src={item.image || '/images/home_image.jpeg'}
                         alt={item.name}
-                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                        className="w-16 h-16 rounded object-cover flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 mb-1">{item.name}</p>
@@ -600,7 +600,7 @@ export default function MenusPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf6ef] overflow-x-hidden">
+    <div className="min-h-screen bg-[#efebe4] overflow-x-hidden">
       <BodyPortal>
         <MenuDetailsModal />
       </BodyPortal>
@@ -621,14 +621,13 @@ export default function MenusPage() {
       />
 
       {/* Hero Section - Premium */}
-      <section className="pt-40 pb-24 px-6 lg:px-8 bg-gradient-to-br from-[#f3ece1] to-[#faf6ef] relative overflow-hidden">
+      <section className="pt-40 pb-24 px-6 lg:px-8 bg-gradient-to-br from-[#e5dfd4] to-[#efebe4] relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#A69256]/12 via-transparent to-transparent"></div>
         </div>
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-            <p className="eyebrow mb-4">Curated Selections</p>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 mb-6 font-display leading-tight">
               {t.hero.title}
             </h1>

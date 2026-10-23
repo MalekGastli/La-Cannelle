@@ -406,7 +406,7 @@ export default function MenuShowcaseHorizontal({
           onClick={closeMenuDetails}
         />
         <div
-          className={`relative bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl border border-[#A69256]/25 ring-1 ring-black/5 rounded-xl w-full max-w-4xl max-h-[85vh] overflow-y-auto shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] transition-all duration-300 transform ${isOpen && !isMenuModalClosing ?'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}
+          className={`relative bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl border border-[#A69256]/25 ring-1 ring-black/5 rounded w-full max-w-4xl max-h-[85vh] overflow-y-auto shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] transition-all duration-300 transform ${isOpen && !isMenuModalClosing ?'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}
         >
           <div
             className="relative h-56 md:h-72 bg-cover bg-center"
@@ -448,7 +448,7 @@ export default function MenuShowcaseHorizontal({
               {items.length > 0 ?(
                 <div className="grid sm:grid-cols-2 gap-4">
                   {items.map((item) => (
-                    <div key={item.id} className="flex gap-3 bg-white/60 backdrop-blur-sm border border-black/5 rounded-xl p-3 hover:border-[#A69256]/25 transition-colors">
+                    <div key={item.id} className="flex gap-3 bg-white/60 backdrop-blur-sm border border-black/5 rounded p-3 hover:border-[#A69256]/25 transition-colors">
                       <img
                         src={item.image || '/images/home_image.jpeg'}
                         alt={item.name}
@@ -527,7 +527,7 @@ export default function MenuShowcaseHorizontal({
                     }
                   }}
                   aria-label={`${viewDetailsLabel}: ${menu.name}`}
-                  className="w-full bg-black rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] hover:shadow-[0_30px_90px_rgba(0,0,0,0.28)] transition-all duration-500 transform hover:-translate-y-1 overflow-hidden group ring-1 ring-black/10"
+                  className="w-full bg-black rounded-sm shadow-[0_20px_60px_rgba(0,0,0,0.18)] hover:shadow-[0_30px_90px_rgba(0,0,0,0.28)] transition-all duration-500 transform hover:-translate-y-1 overflow-hidden group ring-1 ring-black/10"
                   style={{ animationDelay: `${index * 120}ms` }}
                 >
                   <div className="relative h-72 lg:h-80 overflow-hidden">
@@ -591,7 +591,7 @@ export default function MenuShowcaseHorizontal({
                     </p>
 
                     <button
-                      className="w-full bg-[#A69256] text-[#120d0a] py-2 rounded-lg font-semibold hover:bg-[#0D0D0D] transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center gap-2 text-sm"
+                      className="w-full bg-[#A69256] text-[#1a110b] py-2 rounded-lg font-semibold hover:bg-[#0D0D0D] transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center gap-2 text-sm"
                       onClick={() => openMenuDetails(menu)}
                     >
                       {menuT.menuShowcase?.viewDetails || homeT.menus?.viewDetails || (language === 'DE' ? 'Details anzeigen' : 'View Details')}

@@ -33,7 +33,7 @@ type SiteFooterProps = {
 
 export default function SiteFooter({ footer, nav }: SiteFooterProps) {
   return (
-    <footer className="bg-[#120d0a] text-white border-t border-white/10">
+    <footer className="bg-[#1a110b] text-white border-t border-white/10">
       <Container className="py-16 sm:py-20">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
@@ -43,7 +43,7 @@ export default function SiteFooter({ footer, nav }: SiteFooterProps) {
           </div>
 
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">{footer.quickLinks}</p>
+            <p className="text-sm font-semibold text-[color:var(--accent)]">{footer.quickLinks}</p>
             <div className="mt-4 flex flex-col gap-2 text-sm">
               <Link href="/home" className="text-white/70 hover:text-white transition-colors">
                 {nav.home}
@@ -61,7 +61,7 @@ export default function SiteFooter({ footer, nav }: SiteFooterProps) {
           </div>
 
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">{footer.contact}</p>
+            <p className="text-sm font-semibold text-[color:var(--accent)]">{footer.contact}</p>
             <div className="mt-4 space-y-3 text-sm text-white/70">
               <div className="flex items-start gap-2">
                 <Phone size={16} className="mt-0.5 text-white/60" />
@@ -79,7 +79,7 @@ export default function SiteFooter({ footer, nav }: SiteFooterProps) {
           </div>
 
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">{footer.followUs}</p>
+            <p className="text-sm font-semibold text-[color:var(--accent)]">{footer.followUs}</p>
             <div className="mt-4 flex flex-col gap-3 text-sm">
               <a
                 href={INSTAGRAM_PROFILE_URL}

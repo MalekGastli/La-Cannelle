@@ -152,7 +152,7 @@ const LuxurySelect = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-4 py-3 text-left text-sm border border-black/10 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-white text-gray-900 shadow-sm flex items-center justify-between gap-3 hover:border-black/20"
+        className="w-full px-4 py-3 text-left text-sm border border-black/10 rounded focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-white text-gray-900 shadow-sm flex items-center justify-between gap-3 hover:border-black/20"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -166,7 +166,7 @@ const LuxurySelect = ({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 z-50 rounded-xl border border-black/10 bg-white shadow-[0_18px_48px_rgba(0,0,0,0.14)] overflow-hidden">
+        <div className="absolute left-0 right-0 mt-2 z-50 rounded border border-black/10 bg-white shadow-[0_18px_48px_rgba(0,0,0,0.14)] overflow-hidden">
           <div className="max-h-64 overflow-auto py-1">
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -389,13 +389,13 @@ const DatePicker = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full pl-12 pr-4 py-3 text-left text-base border border-black/10 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-white text-gray-900 placeholder:text-gray-500 shadow-sm hover:border-black/20"
+        className="w-full pl-12 pr-4 py-3 text-left text-base border border-black/10 rounded focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-white text-gray-900 placeholder:text-gray-500 shadow-sm hover:border-black/20"
       >
         {displayValue || placeholder}
       </button>
       <Calendar className="absolute left-4 top-3.5 text-amber-500" size={20} />
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 rounded-2xl border border-black/10 bg-white shadow-xl p-4 z-20">
+        <div className="absolute left-0 right-0 mt-2 rounded-sm border border-black/10 bg-white shadow-xl p-4 z-20">
           <div className="flex items-center justify-between mb-4">
             <button
               type="button"
@@ -497,13 +497,13 @@ const TimePicker = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full pl-12 pr-4 py-3 text-left text-base border border-black/10 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-white text-gray-900 placeholder:text-gray-500 shadow-sm hover:border-black/20"
+        className="w-full pl-12 pr-4 py-3 text-left text-base border border-black/10 rounded focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-white text-gray-900 placeholder:text-gray-500 shadow-sm hover:border-black/20"
       >
         {value || placeholder}
       </button>
       <Clock className="absolute left-4 top-3.5 text-amber-500" size={20} />
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 rounded-2xl border border-black/10 bg-white shadow-xl p-2 z-20">
+        <div className="absolute left-0 right-0 mt-2 rounded-sm border border-black/10 bg-white shadow-xl p-2 z-20">
           <div className="max-h-56 overflow-y-auto">
             {slots.map((slot) => {
               const isSelected = slot === value;
@@ -2390,7 +2390,7 @@ export default function OrderPage() {
     return (
       <div className="space-y-6">
         <div className="grid gap-4">
-          <div className="rounded-3xl border border-amber-100 bg-white p-6 shadow-sm">
+          <div className="rounded-sm border border-amber-100 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{t.eventType?.title}</h2>
@@ -2409,7 +2409,7 @@ export default function OrderPage() {
                     updateOrderData('serviceType', '');
                     updateOrderData('serviceId', '');
                   }}
-                  className={`flex flex-col justify-between rounded-xl border-2 px-4 py-4 text-left transition-all duration-300 hover:-translate-y-0.5 ${
+                  className={`flex flex-col justify-between rounded border-2 px-4 py-4 text-left transition-all duration-300 hover:-translate-y-0.5 ${
                     orderData.businessType === type
                       ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-100'
                       : 'border-gray-200 bg-white'
@@ -2425,7 +2425,7 @@ export default function OrderPage() {
           </div>
 
           {orderData.businessType && (
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-sm border border-gray-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">
@@ -2455,7 +2455,7 @@ export default function OrderPage() {
                         key={service.id}
                         type="button"
                         onClick={() => handleServiceClick(service)}
-                        className={`group text-center rounded-xl border overflow-hidden transition-all ${
+                        className={`group text-center rounded border overflow-hidden transition-all ${
                           selected 
                             ? 'border-amber-500 ring-2 ring-amber-200 bg-amber-50' 
                             : 'border-gray-200 hover:border-amber-300 hover:shadow-sm bg-white'
@@ -2569,7 +2569,7 @@ export default function OrderPage() {
             </div>
           )}
         </div>
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="rounded-sm border border-gray-200 bg-white p-6 shadow-sm">
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-900">{t.eventInfo.date} *</label>
@@ -2602,7 +2602,7 @@ export default function OrderPage() {
                 onChange={(e) => handleGuestCountChange(e.target.value)}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-full px-4 py-3 text-base border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-amber-50/60 text-gray-900 placeholder:text-gray-500 shadow-sm"
+                className="w-full px-4 py-3 text-base border border-amber-200 rounded focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all duration-300 bg-amber-50/60 text-gray-900 placeholder:text-gray-500 shadow-sm"
                 placeholder="10"
                 required
               />
@@ -2684,7 +2684,7 @@ export default function OrderPage() {
               ? menu.menuProducts.length
               : 0;
             const cardClassName =
-              'group w-full max-w-[26rem] min-h-[34rem] rounded-3xl border border-white/40 ring-1 ring-black/5 overflow-hidden transition-all duration-300 text-left bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.10)] hover:shadow-[0_30px_90px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 flex flex-col ' +
+              'group w-full max-w-[26rem] min-h-[34rem] rounded-sm border border-white/40 ring-1 ring-black/5 overflow-hidden transition-all duration-300 text-left bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.10)] hover:shadow-[0_30px_90px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 flex flex-col ' +
               ((pendingMenuId ? Number(pendingMenuId) : orderData.selectedMenu ? Number(orderData.selectedMenu) : null) === Number(menu.id)
                 ? 'border-[#A69256] ring-2 ring-[#A69256]/25'
                 : menu.isActive
@@ -2728,7 +2728,7 @@ export default function OrderPage() {
                     </div>
                   <div className="space-y-2 text-sm text-[#404040]/80">
                     {steps.map((step: any, index: number) => (
-                      <div key={`${menu.id}-step-${index}`} className="flex items-center gap-3 rounded-xl bg-white/60 backdrop-blur-sm border border-black/5 px-3 py-2">
+                      <div key={`${menu.id}-step-${index}`} className="flex items-center gap-3 rounded bg-white/60 backdrop-blur-sm border border-black/5 px-3 py-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#A69256]/15 text-[#A69256] border border-[#A69256]/20">
                           <Check size={12} />
                         </span>
@@ -2741,7 +2741,7 @@ export default function OrderPage() {
                         </span>
                       </div>
                     ))}
-                    <div className="flex items-center gap-3 rounded-xl bg-white/60 backdrop-blur-sm border border-black/5 px-3 py-2">
+                    <div className="flex items-center gap-3 rounded bg-white/60 backdrop-blur-sm border border-black/5 px-3 py-2">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#A69256]/15 text-[#A69256] border border-[#A69256]/20">
                         <Check size={12} />
                       </span>
@@ -2758,7 +2758,7 @@ export default function OrderPage() {
                     ) : null}
                   </div>
                   <div className="pt-2">
-                    <div className="w-full rounded-xl bg-[#A69256] px-4 py-3 text-center text-sm font-semibold text-[#F2F2F2] shadow-sm group-hover:bg-[#0D0D0D] group-hover:shadow-md transition-colors">
+                    <div className="w-full rounded bg-[#A69256] px-4 py-3 text-center text-sm font-semibold text-[#F2F2F2] shadow-sm group-hover:bg-[#0D0D0D] group-hover:shadow-md transition-colors">
                       {ui.selectFood}
                     </div>
                   </div>
@@ -2838,7 +2838,7 @@ export default function OrderPage() {
         {/* Order Overview - Right Side */}
         <div className="hidden lg:block lg:col-span-1 lg:order-2">
           <div
-            className="lg:sticky rounded-3xl border border-amber-100/60 bg-white p-6 shadow-sm"
+            className="lg:sticky rounded-sm border border-amber-100/60 bg-white p-6 shadow-sm"
             style={{ top: stepsBarHeight + 16 }}
           >
             <div className="flex items-center justify-between mb-6">
@@ -2853,7 +2853,7 @@ export default function OrderPage() {
             
             <div className={`${orderSummaryVisible ? 'block' : 'hidden lg:block'} space-y-6`}>
               {/* Event Info Summary */}
-              <div className="space-y-3 rounded-lg border border-gray-100 bg-[#f3ece1]/70 p-4">
+              <div className="space-y-3 rounded-lg border border-gray-100 bg-[#e5dfd4]/70 p-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-semibold text-gray-800">{t.eventInfo.date}:</span>
                   <span className="font-semibold text-gray-900">{orderData.eventDate || 'Not set'}</span>
@@ -2918,7 +2918,7 @@ export default function OrderPage() {
                             ? 'bg-amber-100 border border-amber-300'
                             : isCompleted
                             ? 'bg-green-50 border border-green-200'
-                            : 'bg-[#f3ece1] border border-gray-200 hover:bg-gray-100'
+                            : 'bg-[#e5dfd4] border border-gray-200 hover:bg-gray-100'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -2983,7 +2983,7 @@ export default function OrderPage() {
                   </h4>
                   <div className="space-y-3">
                     {getCategorySummaryRows().map((row) => (
-                      <div key={`summary-${row.key}`} className="rounded-xl border border-[#A6A6A6]/40 bg-white/70 backdrop-blur-sm p-4 shadow-sm dark:border-white/10 dark:bg-white/10">
+                      <div key={`summary-${row.key}`} className="rounded border border-[#A6A6A6]/40 bg-white/70 backdrop-blur-sm p-4 shadow-sm dark:border-white/10 dark:bg-white/10">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-[#404040] dark:text-[#D1D1D1]">{row.label}</span>
                           <span className="text-xs text-[#404040]/70 dark:text-[#B0B0B0]">
@@ -3008,7 +3008,7 @@ export default function OrderPage() {
                 <div className="flex justify-between gap-3">
                   <button
                     onClick={prevSubStep}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-[#f3ece1] transition-colors"
+                    className="px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-[#e5dfd4] transition-colors"
                   >
                     {language === 'DE' ? 'Zurück' : 'Back'}
                   </button>
@@ -3046,7 +3046,7 @@ export default function OrderPage() {
               </div>
             </div>
             
-            <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-[#A6A6A6]/50 bg-white/70 backdrop-blur-sm px-4 py-2.5 text-sm text-[#404040] shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-[#EDEDED]">
+            <div className="inline-flex flex-wrap items-center justify-center gap-3 rounded-sm border border-[#A6A6A6]/50 bg-white/70 backdrop-blur-sm px-4 py-2.5 text-sm text-[#404040] shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-[#EDEDED]">
               <span className="text-[#404040]/70 dark:text-[#B0B0B0]">Included</span>
               <span className="rounded-full bg-[#A69256]/15 px-2 py-0.5 text-xs font-semibold text-[#A69256] border border-[#A69256]/20">
                 {stepIncluded}
@@ -3085,7 +3085,7 @@ export default function OrderPage() {
               const currentQuantity = quantities[quantityKey] || 0;
               
               return (
-                <div key={product.id} className="rounded-2xl overflow-hidden bg-gradient-to-b from-white/80 via-white/70 to-white/60 supports-[backdrop-filter]:bg-white/60 backdrop-blur-xl border border-white/40 ring-1 ring-black/5 shadow-[0_16px_50px_rgba(0,0,0,0.10)] hover:shadow-[0_24px_80px_rgba(0,0,0,0.14)] transition-all duration-300 hover:-translate-y-0.5">
+                <div key={product.id} className="rounded-sm overflow-hidden bg-gradient-to-b from-white/80 via-white/70 to-white/60 supports-[backdrop-filter]:bg-white/60 backdrop-blur-xl border border-white/40 ring-1 ring-black/5 shadow-[0_16px_50px_rgba(0,0,0,0.10)] hover:shadow-[0_24px_80px_rgba(0,0,0,0.14)] transition-all duration-300 hover:-translate-y-0.5">
                   <div className="p-6">
                     <div className="flex flex-col md:flex-row gap-6">
                       <div className="w-full md:w-48 h-48 relative rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
@@ -3222,7 +3222,7 @@ export default function OrderPage() {
             })}
             
             {products.length === 0 && (
-              <div className="text-center py-12 border border-gray-200 rounded-xl bg-[#f3ece1]">
+              <div className="text-center py-12 border border-gray-200 rounded bg-[#e5dfd4]">
                 <p className="text-gray-600">
                   {language === 'DE' 
                     ? `Keine ${categoryTitle.toLowerCase()} verfügbar für dieses Menu.`
@@ -3362,14 +3362,14 @@ export default function OrderPage() {
         {/* Order Overview - Right Side */}
         <div className="hidden lg:block lg:col-span-1 lg:order-2">
           <div
-            className="lg:sticky rounded-3xl border border-amber-100/60 bg-white p-6 shadow-sm"
+            className="lg:sticky rounded-sm border border-amber-100/60 bg-white p-6 shadow-sm"
             style={{ top: stepsBarHeight + 16 }}
           >
             <h3 className="text-xl font-bold text-gray-900 mb-6">{t.productSelection.orderSummary}</h3>
             
             <div className="space-y-6">
               {/* Event Info Summary */}
-              <div className="space-y-3 rounded-lg border border-gray-100 bg-[#f3ece1]/70 p-4">
+              <div className="space-y-3 rounded-lg border border-gray-100 bg-[#e5dfd4]/70 p-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-semibold text-gray-800">{t.eventInfo.date}:</span>
                   <span className="font-semibold text-gray-900">{orderData.eventDate || 'Not set'}</span>
@@ -3430,7 +3430,7 @@ export default function OrderPage() {
                   </h4>
                   <div className="space-y-3">
                     {getCategorySummaryRows().map((row) => (
-                      <div key={`summary-${row.key}`} className="rounded-xl border border-[#A6A6A6]/40 bg-white/70 backdrop-blur-sm p-4 shadow-sm dark:border-white/10 dark:bg-white/10">
+                      <div key={`summary-${row.key}`} className="rounded border border-[#A6A6A6]/40 bg-white/70 backdrop-blur-sm p-4 shadow-sm dark:border-white/10 dark:bg-white/10">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-[#404040] dark:text-[#D1D1D1]">{row.label}</span>
                           <span className="text-xs text-[#404040]/70 dark:text-[#B0B0B0]">
@@ -3570,7 +3570,7 @@ export default function OrderPage() {
                 const unitPrice = Number(accessory?.price) || 0;
                 
                 return (
-                  <div key={accessory.id} className="border border-gray-200 rounded-2xl overflow-hidden bg-white hover:shadow-md transition-shadow">
+                  <div key={accessory.id} className="border border-gray-200 rounded-sm overflow-hidden bg-white hover:shadow-md transition-shadow">
                     <div className="p-6">
                       <div className="flex flex-col md:flex-row items-start gap-6">
                         {/* Image Column */}
@@ -3729,7 +3729,7 @@ export default function OrderPage() {
         // Business orders - Invoice only
         return (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-amber-100 bg-white shadow-sm p-6 md:p-8">
+            <div className="rounded-sm border border-amber-100 bg-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-3 mb-2">
                 <FileInvoice size={20} className="text-amber-600" />
                 <h2 className="text-2xl font-bold text-gray-900">{ui.invoiceTitle}</h2>
@@ -3740,7 +3740,7 @@ export default function OrderPage() {
               {/* Order Summary - Right Side */}
               <div className="hidden lg:block lg:col-span-1 lg:order-2">
                 <div
-                  className="lg:sticky bg-white rounded-3xl shadow-sm border border-black/10 p-6"
+                  className="lg:sticky bg-white rounded-sm shadow-sm border border-black/10 p-6"
                   style={{ top: stepsBarHeight + 16 }}
                 >
                   <h3 className="text-xl font-bold text-gray-900 mb-6">{t.productSelection.orderSummary}</h3>
@@ -3891,7 +3891,7 @@ export default function OrderPage() {
               
               {/* Invoice Information - Left Side */}
               <div className="lg:col-span-2 lg:order-1 lg:max-h-[calc(100dvh-var(--order-top)-2.5rem)] lg:overflow-y-auto lg:pr-3 lg:pb-24">
-                <div className="bg-white rounded-3xl shadow-sm border border-black/10 p-8">
+                <div className="bg-white rounded-sm shadow-sm border border-black/10 p-8">
                   <div className="space-y-6">
                     {/* Invoice Details */}
                     <div>
@@ -3902,7 +3902,7 @@ export default function OrderPage() {
                         </span>
                       </div>
                       
-                      <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-6 mb-6">
+                      <div className="rounded-sm border border-amber-100 bg-amber-50/70 p-6 mb-6">
                         <div className="flex items-start gap-3">
                           <FileInvoice size={24} className="text-amber-600 mt-1" />
                           <div>
@@ -4060,7 +4060,7 @@ export default function OrderPage() {
                         handleSubmitOrder();
                       }}
                       disabled={orderBlocked || (isCaptchaEnabled && !captchaToken)}
-                      className="w-full mt-6 bg-amber-600 text-white py-4 px-6 rounded-2xl text-base font-semibold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full mt-6 bg-amber-600 text-white py-4 px-6 rounded-sm text-base font-semibold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <FileInvoice size={20} />
                       {ui.confirmOrder}
@@ -4093,7 +4093,7 @@ export default function OrderPage() {
         // Private orders - Original payment methods
         return (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-amber-100 bg-white shadow-sm p-6 md:p-8">
+            <div className="rounded-sm border border-amber-100 bg-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-3 mb-2">
                 <Lock size={20} className="text-amber-600" />
                 <h2 className="text-2xl font-bold text-gray-900">{t.payment.title}</h2>
@@ -4104,7 +4104,7 @@ export default function OrderPage() {
               {/* Order Summary - Right Side */}
               <div className="hidden lg:block lg:col-span-1 lg:order-2">
                 <div
-                  className="lg:sticky bg-white rounded-3xl shadow-sm border border-black/10 p-6"
+                  className="lg:sticky bg-white rounded-sm shadow-sm border border-black/10 p-6"
                   style={{ top: stepsBarHeight + 16 }}
                 >
                   <h3 className="text-xl font-bold text-gray-900 mb-6">{t.productSelection.orderSummary}</h3>
@@ -4238,7 +4238,7 @@ export default function OrderPage() {
               
               {/* Payment Form - Left Side */}
               <div className="lg:col-span-2 lg:order-1 lg:max-h-[calc(100dvh-var(--order-top)-2.5rem)] lg:overflow-y-auto lg:pr-3 lg:pb-24">
-                <div className="bg-white rounded-3xl shadow-sm border border-black/10 p-8">
+                <div className="bg-white rounded-sm shadow-sm border border-black/10 p-8">
                   <div className="space-y-6">
                     {/* Payment Method Selection */}
                     <div>
@@ -4282,7 +4282,7 @@ export default function OrderPage() {
                                   setBankDetailsOpen(true);
                                 }
                               }}
-                              className={`group rounded-2xl border-2 p-5 text-left transition-all duration-300 ${
+                              className={`group rounded-sm border-2 p-5 text-left transition-all duration-300 ${
                                 isSelected
                                   ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-100'
                                   : 'border-gray-200 hover:border-amber-300 hover:shadow-sm'
@@ -4290,7 +4290,7 @@ export default function OrderPage() {
                             >
                               <div className="flex items-start justify-between mb-3 gap-3">
                                 <div className="flex min-w-0 flex-1 items-start gap-3">
-                                  <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                                  <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded ${
                                     isSelected ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
                                   }`}>
                                     {method.icon ? <method.icon size={22} /> : <span className="text-sm font-bold">PP</span>}
@@ -4486,7 +4486,7 @@ export default function OrderPage() {
                         handleSubmitOrder();
                       }}
                       disabled={orderBlocked || (isCaptchaEnabled && !captchaToken)}
-                      className="w-full mt-6 bg-amber-600 text-white py-4 px-6 rounded-2xl text-base font-semibold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full mt-6 bg-amber-600 text-white py-4 px-6 rounded-sm text-base font-semibold hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <Lock size={20} />
                       Pay €{grandTotal.toFixed(2)} Securely
@@ -4530,7 +4530,7 @@ export default function OrderPage() {
         </div>
         <div className="grid lg:grid-cols-12 gap-8">
           <div className="lg:col-span-7 space-y-6">
-            <div className="rounded-3xl border border-amber-100 bg-white shadow-sm p-6 md:p-8">
+            <div className="rounded-sm border border-amber-100 bg-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <TruckIcon size={20} className="text-amber-600" />
                 <div>
@@ -4643,7 +4643,7 @@ export default function OrderPage() {
                 )}
               </div>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6 md:p-8">
+            <div className="rounded-sm border border-gray-200 bg-white shadow-sm p-6 md:p-8">
               <div className="flex items-center gap-3 mb-4">
                 <FileText size={18} className="text-gray-600" />
                 <h3 className="text-lg font-bold text-gray-900">
@@ -4667,7 +4667,7 @@ export default function OrderPage() {
             </div>
           </div>
           <div className="lg:col-span-5">
-            <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-6 md:p-8 shadow-sm">
+            <div className="rounded-sm border border-amber-100 bg-amber-50/70 p-6 md:p-8 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
                 <MapPinIcon size={18} className="text-amber-600" />
                 <h3 className="text-lg font-bold text-gray-900">
@@ -4708,7 +4708,7 @@ export default function OrderPage() {
                   </span>
                 </div>
               </div>
-              <div className="mt-6 rounded-xl border border-amber-200 bg-white/70 p-4 text-xs text-gray-600">
+              <div className="mt-6 rounded border border-amber-200 bg-white/70 p-4 text-xs text-gray-600">
                 <div className="flex items-center gap-2">
                   <Info size={14} className="text-amber-600" />
                   <span>
@@ -4752,7 +4752,7 @@ export default function OrderPage() {
     
     return (
       <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 supports-[backdrop-filter]:bg-black/35 backdrop-blur-md p-4 sm:p-6 overflow-y-auto">
-        <div className="w-full max-w-lg max-h-[90vh] overflow-hidden rounded-xl bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] border border-[#A69256]/25 ring-1 ring-black/5 flex flex-col animate-fade-in-up">
+        <div className="w-full max-w-lg max-h-[90vh] overflow-hidden rounded bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] border border-[#A69256]/25 ring-1 ring-black/5 flex flex-col animate-fade-in-up">
           <div className="flex items-center justify-between px-6 py-4 border-b border-black/10">
             <h3 className="text-lg font-semibold text-[#404040] font-elegant tracking-wide">{t.menuMinPeoplePrompt.title}</h3>
             <button
@@ -4784,7 +4784,7 @@ export default function OrderPage() {
                 }
                 finalizeMenuSelection(minPeoplePromptMenu, { ignoreMenuMinPeople: false });
               }}
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#120d0a] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.18)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.24)] transition-all duration-200 hover:scale-[1.02]"
+              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#1a110b] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.18)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.24)] transition-all duration-200 hover:scale-[1.02]"
             >
               {t.menuMinPeoplePrompt.useMenuMin(Number(minPeoplePromptMenu.minPeople) || 0)}
             </button>
@@ -4816,7 +4816,7 @@ export default function OrderPage() {
     
     return (
       <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#0D0D0D]/55 supports-[backdrop-filter]:bg-[#0D0D0D]/45 backdrop-blur-lg p-4 sm:p-6 overflow-y-auto">
-        <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-gradient-to-b from-white/80 via-white/70 to-white/60 supports-[backdrop-filter]:bg-white/60 backdrop-blur-2xl shadow-[0_40px_120px_rgba(0,0,0,0.38)] border border-white/35 ring-1 ring-[#A69256]/15 flex flex-col">
+        <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-sm bg-gradient-to-b from-white/80 via-white/70 to-white/60 supports-[backdrop-filter]:bg-white/60 backdrop-blur-2xl shadow-[0_40px_120px_rgba(0,0,0,0.38)] border border-white/35 ring-1 ring-[#A69256]/15 flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-black/5">
             <h3 className="text-lg font-bold text-gray-900">
               {language === 'DE' ? 'AGB & Bedingungen' : 'Terms and Conditions'}
@@ -4895,7 +4895,7 @@ export default function OrderPage() {
     
     return (
       <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
-        <div className="w-full max-w-xl max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 flex flex-col">
+        <div className="w-full max-w-xl max-h-[90vh] overflow-hidden rounded-sm bg-white shadow-2xl border border-gray-200 flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900">{ui.bankTransferTitle}</h3>
             <button
@@ -4949,7 +4949,7 @@ export default function OrderPage() {
     
     return (
       <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 supports-[backdrop-filter]:bg-black/35 backdrop-blur-md p-4 sm:p-6 overflow-y-auto">
-        <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-xl bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] border border-[#A69256]/25 ring-1 ring-black/5 flex flex-col animate-fade-in-up">
+        <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl shadow-[0_30px_90px_rgba(0,0,0,0.20),0_10px_30px_rgba(166,146,86,0.12)] border border-[#A69256]/25 ring-1 ring-black/5 flex flex-col animate-fade-in-up">
           <div className="flex items-center justify-between px-6 py-4 border-b border-black/10">
             <h3 className="text-lg font-semibold text-[#404040] font-elegant tracking-wide">{ui.productDetailsTitle}</h3>
             <button
@@ -4965,7 +4965,7 @@ export default function OrderPage() {
           </div>
           <div className="px-6 py-6 flex-1 overflow-y-auto">
             <div className="grid gap-5 md:grid-cols-[180px,1fr]">
-              <div className="relative w-full h-44 rounded-xl bg-white/60 backdrop-blur-sm border border-black/10 overflow-hidden shadow-sm">
+              <div className="relative w-full h-44 rounded bg-white/60 backdrop-blur-sm border border-black/10 overflow-hidden shadow-sm">
                 {productDetailsItem.image ? (
                   <img
                     src={productDetailsItem.image}
@@ -5050,7 +5050,7 @@ export default function OrderPage() {
                 setProductDetailsOpen(false);
                 setProductDetailsItem(null);
               }}
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#120d0a] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.22)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.28)] transition-all duration-200 hover:scale-[1.02]"
+              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#1a110b] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.22)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.28)] transition-all duration-200 hover:scale-[1.02]"
             >
               {ui.close}
             </button>
@@ -5065,7 +5065,7 @@ export default function OrderPage() {
     
     return (
       <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
-        <div className="w-full max-w-lg max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 flex flex-col">
+        <div className="w-full max-w-lg max-h-[90vh] overflow-hidden rounded-sm bg-white shadow-2xl border border-gray-200 flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900">
               {language === 'DE' ? 'Hinweis zu Extras' : 'Extras notice'}
@@ -5142,7 +5142,7 @@ export default function OrderPage() {
           aria-label={ui.close}
           onClick={() => setOrderSummaryModalOpen(false)}
         />
-        <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-2xl shadow-[0_40px_120px_rgba(0,0,0,0.38)] border border-white/35 ring-1 ring-[#A69256]/15 flex flex-col">
+        <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-sm bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-2xl shadow-[0_40px_120px_rgba(0,0,0,0.38)] border border-white/35 ring-1 ring-[#A69256]/15 flex flex-col">
           <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-black/10">
             <div className="min-w-0">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black/50">
@@ -5163,7 +5163,7 @@ export default function OrderPage() {
           </div>
 
           <div className="px-5 sm:px-6 py-5 flex-1 overflow-y-auto space-y-6 text-sm text-[#404040]">
-            <div className="rounded-xl border border-black/10 bg-white/70 backdrop-blur-sm p-4">
+            <div className="rounded border border-black/10 bg-white/70 backdrop-blur-sm p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-black/50 mb-3">
                 {t.eventInfo.title}
               </div>
@@ -5192,7 +5192,7 @@ export default function OrderPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-black/10 bg-white/70 backdrop-blur-sm p-4">
+            <div className="rounded border border-black/10 bg-white/70 backdrop-blur-sm p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-black/50 mb-3">
                 {language === 'DE' ? 'Menu' : 'Menu'}
               </div>
@@ -5239,7 +5239,7 @@ export default function OrderPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-black/10 bg-white/70 backdrop-blur-sm p-4">
+            <div className="rounded border border-black/10 bg-white/70 backdrop-blur-sm p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-black/50 mb-3">
                 {language === 'DE' ? 'Auswahl' : 'Selections'}
               </div>
@@ -5286,7 +5286,7 @@ export default function OrderPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-black/10 bg-white/70 backdrop-blur-sm p-4">
+            <div className="rounded border border-black/10 bg-white/70 backdrop-blur-sm p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-black/50 mb-3">
                 {language === 'DE' ? 'Zubehör' : 'Accessories'}
               </div>
@@ -5400,7 +5400,7 @@ export default function OrderPage() {
   
   return (
     <div
-      className="order-theme min-h-screen bg-[#faf6ef] flex flex-col overflow-x-hidden"
+      className="order-theme min-h-screen bg-[#efebe4] flex flex-col overflow-x-hidden"
       style={{ ['--order-dock' as any]: `${currentStep === 1 ? 0 : orderSummaryDockHeight}px` }}
     >
       {notification && (
@@ -5508,9 +5508,9 @@ export default function OrderPage() {
           border-color: rgba(13, 13, 13, 0.10) !important;
         }
 
-        .order-theme [class~="bg-[#f3ece1]"],
-        .order-theme [class~="bg-[#f3ece1]/70"],
-        .order-theme [class~="bg-[#f3ece1]/60"],
+        .order-theme [class~="bg-[#e5dfd4]"],
+        .order-theme [class~="bg-[#e5dfd4]/70"],
+        .order-theme [class~="bg-[#e5dfd4]/60"],
         .order-theme [class~="bg-gray-100"],
         .order-theme [class~="bg-gray-100/70"],
         .order-theme [class~="bg-gray-100/60"] {
@@ -5630,7 +5630,7 @@ export default function OrderPage() {
                   className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors inline-flex items-center shadow-sm ${
                     isOrderingPaused || (isClosedDate && currentStep >= 1)
                       ? 'bg-white/10 text-[#F2F2F2]/40 cursor-not-allowed'
-                      : 'bg-[#A69256] text-[#120d0a] hover:bg-[#0D0D0D]'
+                      : 'bg-[#A69256] text-[#1a110b] hover:bg-[#0D0D0D]'
                   }`}
                   aria-label={currentStep === stepsConfig.length ? ui.confirmOrder : t.buttons.next}
                 >
@@ -5788,7 +5788,7 @@ export default function OrderPage() {
         >
           <div className="max-w-6xl mx-auto">
             {currentStep === 1 && (
-              <section className="mb-8 overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
+              <section className="mb-8 overflow-hidden rounded-sm border border-black/10 bg-white shadow-sm">
                 <div className="relative">
                   <div className="absolute inset-0">
                     <img
@@ -5871,7 +5871,7 @@ export default function OrderPage() {
           <button
             type="button"
             onClick={() => setOrderSummaryModalOpen(true)}
-            className="w-full rounded-2xl border border-black/10 bg-white/90 supports-[backdrop-filter]:bg-white/75 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.14)] px-4 py-3 text-left"
+            className="w-full rounded-sm border border-black/10 bg-white/90 supports-[backdrop-filter]:bg-white/75 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.14)] px-4 py-3 text-left"
             aria-haspopup="dialog"
             aria-expanded={orderSummaryModalOpen}
           >
@@ -5906,7 +5906,7 @@ export default function OrderPage() {
         </div>
       )}
       
-      <footer className="bg-[#120d0a] text-white/60 pt-12 pb-[calc(3rem+var(--order-dock,0px)+env(safe-area-inset-bottom))] px-4 sm:px-6 lg:px-8 border-t border-white/10">
+      <footer className="bg-[#1a110b] text-white/60 pt-12 pb-[calc(3rem+var(--order-dock,0px)+env(safe-area-inset-bottom))] px-4 sm:px-6 lg:px-8 border-t border-white/10">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm tracking-wide">&copy; {new Date().getFullYear()} La Cannelle Catering. All rights reserved.</p>
         </div>

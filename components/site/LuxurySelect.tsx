@@ -48,7 +48,7 @@ export function LuxurySelect({ value, placeholder, options, onChange, className 
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full px-4 py-3 text-left text-base border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 bg-[#F9F9F9] text-[#404040] shadow-sm flex items-center justify-between gap-3 dark:bg-[#2A2A2A]/70 dark:text-[#EDEDED] dark:border-white/10"
+        className="w-full px-4 py-3 text-left text-base border border-[#A6A6A6] rounded focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 bg-[#F9F9F9] text-[#404040] shadow-sm flex items-center justify-between gap-3 dark:bg-[#2A2A2A]/70 dark:text-[#EDEDED] dark:border-white/10"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -65,7 +65,7 @@ export function LuxurySelect({ value, placeholder, options, onChange, className 
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 z-50 rounded-xl border border-[#A6A6A6]/60 bg-white/90 backdrop-blur-md shadow-[0_18px_48px_rgba(0,0,0,0.18)] overflow-hidden dark:bg-[#1C1C1C]/90 dark:border-white/10">
+        <div className="absolute left-0 right-0 mt-2 z-50 rounded border border-[#A6A6A6]/60 bg-white/90 backdrop-blur-md shadow-[0_18px_48px_rgba(0,0,0,0.18)] overflow-hidden dark:bg-[#1C1C1C]/90 dark:border-white/10">
           <div className="max-h-64 overflow-auto py-1">
             {options.map((option) => {
               const isSelected = option.value === value;

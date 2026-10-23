@@ -73,10 +73,10 @@ export default function AdminLayout({
   const sidebarTransformClass = mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0';
 
   return (
-    <div className="min-h-screen bg-[#f6f0e6] overflow-x-hidden text-gray-900">
+    <div className="min-h-screen bg-[#efebe4] overflow-x-hidden text-gray-900">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-[#17120e] text-white border-r border-white/10 transition-transform duration-300 ${sidebarTransformClass}`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-[#261811] text-white border-r border-white/10 transition-transform duration-300 ${sidebarTransformClass}`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-6 border-b border-white/10">
@@ -148,7 +148,7 @@ export default function AdminLayout({
 
       {/* Main content */}
       <div className="min-w-0 transition-all duration-300 ml-0 lg:ml-72">
-        <header className="bg-[#faf6ef]/85 backdrop-blur-lg border-b border-black/10 sticky top-0 z-30">
+        <header className="bg-[#efebe4]/85 backdrop-blur-lg border-b border-black/10 sticky top-0 z-30">
           <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <button

@@ -296,7 +296,7 @@ export function PhoneNumberInput({
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
+        <div className="absolute left-0 right-0 mt-2 z-50 overflow-hidden rounded border border-gray-200 bg-white shadow-[0_18px_48px_rgba(0,0,0,0.18)]">
           <div className="border-b border-gray-200 p-3">
             <div className="relative">
               <input

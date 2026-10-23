@@ -126,7 +126,7 @@ export default function SiteHeader({
   const solid = !transparentOnTop || scrolled || open;
 
   const desktopLinkClass = (href: string) =>
-    `relative py-2 text-[11px] font-semibold uppercase tracking-[0.22em] transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:bg-[color:var(--accent)] after:transition-transform after:duration-300 ${
+    `relative py-2 text-[14px] font-medium tracking-wide transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:bg-[color:var(--accent)] after:transition-transform after:duration-300 ${
       isActiveHref(pathname, href)
         ? "text-white after:scale-x-100"
         : "text-white/70 hover:text-white after:scale-x-0 hover:after:scale-x-100"
@@ -137,7 +137,7 @@ export default function SiteHeader({
       type="button"
       onClick={toggleLanguage}
       aria-label={language === "EN" ? a11y.switchToGerman : a11y.switchToEnglish}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 transition-colors hover:border-white/40 hover:bg-white/10 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-sm border border-white/20 px-3 py-2 text-sm font-semibold text-white/90 transition-colors hover:border-white/40 hover:bg-white/10 ${className}`}
     >
       <Image
         src={FLAGS[language]}
@@ -153,7 +153,7 @@ export default function SiteHeader({
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div
-        className={`overflow-hidden border-b border-white/10 bg-[#120d0a] transition-all duration-300 ${
+        className={`overflow-hidden border-b border-white/10 bg-[#1a110b] transition-all duration-300 ${
           transparentOnTop && !solid ? "h-0 border-transparent opacity-0" : "h-[34px] opacity-100"
         }`}
       >
@@ -174,7 +174,7 @@ export default function SiteHeader({
               </span>
             </div>
 
-            <div className="flex items-center gap-5 text-[11px] font-semibold uppercase tracking-[0.18em]">
+            <div className="flex items-center gap-5 text-xs font-medium">
               <a
                 href={INSTAGRAM_PROFILE_URL}
                 target="_blank"
@@ -196,7 +196,7 @@ export default function SiteHeader({
       <div
         className={`border-b transition-all duration-300 ${
           solid
-            ? "border-white/10 bg-[#17120e]/95 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+            ? "border-white/10 bg-[#261811]/95 shadow-[0_10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl"
             : "border-transparent bg-gradient-to-b from-black/60 to-transparent"
         }`}
       >
@@ -223,7 +223,7 @@ export default function SiteHeader({
                   </Link>
                   {entry.items && (
                     <div className="pointer-events-none absolute left-1/2 top-full z-50 w-[600px] -translate-x-1/2 pt-5 opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-                      <div className="grid grid-cols-12 gap-8 rounded-2xl border border-white/10 bg-[#17120e]/98 p-8 shadow-[0_30px_90px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                      <div className="grid grid-cols-12 gap-8 rounded-sm border border-white/10 bg-[#261811]/98 p-8 shadow-[0_30px_90px_rgba(0,0,0,0.5)] backdrop-blur-xl">
                         <div className="col-span-5">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">
                             {entry.label}
@@ -235,7 +235,7 @@ export default function SiteHeader({
                             <Link
                               key={item.href}
                               href={item.href}
-                              className="group/item flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-white/5"
+                              className="group/item flex items-center justify-between gap-3 rounded px-4 py-3 transition-colors hover:bg-white/5"
                             >
                               <div>
                                 <p className="text-sm font-semibold text-white">{item.title}</p>
@@ -260,7 +260,7 @@ export default function SiteHeader({
               <button
                 type="button"
                 onClick={() => orderHandler()}
-                className="group inline-flex items-center gap-2 rounded-full bg-[color:var(--accent)] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition-all hover:brightness-110"
+                className="group inline-flex items-center gap-2 rounded-sm bg-[color:var(--accent)] px-5 py-2.5 text-sm font-semibold text-black transition-all hover:brightness-110"
               >
                 {nav.order}
                 <ArrowUpRight size={15} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -269,7 +269,7 @@ export default function SiteHeader({
 
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-full border border-white/20 p-2.5 text-white transition-colors hover:bg-white/10 md:hidden"
+              className="inline-flex items-center justify-center rounded-sm border border-white/20 p-2.5 text-white transition-colors hover:bg-white/10 md:hidden"
               onClick={() => {
                 setOpen((v) => !v);
                 setMobileSection(null);
@@ -284,12 +284,12 @@ export default function SiteHeader({
       </div>
 
       {open && (
-        <div className="max-h-[calc(100svh-118px)] overflow-y-auto border-b border-white/10 bg-[#17120e] md:hidden">
+        <div className="max-h-[calc(100svh-118px)] overflow-y-auto border-b border-white/10 bg-[#261811] md:hidden">
           <Container className="py-5">
             <div className="flex flex-col">
               {entries.map((entry) => {
                 const active = isActiveHref(pathname, entry.href);
-                const linkClass = `text-sm font-semibold uppercase tracking-[0.18em] ${active ? "text-[color:var(--accent)]" : "text-white/85"}`;
+                const linkClass = `text-base font-medium ${active ? "text-[color:var(--accent)]" : "text-white/85"}`;
                 if (!entry.items) {
                   return (
                     <Link
@@ -321,7 +321,7 @@ export default function SiteHeader({
                             key={item.href}
                             href={item.href}
                             onClick={() => setOpen(false)}
-                            className="block rounded-xl px-3 py-2.5 transition-colors hover:bg-white/5"
+                            className="block rounded px-3 py-2.5 transition-colors hover:bg-white/5"
                           >
                             <p className="text-sm font-semibold text-white">{item.title}</p>
                             <p className="mt-0.5 text-xs text-white/55">{item.description}</p>
@@ -341,7 +341,7 @@ export default function SiteHeader({
                     setOpen(false);
                     orderHandler();
                   }}
-                  className="inline-flex flex-1 items-center justify-center rounded-full bg-[color:var(--accent)] px-3 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-black transition-all hover:brightness-110"
+                  className="inline-flex flex-1 items-center justify-center rounded-sm bg-[color:var(--accent)] px-3 py-3 text-sm font-semibold text-black transition-all hover:brightness-110"
                 >
                   {nav.order}
                 </button>
