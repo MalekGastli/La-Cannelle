@@ -12,6 +12,7 @@ datasource db {
 
 enum UserRole {
   ADMIN
+  STAFF
   CLIENT
 }
 
@@ -81,9 +82,17 @@ model User {
   tier        CustomerTier @default(REGULAR)
   status      String       @default("active") // active, inactive
 
+  // Admin / team fields (STAFF users get their access from a Role plus per-person overrides)
+  roleId      Int?
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+
   // Relations
-  orders    Order[]
-  favorites Favorite[]
+  orders      Order[]
+  favorites   Favorite[]
+  teamRole    Role?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  permissions UserPermission[]
+  invitesSent Invite[]         @relation("InvitedBy")
 
   @@map("users")
 }
@@ -307,4 +316,74 @@ model Todo {
   updatedAt DateTime @updatedAt
 
   @@map("todos")
+}
+
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String   @default("")
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  permissions RolePermission[]
+  users       User[]
+  invites     Invite[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id       Int    @id @default(autoincrement())
+  roleId   Int
+  resource String
+  action   String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, resource, action])
+  @@map("role_permissions")
+}
+
+/// A per-person override: allow=true grants, allow=false denies even when the role grants it.
+model UserPermission {
+  id       Int     @id @default(autoincrement())
+  userId   Int
+  resource String
+  action   String
+  allow    Boolean
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resource, action])
+  @@map("user_permissions")
+}
+
+model Invite {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  roleId      Int
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  invitedById Int?
+  createdAt   DateTime  @default(now())
+
+  role      Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  invitedBy User? @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@map("invites")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  userEmail String
+  action    String
+  target    String   @default("")
+  detail    Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("audit_logs")
 }

@@ -1,6 +1,6 @@
 import express from 'express';
 import { systemController } from '../controllers/systemController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireResource } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get('/closed-dates', asyncHandler(systemController.getClosedDates));
 
 // Admin routes
 router.use(authenticate);
-router.use(requireAdmin);
+router.use(requireResource('system'));
 
 router.put('/status', asyncHandler(systemController.updateSystemStatus));
 router.post('/closed-dates', asyncHandler(systemController.createClosedDate));

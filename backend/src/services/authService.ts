@@ -21,7 +21,46 @@ export interface LoginData {
   password: string;
 }
 
+const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', 10);
+
 export const authService = {
+  /** Team sign-in (owner or staff). Same error for unknown user, wrong password or deactivated account. */
+  async adminLogin(data: LoginData) {
+    const email = String(data.email || '').trim().toLowerCase();
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        permissions: { select: { resource: true, action: true, allow: true } },
+        teamRole: { select: { name: true, permissions: { select: { resource: true, action: true } } } },
+      },
+    });
+
+    // Compare against a dummy hash when the user is unknown so timing does not reveal valid emails
+    const isValid = await bcrypt.compare(data.password || '', user?.password ?? DUMMY_HASH);
+    if (!user || !isValid || !user.isActive || (user.role !== 'ADMIN' && user.role !== 'STAFF')) {
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET as Secret,
+      { expiresIn: '1d' } as SignOptions
+    );
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        roleName: user.role === 'ADMIN' ? 'Owner' : user.teamRole?.name ?? null,
+      },
+    };
+  },
+
   async register(data: RegisterData) {
     const { email, password, firstName, lastName, phone, company, position } = data;
 
@@ -80,7 +119,7 @@ export const authService = {
       where: { email }
     });
 
-    if (!user) {
+    if (!user || !user.isActive) {
       throw new AppError('Invalid email or password', 401);
     }
 

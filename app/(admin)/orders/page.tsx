@@ -11,6 +11,7 @@ import {
 
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useAdminSession } from '@/lib/hooks/useAdminSession';
 import AdminLanguageToggle from '../components/AdminLanguageToggle';
 import AdminLayout from '../components/AdminLayout';
 import { ordersApi, Order } from '@/lib/api/orders';
@@ -110,6 +111,9 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const { language, toggleLanguage } = useTranslation('admin');
+  const session = useAdminSession();
+  const canEditOrders = session.can('orders.edit');
+  const canDeleteOrders = session.can('orders.delete');
 
   // State for confirmation modal
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -753,7 +757,7 @@ export default function AdminOrders() {
                 <p className="text-sm text-gray-700 mb-3">{t.modal.restoreHint}</p>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                {statusOptionsForUpdate.map((status) => (
+                {canEditOrders && statusOptionsForUpdate.map((status) => (
                   <button
                     key={status.value}
                     onClick={() => updateOrderStatus(order.id, status.value)}
@@ -903,7 +907,7 @@ export default function AdminOrders() {
             {isLoading ? t.filters.refreshing : t.filters.refresh}
           </button>
 
-          <button
+          {canDeleteOrders && <button
             type="button"
             onClick={openDeleteAllConfirmation}
             disabled={isLoading || orders.length === 0}
@@ -912,7 +916,7 @@ export default function AdminOrders() {
           >
             <Trash2 size={16} />
             {t.labels.deleteAll}
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -1017,20 +1021,20 @@ export default function AdminOrders() {
                         >
                           <Eye size={16} />
                         </button>
-                        <button
+                        {canEditOrders && <button
                           onClick={() => updateOrderStatus(order.id, 'completed')}
                           className="p-2 text-green-700 hover:bg-green-50 rounded-lg transition-colors border border-green-200 hover:border-green-300 hover:shadow-sm"
                           title={t.labels.markComplete}
                         >
                           <CheckCircle size={16} />
-                        </button>
-                        <button
+                        </button>}
+                        {canDeleteOrders && <button
                           onClick={() => openDeleteConfirmation({ id: order.id, client: order.client })}
                           className="p-2 text-red-800 hover:bg-red-50 rounded-lg transition-colors border border-red-200 hover:border-red-300 hover:shadow-sm"
                           title={t.labels.deleteOrder}
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </button>}
                       </div>
                     </td>
                   </tr>

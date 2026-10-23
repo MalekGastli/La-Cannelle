@@ -21,7 +21,8 @@ export async function middleware(req: NextRequest) {
 
   try {
     const payload = await verifyToken(token)
-    if (payload.role !== 'admin') throw new Error('not admin')
+    // Backend-issued token: the owner (ADMIN) or an invited staff member (STAFF). Real permissions are enforced by the API.
+    if (payload.role !== 'ADMIN' && payload.role !== 'STAFF') throw new Error('not team')
     return NextResponse.next()
   } catch {
     const url = req.nextUrl.clone()
@@ -44,5 +45,6 @@ export const config = {
     '/system_control/:path*',
     '/customers/:path*',
     '/reports/:path*',
+    '/team/:path*',
   ],
 }

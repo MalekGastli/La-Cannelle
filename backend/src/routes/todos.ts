@@ -1,12 +1,12 @@
 import express from 'express';
 import { todoController } from '../controllers/todoController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireStaff } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireAdmin);
+router.use(requireStaff);
 
 router.get('/', asyncHandler(todoController.getTodos));
 router.post('/', asyncHandler(todoController.createTodo));

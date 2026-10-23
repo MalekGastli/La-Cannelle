@@ -74,8 +74,8 @@ function LoginInner() {
             <input
               name="login"
               id="login"
-              type="text"
-              placeholder="lacannelle"
+              type="email"
+              placeholder="name@lacannelle.com"
               autoComplete="username"
               required
               className="w-full px-4 py-3 rounded-xl border border-white/15 bg-white/5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[color:var(--accent)]/40 focus:border-[color:var(--accent)]"

@@ -33,6 +33,10 @@ const forward = async (
 
   const headers = new Headers(req.headers);
   for (const headerName of HOP_BY_HOP_HEADERS) headers.delete(headerName);
+
+  // Team members sign in through an httpOnly cookie; it takes precedence over any customer token in the browser
+  const adminToken = req.cookies.get('admin_token')?.value;
+  if (adminToken) headers.set('authorization', `Bearer ${adminToken}`);
   headers.delete('accept-encoding');
   headers.delete('if-none-match');
   headers.delete('if-modified-since');

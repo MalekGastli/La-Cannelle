@@ -1,6 +1,6 @@
 import express from 'express';
 import { productController } from '../controllers/productController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireResource } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get('/:id', asyncHandler(productController.getProductById));
 
 // Admin routes
 router.use(authenticate);
-router.use(requireAdmin);
+router.use(requireResource('products'));
 
 router.post('/', asyncHandler(productController.createProduct));
 router.put('/:id', asyncHandler(productController.updateProduct));

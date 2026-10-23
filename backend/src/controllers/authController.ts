@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { authService } from '../services/authService';
 import { AppError } from '../middleware/errorHandler';
+import { audit } from '../utils/audit';
 
 export const authController = {
   async register(req: AuthRequest, res: Response) {
@@ -32,6 +33,15 @@ export const authController = {
     }
 
     const result = await authService.login({ email, password });
+    res.json(result);
+  },
+
+  async adminLogin(req: AuthRequest, res: Response) {
+    const { email, password } = req.body;
+    if (!email || !password) throw new AppError('Email and password required', 400);
+
+    const result = await authService.adminLogin({ email, password });
+    await audit({ id: result.user.id, email: result.user.email }, 'auth.login');
     res.json(result);
   },
 

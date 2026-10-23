@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
-import { signToken } from '@/lib/auth'
 
+const backendBase = () =>
+  (process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '')
+
+/**
+ * Team sign-in. The backend checks email + password (owner or invited staff) and issues the JWT;
+ * it is stored in an httpOnly cookie and attached to API calls by the /api proxy.
+ */
 export async function POST(req: Request) {
   let body: any = null
   try {
@@ -9,27 +15,43 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const login = String(body?.login ?? '')
+  const email = String(body?.login ?? body?.email ?? '').trim()
   const password = String(body?.password ?? '')
+  if (!email || !password) {
+    return NextResponse.json({ ok: false, error: 'Email and password required' }, { status: 400 })
+  }
 
-  if (login !== 'lacannelle' || password !== 'lacannelle') {
+  let backend: Response
+  try {
+    backend = await fetch(`${backendBase()}/auth/admin-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      cache: 'no-store',
+    })
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Backend unavailable' }, { status: 503 })
+  }
+
+  if (backend.status === 401 || backend.status === 403) {
     return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 401 })
   }
+  if (!backend.ok) {
+    return NextResponse.json({ ok: false, error: `Login failed (${backend.status})` }, { status: 502 })
+  }
 
-  let token = ''
-  try {
-    token = await signToken({ role: 'admin', login })
-  } catch (err) {
-    console.error('Failed to sign admin token:', err)
+  const data = (await backend.json()) as { token?: string }
+  if (!data.token) {
     return NextResponse.json({ ok: false, error: 'Server misconfigured' }, { status: 500 })
   }
+
   const res = NextResponse.json({ ok: true })
-  res.cookies.set('admin_token', token, {
+  res.cookies.set('admin_token', data.token, {
     httpOnly: true,
     sameSite: 'lax',
+    secure: req.headers.get('x-forwarded-proto') === 'https' || new URL(req.url).protocol === 'https:',
     path: '/',
-    maxAge: 60 * 60 * 24, // 1 day
+    maxAge: 60 * 60 * 24, // 1 day, same as the token
   })
   return res
 }
-

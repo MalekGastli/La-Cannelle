@@ -1,6 +1,6 @@
 import express from 'express';
 import { menuController } from '../controllers/menuController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireResource } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get('/:id', asyncHandler(menuController.getMenuById));
 
 // Admin routes
 router.use(authenticate);
-router.use(requireAdmin);
+router.use(requireResource('menus'));
 
 router.post('/restore-defaults', asyncHandler(menuController.restoreDefaultMenus));
 router.post('/restore-legacy', asyncHandler(menuController.restoreLegacyMenusFromBackup));

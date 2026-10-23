@@ -1,30 +1,37 @@
 import express from 'express';
 import { orderController } from '../controllers/orderController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { Response, NextFunction } from 'express';
+import { authenticate, requirePermission, requireAuth, AuthRequest } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-// All routes require authentication
 router.use(authenticate);
+
+// Customers read their own orders; the team needs orders.view. Anonymous callers get nothing.
+const readOrders = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role === 'CLIENT') return next();
+  if (!req.user) return requireAuth(req, res, next);
+  return requirePermission('orders.view')(req, res, next);
+};
 
 // Create order (client or guest)
 router.post('/', asyncHandler(orderController.createOrder));
 
 // Get orders (filtered by user role)
-router.get('/', asyncHandler(orderController.getOrders));
+router.get('/', readOrders, asyncHandler(orderController.getOrders));
 
 // Get single order
-router.get('/:id', asyncHandler(orderController.getOrderById));
+router.get('/:id', readOrders, asyncHandler(orderController.getOrderById));
 
 // Update order status (admin only)
-router.patch('/:id/status', requireAdmin, asyncHandler(orderController.updateOrderStatus));
+router.patch('/:id/status', requirePermission('orders.edit'), asyncHandler(orderController.updateOrderStatus));
 
 // Update payment status (admin only)
-router.patch('/:id/payment', requireAdmin, asyncHandler(orderController.updatePaymentStatus));
+router.patch('/:id/payment', requirePermission('orders.edit'), asyncHandler(orderController.updatePaymentStatus));
 
 // Delete order(s) (admin only)
-router.delete('/:id', requireAdmin, asyncHandler(orderController.deleteOrder));
-router.delete('/', requireAdmin, asyncHandler(orderController.deleteAllOrders));
+router.delete('/:id', requirePermission('orders.delete'), asyncHandler(orderController.deleteOrder));
+router.delete('/', requirePermission('orders.delete'), asyncHandler(orderController.deleteAllOrders));
 
 export default router;

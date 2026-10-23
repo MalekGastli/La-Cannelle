@@ -3,8 +3,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Users } from 'lucide-react';
+import { Menu, X, Users, ShieldCheck, LogOut } from 'lucide-react';
 import { useBodyScrollLock } from './useBodyScrollLock';
+import { useAdminSession } from '@/lib/hooks/useAdminSession';
+import { useTranslation } from '@/lib/hooks/useTranslation';
+import { L } from '@/lib/i18n/inline';
 
 export type AdminNavItem = {
   id: string;
@@ -40,6 +43,8 @@ export default function AdminLayout({
 }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const session = useAdminSession();
+  const { language } = useTranslation('admin');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [formattedDate, setFormattedDate] = useState('');
 
@@ -50,10 +55,40 @@ export default function AdminLayout({
     setMobileSidebarOpen(false);
   }
 
+  // Menu items follow the person's permissions; "Team" is added here so every admin page gets it
+  const visibleNavigation = useMemo(() => {
+    const resourceByPath: Record<string, string> = {
+      '/orders': 'orders',
+      '/customers': 'customers',
+      '/menu_management': 'menus',
+      '/services_management': 'services',
+      '/accessories': 'accessories',
+      '/system_control': 'system',
+      '/reports': 'reports',
+    };
+    const items = navigation.filter((item) => {
+      const resource = resourceByPath[item.path];
+      return !resource || session.loading || session.can(`${resource}.view`);
+    });
+    if (!session.loading && session.can('team.view') && !items.some((item) => item.path === '/team')) {
+      items.push({ id: 'team', name: L(language, 'Team', 'Team'), path: '/team', icon: ShieldCheck });
+    }
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation, session.loading, session.me, language]);
+
   const activeId = useMemo(() => {
-    const match = navigation.find((item) => pathname?.startsWith(item.path));
-    return match?.id || navigation[0]?.id || '';
-  }, [navigation, pathname]);
+    const match = visibleNavigation.find((item) => pathname?.startsWith(item.path));
+    return match?.id || visibleNavigation[0]?.id || '';
+  }, [visibleNavigation, pathname]);
+
+  async function signOut() {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' });
+    } finally {
+      window.location.href = '/login';
+    }
+  }
 
   useEffect(() => {
     try {
@@ -69,6 +104,18 @@ export default function AdminLayout({
       setFormattedDate(new Date().toDateString());
     }
   }, [locale]);
+
+  // Read-only notice: the server refuses changes anyway; this explains why buttons fail
+  const readOnlyResource = (() => {
+    const map: Record<string, string> = {
+      '/orders': 'orders', '/customers': 'customers', '/menu_management': 'menus', '/services_management': 'services',
+      '/accessories': 'accessories', '/system_control': 'system',
+    };
+    const key = Object.keys(map).find((path) => pathname?.startsWith(path));
+    if (!key || session.loading || !session.me) return null;
+    const resource = map[key];
+    return session.can(`${resource}.edit`) ? null : resource;
+  })();
 
   const sidebarTransformClass = mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0';
 
@@ -103,7 +150,7 @@ export default function AdminLayout({
 
           <nav className="flex-1 p-4">
             <div className="space-y-2">
-              {navigation.map((item) => {
+              {visibleNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeId === item.id;
                 return (
@@ -130,10 +177,19 @@ export default function AdminLayout({
               <div className="w-10 h-10 bg-[color:var(--accent)]/20 rounded-full flex items-center justify-center">
                 <Users className="text-[color:var(--accent)]" size={20} />
               </div>
-              <div className="flex-1">
-                <p className="font-semibold text-white">{adminUserLabel}</p>
-                <p className="text-sm text-white/60">{adminRoleLabel}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-white">{session.me?.name?.trim() || session.me?.email || adminUserLabel}</p>
+                <p className="truncate text-sm text-white/60">{session.me?.roleName || adminRoleLabel}</p>
               </div>
+              <button
+                type="button"
+                onClick={signOut}
+                aria-label={L(language, 'Abmelden', 'Sign out')}
+                title={L(language, 'Abmelden', 'Sign out')}
+                className="shrink-0 rounded-lg p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           </div>
         </div>
@@ -171,7 +227,14 @@ export default function AdminLayout({
           </div>
         </header>
 
-        <main className="p-4 sm:p-6 lg:p-8 min-w-0">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8 min-w-0">
+          {readOnlyResource && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+              {L(language, 'Sie haben hier nur Lesezugriff. Änderungen werden vom Server abgelehnt.', 'You have read-only access here. Changes are refused by the server.')}
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

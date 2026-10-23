@@ -1,14 +1,8 @@
 // API Configuration and Client
 
 function getDefaultApiBaseUrl() {
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:3001/api';
-    }
-    return '/api';
-  }
-
+  // Browser: always the same-origin proxy (/api), which attaches the team cookie and forwards to the backend
+  if (typeof window !== 'undefined') return '/api';
   return process.env.BACKEND_API_URL || 'http://localhost:3001/api';
 }
 

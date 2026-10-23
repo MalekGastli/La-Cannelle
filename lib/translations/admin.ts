@@ -36,7 +36,7 @@ export const adminTranslations: Record<Language, AdminTranslations> = {
     auth: {
       title: 'Admin Login',
       subtitle: 'Sign in to access the admin area.',
-      loginLabel: 'Login',
+      loginLabel: 'Email',
       passwordLabel: 'Password',
       submit: 'Login',
       signingIn: 'Signing in...',
@@ -58,7 +58,7 @@ export const adminTranslations: Record<Language, AdminTranslations> = {
     auth: {
       title: 'Admin Anmeldung',
       subtitle: 'Melden Sie sich an, um den Adminbereich zu nutzen.',
-      loginLabel: 'Login',
+      loginLabel: 'E-Mail',
       passwordLabel: 'Passwort',
       submit: 'Anmelden',
       signingIn: 'Anmeldung...',

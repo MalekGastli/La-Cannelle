@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post('/register', asyncHandler(authController.register));
 router.post('/login', asyncHandler(authController.login));
+router.post('/admin-login', asyncHandler(authController.adminLogin));
 router.get('/profile', authenticate, asyncHandler(authController.getProfile));
 router.put('/profile', authenticate, asyncHandler(authController.updateProfile));
 

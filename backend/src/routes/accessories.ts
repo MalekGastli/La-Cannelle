@@ -1,6 +1,6 @@
 import express from 'express';
 import { accessoryController } from '../controllers/accessoryController';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate, requireResource } from '../middleware/auth';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get('/:id', asyncHandler(accessoryController.getAccessoryById));
 
 // Admin routes
 router.use(authenticate);
-router.use(requireAdmin);
+router.use(requireResource('accessories'));
 
 router.post('/restore-defaults', asyncHandler(accessoryController.restoreDefaultAccessories));
 router.post('/', asyncHandler(accessoryController.createAccessory));
