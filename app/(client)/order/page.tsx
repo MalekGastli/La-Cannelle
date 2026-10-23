@@ -893,7 +893,11 @@ export default function OrderPage() {
     const fetchMenusForService = async () => {
       try {
         const serviceId = orderData.serviceId ? Number(orderData.serviceId) : undefined;
-        const menus = await menusApi.getMenus({ isActive: true, serviceId, includeImages: true });
+        let menus = await menusApi.getMenus({ isActive: true, serviceId, includeImages: true });
+        // Services without dedicated menus (e.g. weddings, corporate events) offer the full menu range
+        if (serviceId && (!menus || menus.length === 0)) {
+          menus = await menusApi.getMenus({ isActive: true, includeImages: true });
+        }
         
         const normalizeMenus = (menus: any[]) =>
           (menus || []).map((menu: any) => ({
@@ -2393,7 +2397,7 @@ export default function OrderPage() {
     return (
       <div className="space-y-6">
         <div className="grid gap-4">
-          <div className="order-card p-6 sm:p-8">
+          <div className="order-card p-4 sm:p-8">
             <div className="flex items-end justify-between mb-6">
               <div>
                 <p className="order-eyebrow !text-[#7a6a32]">01</p>
@@ -2433,7 +2437,7 @@ export default function OrderPage() {
           </div>
 
           {orderData.businessType && (
-            <div className="order-card p-6 sm:p-8">
+            <div className="order-card p-4 sm:p-8">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <p className="order-eyebrow !text-[#7a6a32]">02</p>
@@ -5614,7 +5618,7 @@ export default function OrderPage() {
                 <button
                   onClick={nextStep}
                   disabled={isOrderingPaused || (isClosedDate && currentStep >= 1)}
-                  className={`inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                  className={`hidden sm:inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold transition-all ${
                     isOrderingPaused || (isClosedDate && currentStep >= 1)
                       ? 'bg-white/10 text-white/40 cursor-not-allowed'
                       : 'bg-gradient-to-b from-[#c9b574] to-[#A69256] text-[#120d0a] hover:brightness-110'
