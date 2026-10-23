@@ -2397,45 +2397,51 @@ export default function OrderPage() {
     return (
       <div className="space-y-6">
         <div className="grid gap-4">
-          <div className="rounded-3xl border border-amber-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+          <div className="order-card p-6 sm:p-8">
+            <div className="flex items-end justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{t.eventType?.title}</h2>
-                <p className="text-sm text-gray-500">{t.eventType?.subtitle}</p>
+                <p className="order-eyebrow !text-[#7a6a32]">01</p>
+                <h2 className="order-h2">{t.eventType?.title}</h2>
+                <p className="text-sm text-black/55 mt-1">{t.eventType?.subtitle}</p>
               </div>
-              <span className="text-[11px] uppercase tracking-[0.2em] text-amber-500">Step 1</span>
             </div>
-            <div className="grid gap-3 lg:grid-cols-2">
-              {['business', 'private'].map((type) => {
+            <div className="grid gap-4 md:grid-cols-2">
+              {[
+                { type: 'business', img: '/images/services/corporate.jpg' },
+                { type: 'private', img: '/images/services/weddings.jpg' },
+              ].map(({ type, img }) => {
                 const option = t.eventType?.options?.[type] || {};
+                const active = orderData.businessType === type;
                 return (
                 <button
                   key={type}
+                  type="button"
+                  aria-pressed={active}
                   onClick={() => {
                     updateOrderData('businessType', type);
                     updateOrderData('serviceType', '');
                     updateOrderData('serviceId', '');
                   }}
-                  className={`flex flex-col justify-between rounded-xl border-2 px-4 py-4 text-left transition-all duration-300 hover:-translate-y-0.5 ${
-                    orderData.businessType === type
-                      ? 'border-amber-500 bg-amber-50 shadow-md shadow-amber-100'
-                      : 'border-gray-200 bg-white'
-                  }`}
+                  className={`order-occasion group ${active ? 'is-active' : ''}`}
                 >
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900">{option.title}</h3>
-                    <p className="text-amber-600 font-semibold text-sm">{option.subtitle}</p>
-                  </div>
+                  <img src={img} alt="" aria-hidden className="order-occasion-img" loading="lazy" />
+                  <span className="order-occasion-scrim" />
+                  <span className="order-occasion-check"><Check size={14} /></span>
+                  <span className="relative z-10 block text-left">
+                    <span className="block font-display text-2xl text-white">{option.title}</span>
+                    <span className="mt-1 block text-sm text-white/80">{option.subtitle}</span>
+                  </span>
                 </button>
               )})}
             </div>
           </div>
 
           {orderData.businessType && (
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
+            <div className="order-card p-6 sm:p-8">
+              <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <p className="order-eyebrow !text-[#7a6a32]">02</p>
+                  <h3 className="order-h2">
                     {language === 'DE' ? 'Service ausw\u00e4hlen' : 'Choose a service'}
                   </h3>
                   <p className="text-sm text-gray-500">
@@ -5580,126 +5586,116 @@ export default function OrderPage() {
       {/* Enhanced Top Navigation with Steps */}
       <div
         ref={stepsBarRef}
-        className="fixed top-0 left-0 right-0 bg-black/85 supports-[backdrop-filter]:bg-black/70 backdrop-blur-xl z-40 border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.22)]"
+        className="fixed top-0 left-0 right-0 bg-[#17120e]/95 backdrop-blur-xl z-40 border-b border-[#A69256]/25 shadow-[0_10px_40px_rgba(0,0,0,0.28)]"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Steps Progress Bar */}
-          <div className="pt-2 pb-3">
+          {/* Brand + steps */}
+          <div className="pt-3 pb-3">
             <div className="flex items-center justify-between gap-3">
-              <span className="min-w-0 text-xs sm:text-sm font-semibold text-[#F2F2F2] font-elegant truncate">
-                {stepsConfig[currentStep - 1]?.label}
-              </span>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  onClick={handleBackToHome}
+                  aria-label={t.buttons.backToHome}
+                  className="order-logo-link shrink-0"
+                >
+                  <img
+                    src="/images/logo-header-dark.png"
+                    alt="La Cannelle"
+                    width={1438}
+                    height={439}
+                    className="h-9 sm:h-11 w-auto object-contain"
+                  />
+                </button>
+                <span className="hidden xl:block h-7 w-px bg-white/15" />
+                <button
+                  onClick={handleBackToHome}
+                  className="hidden xl:inline-flex whitespace-nowrap items-center gap-1.5 text-xs tracking-wide text-white/70 hover:text-[#d6c27d] transition-colors"
+                >
+                  <ArrowLeft size={14} />
+                  {t.buttons.backToHome}
+                </button>
+              </div>
+
+              <nav aria-label="Order steps" className="hidden lg:flex items-center gap-2 min-w-0">
+                {stepsConfig.map((step, index) => {
+                  const stepNumber = index + 1;
+                  const isCurrent = stepNumber === currentStep;
+                  const isCompleted = stepNumber < currentStep;
+                  const canNavigate = canNavigateToStep(stepNumber);
+                  return (
+                    <React.Fragment key={step.key}>
+                      <button
+                        type="button"
+                        onClick={() => handleStepChange(stepNumber)}
+                        disabled={!canNavigate}
+                        aria-current={isCurrent ? 'step' : undefined}
+                        className={`order-step-pill ${isCurrent ? 'is-current' : ''} ${isCompleted ? 'is-done' : ''} ${!canNavigate ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <span className="order-step-num">
+                          {isCompleted ? <Check size={12} /> : stepNumber}
+                        </span>
+                        <span className="whitespace-nowrap">{step.label}</span>
+                      </button>
+                      {index < stepsConfig.length - 1 && (
+                        <span className={`order-step-line ${isCompleted ? 'is-done' : ''}`} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </nav>
+
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={prevStep}
                   disabled={currentStep === 1}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-full inline-flex items-center transition-colors ${
-                    currentStep === 1
-                      ? 'text-[#F2F2F2]/40 cursor-not-allowed'
-                      : 'text-[#F2F2F2] hover:text-[#A69256] hover:bg-white/10'
+                  className={`hidden sm:inline-flex items-center rounded-full px-3 py-2 text-xs font-medium transition-colors ${
+                    currentStep === 1 ? 'text-white/30 cursor-not-allowed' : 'text-white/85 hover:text-[#d6c27d] hover:bg-white/10'
                   }`}
                 >
                   <ChevronLeft size={14} className="mr-1" />
                   {t.buttons.back}
                 </button>
-
                 <button
                   onClick={nextStep}
                   disabled={isOrderingPaused || (isClosedDate && currentStep >= 1)}
-                  className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors inline-flex items-center shadow-sm ${
+                  className={`inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold transition-all ${
                     isOrderingPaused || (isClosedDate && currentStep >= 1)
-                      ? 'bg-white/10 text-[#F2F2F2]/40 cursor-not-allowed'
-                      : 'bg-[#A69256] text-[#120d0a] hover:bg-[#0D0D0D]'
+                      ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                      : 'bg-gradient-to-b from-[#c9b574] to-[#A69256] text-[#120d0a] hover:brightness-110'
                   }`}
                   aria-label={currentStep === stepsConfig.length ? ui.confirmOrder : t.buttons.next}
                 >
                   {currentStep === stepsConfig.length ? ui.confirmOrder : t.buttons.next}
                   <ChevronRight size={14} className="ml-1" />
                 </button>
+                <button
+                  onClick={toggleLanguage}
+                  aria-label={language === 'EN' ? commonA11y.switchToGerman : commonA11y.switchToEnglish}
+                  className="h-9 w-11 border border-white/20 rounded-full hover:border-[#A69256] hover:bg-white/10 transition-colors inline-flex items-center justify-center"
+                >
+                  <img
+                    src={language === 'EN' ? '/images/language/Flag_of_United_Kingdom-4096x2048.png' : '/images/language/Flag_of_Germany-4096x2453.png'}
+                    alt={language === 'EN' ? commonA11y.englishFlagAlt : commonA11y.germanFlagAlt}
+                    className="h-3.5 w-auto"
+                  />
+                </button>
               </div>
             </div>
 
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                onClick={handleBackToHome}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-[#F2F2F2] hover:text-[#A69256] hover:bg-white/10 transition-colors"
-              >
-                <ArrowLeft size={14} />
-                <span className="hidden sm:inline">{t.buttons.backToHome}</span>
-              </button>
-
-              {/* Steps Navigation - Only 4 main steps now */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-start sm:justify-center gap-2 px-2 flex-nowrap overflow-x-auto overscroll-x-contain touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {stepsConfig.map((step, index) => {
-                    const stepNumber = index + 1;
-                    const isCurrent = stepNumber === currentStep;
-                    const isCompleted = stepNumber < currentStep;
-                    const canNavigate = canNavigateToStep(stepNumber);
-
-                    return (
-                      <React.Fragment key={step.key}>
-                        <button
-                          type="button"
-                          onClick={() => handleStepChange(stepNumber)}
-                          disabled={!canNavigate}
-                          className={`flex flex-col items-center min-w-0 px-1 transition-all duration-300 ${
-                            !canNavigate ? 'opacity-60 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1 transition-colors ${
-                              isCompleted
-                                ? 'border-[#A69256] bg-[#A69256]'
-                                : isCurrent
-                                  ? 'border-[#A69256] bg-white/10'
-                                  : 'border-white/25 bg-white/10'
-                            }`}
-                          >
-                            {isCompleted ? (
-                              <Check size={12} className="text-white" />
-                            ) : (
-                              <span className="w-2 h-2 rounded-full bg-[#A69256]" />
-                            )}
-                          </div>
-                          <span
-                            className={`hidden sm:block text-[10px] font-semibold text-center whitespace-nowrap ${
-                              isCurrent ? 'text-[#d6c27d]' : isCompleted ? 'text-[#d6c27d]' : 'text-[#F2F2F2]/60'
-                            }`}
-                          >
-                            {step.label}
-                          </span>
-                        </button>
-                        {index < stepsConfig.length - 1 && (
-                          <div
-                            className={`h-0.5 flex-1 min-w-[50px] max-w-[130px] rounded-full transition-colors duration-300 ${
-                              stepNumber < currentStep ? 'bg-[#A69256]' : 'bg-white/15'
-                            }`}
-                          />
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
+            {/* Mobile / tablet progress */}
+            <div className="lg:hidden mt-3">
+              <div className="flex items-center justify-between text-[11px] tracking-[0.18em] uppercase text-white/60">
+                <span>{String(currentStep).padStart(2, '0')} / {String(stepsConfig.length).padStart(2, '0')}</span>
+                <span className="text-[#d6c27d] font-semibold">{stepsConfig[currentStep - 1]?.label}</span>
               </div>
-
-              <button
-                onClick={toggleLanguage}
-                aria-label={language === 'EN' ? commonA11y.switchToGerman : commonA11y.switchToEnglish}
-                className="shrink-0 h-8 w-10 text-xs font-medium border border-white/20 text-[#F2F2F2] bg-transparent rounded-full hover:border-[#A69256] hover:text-[#A69256] hover:bg-white/10 transition-colors inline-flex items-center justify-center"
-              >
-                <img
-                  src={
-                    language === 'EN'
-                      ? '/images/language/Flag_of_United_Kingdom-4096x2048.png'
-                      : '/images/language/Flag_of_Germany-4096x2453.png'
-                  }
-                  alt={language === 'EN' ? commonA11y.englishFlagAlt : commonA11y.germanFlagAlt}
-                  className="h-3.5 w-auto"
+              <div className="mt-2 h-[3px] w-full rounded-full bg-white/15 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#A69256] to-[#e3d49a] transition-[width] duration-500"
+                  style={{ width: `${(currentStep / stepsConfig.length) * 100}%` }}
                 />
-              </button>
+              </div>
             </div>
-            
+
             {/* Menu Sub-steps Indicator (only shown when in menu step) */}
             {currentStep === 2 && dynamicMenuSteps.length > 0 && (
               <div className="mt-2 pt-2 border-t border-white/10">
@@ -5767,19 +5763,19 @@ export default function OrderPage() {
         >
           <div className="max-w-6xl mx-auto">
             {currentStep === 1 && (
-              <section className="mb-8 overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
-                <div className="relative">
-                  <div className="absolute inset-0">
-                    <img
-                      src="/images/restaurant-interior.jpg"
-                      alt="La Cannelle"
-                      className="h-full w-full object-cover opacity-20"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/70" />
-                  </div>
-
-
+              <section className="order-hero mb-8 overflow-hidden rounded-[28px]">
+                <img src="/images/buffet-fingerfood.jpg" alt="" aria-hidden className="order-hero-img" loading="eager" />
+                <div className="order-hero-scrim" />
+                <div className="relative z-10 px-6 py-10 sm:px-12 sm:py-14 max-w-2xl">
+                  <p className="order-eyebrow">{language === 'DE' ? 'Ihre Anfrage' : 'Your request'}</p>
+                  <h1 className="order-hero-title">
+                    {language === 'DE' ? 'Gestalten Sie Ihr Catering' : 'Design your catering'}
+                  </h1>
+                  <p className="mt-3 text-sm sm:text-base text-white/80 leading-relaxed">
+                    {language === 'DE'
+                      ? 'In vier Schritten zu Ihrem Menü: Anlass, Auswahl, Zubehör und Lieferung. Unverbindlich und jederzeit anpassbar.'
+                      : 'Four simple steps to your menu: occasion, selection, accessories and delivery. Non-binding and adjustable at any time.'}
+                  </p>
                 </div>
               </section>
             )}
