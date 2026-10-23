@@ -823,3 +823,8 @@ section[id] { scroll-margin-top: 124px; }
 @media (min-width: 1024px) {
   .motion-wipe-fill, .motion-wipe-fill > .motion-wipe-inner { height: 100%; }
 }
+
+/* Quantity inputs use the − / + buttons, not the native spinner */
+.order-theme input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.order-theme input[type="number"]::-webkit-outer-spin-button,
+.order-theme input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

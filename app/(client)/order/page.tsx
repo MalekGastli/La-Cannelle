@@ -721,7 +721,8 @@ export default function OrderPage() {
       dishesAvailable: L(language, 'Gerichte verfügbar', 'dishes available'),
       fromPerGuest: (price: any) => {
         // Keep legacy key name but remove "Ab/From" prefix.
-        return L(language, `€${price}/Gast`, `€${price}/guest`);
+        const shown = Number.isFinite(Number(price)) ? Number(price).toFixed(2) : price;
+        return L(language, `€${shown}/Gast`, `€${shown}/guest`);
       },
       customPricing: L(language, 'Preis auf Anfrage', 'Custom Pricing'),
       exclVat: L(language, 'zzgl. MwSt.', 'Excl. VAT'),
@@ -2853,7 +2854,7 @@ export default function OrderPage() {
         {/* Order Overview - Right Side */}
         <div className="hidden lg:block lg:col-span-1 lg:order-2">
           <div
-            className="lg:sticky rounded-3xl border border-amber-100/60 bg-white p-6 shadow-sm"
+            className="lg:sticky lg:max-h-[calc(100dvh-var(--order-top)-6.5rem)] lg:overflow-y-auto rounded-3xl border border-amber-100/60 bg-white p-6 shadow-sm"
             style={{ top: stepsBarHeight + 16 }}
           >
             <div className="flex items-center justify-between mb-6">
@@ -2898,7 +2899,7 @@ export default function OrderPage() {
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-bold text-gray-900">{selectedMenu.name}</h4>
-                    <span className="text-amber-700 font-bold">€{selectedMenu.price}</span>
+                    <span className="text-amber-700 font-bold">€{Number(selectedMenu.price).toFixed(2)}</span>
                   </div>
                   <p className="text-gray-700 text-sm mb-3">{selectedMenu.description}</p>
                 </div>
@@ -3042,7 +3043,7 @@ export default function OrderPage() {
         </div>
         
         {/* Product Selection - Left Side */}
-        <div className="lg:col-span-2 lg:order-1 lg:max-h-[calc(100dvh-var(--order-top)-2.5rem)] lg:overflow-y-auto lg:pr-3 lg:pb-24">
+        <div className="lg:col-span-2 lg:order-1 lg:pb-8">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -3361,7 +3362,7 @@ export default function OrderPage() {
         {/* Order Overview - Right Side */}
         <div className="hidden lg:block lg:col-span-1 lg:order-2">
           <div
-            className="lg:sticky rounded-3xl border border-amber-100/60 bg-white p-6 shadow-sm"
+            className="lg:sticky lg:max-h-[calc(100dvh-var(--order-top)-6.5rem)] lg:overflow-y-auto rounded-3xl border border-amber-100/60 bg-white p-6 shadow-sm"
             style={{ top: stepsBarHeight + 16 }}
           >
             <h3 className="text-xl font-bold text-gray-900 mb-6">{t.productSelection.orderSummary}</h3>
@@ -3506,7 +3507,7 @@ export default function OrderPage() {
         </div>
         
         {/* Accessories Selection - Left Side */}
-        <div className="lg:col-span-2 lg:order-1 lg:max-h-[calc(100dvh-var(--order-top)-2.5rem)] lg:overflow-y-auto lg:pr-3 lg:pb-24">
+        <div className="lg:col-span-2 lg:order-1 lg:pb-8">
           <div className="space-y-8">
             <div className="text-center mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-3">
@@ -3737,7 +3738,7 @@ export default function OrderPage() {
               {/* Order Summary - Right Side */}
               <div className="hidden lg:block lg:col-span-1 lg:order-2">
                 <div
-                  className="lg:sticky bg-white rounded-3xl shadow-sm border border-black/10 p-6"
+                  className="lg:sticky lg:max-h-[calc(100dvh-var(--order-top)-6.5rem)] lg:overflow-y-auto bg-white rounded-3xl shadow-sm border border-black/10 p-6"
                   style={{ top: stepsBarHeight + 16 }}
                 >
                   <h3 className="text-xl font-bold text-gray-900 mb-6">{t.productSelection.orderSummary}</h3>
@@ -3883,7 +3884,7 @@ export default function OrderPage() {
               </div>
               
               {/* Invoice Information - Left Side */}
-              <div className="lg:col-span-2 lg:order-1 lg:max-h-[calc(100dvh-var(--order-top)-2.5rem)] lg:overflow-y-auto lg:pr-3 lg:pb-24">
+              <div className="lg:col-span-2 lg:order-1 lg:pb-8">
                 <div className="bg-white rounded-3xl shadow-sm border border-black/10 p-8">
                   <div className="space-y-6">
                     {/* Invoice Details */}
@@ -4095,7 +4096,7 @@ export default function OrderPage() {
               {/* Order Summary - Right Side */}
               <div className="hidden lg:block lg:col-span-1 lg:order-2">
                 <div
-                  className="lg:sticky bg-white rounded-3xl shadow-sm border border-black/10 p-6"
+                  className="lg:sticky lg:max-h-[calc(100dvh-var(--order-top)-6.5rem)] lg:overflow-y-auto bg-white rounded-3xl shadow-sm border border-black/10 p-6"
                   style={{ top: stepsBarHeight + 16 }}
                 >
                   <h3 className="text-xl font-bold text-gray-900 mb-6">{t.productSelection.orderSummary}</h3>
@@ -4224,7 +4225,7 @@ export default function OrderPage() {
               </div>
               
               {/* Payment Form - Left Side */}
-              <div className="lg:col-span-2 lg:order-1 lg:max-h-[calc(100dvh-var(--order-top)-2.5rem)] lg:overflow-y-auto lg:pr-3 lg:pb-24">
+              <div className="lg:col-span-2 lg:order-1 lg:pb-8">
                 <div className="bg-white rounded-3xl shadow-sm border border-black/10 p-8">
                   <div className="space-y-6">
                     {/* Payment Method Selection */}
@@ -4942,7 +4943,7 @@ export default function OrderPage() {
                 <div className="grid gap-3 sm:grid-cols-2 text-sm">
                   <div className="rounded-lg bg-white/60 backdrop-blur-sm border border-black/10 p-3">
                     <p className="text-[#404040]/60">{ui.price}</p>
-                    <p className="text-base font-semibold text-[#A69256]">€{productDetailsItem.price}</p>
+                    <p className="text-base font-semibold text-[#A69256]">€{Number(productDetailsItem.price).toFixed(2)}</p>
                   </div>
                   <div className="rounded-lg bg-white/60 backdrop-blur-sm border border-black/10 p-3">
                     <p className="text-[#404040]/60">{L(language, 'Anzahl der Gäste', 'Number of Guests')}</p>
@@ -5351,7 +5352,7 @@ export default function OrderPage() {
   
   return (
     <div
-      className="order-theme min-h-screen bg-[#faf6ef] flex flex-col overflow-x-hidden"
+      className="order-theme min-h-screen bg-[#faf6ef] flex flex-col overflow-x-clip"
       style={{ ['--order-dock' as any]: `${currentStep === 1 ? 0 : orderSummaryDockHeight}px` }}
     >
       {notification && (
@@ -5552,7 +5553,7 @@ export default function OrderPage() {
       {/* Enhanced Top Navigation with Steps */}
       <div
         ref={stepsBarRef}
-        className="fixed top-0 left-0 right-0 bg-[#17120e]/95 backdrop-blur-xl z-40 border-b border-[#A69256]/25 shadow-[0_10px_40px_rgba(0,0,0,0.28)]"
+        className="fixed top-0 left-0 right-0 bg-[#17120e] z-40 border-b border-[#A69256]/25 shadow-[0_10px_40px_rgba(0,0,0,0.28)]"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Brand + steps */}
