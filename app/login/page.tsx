@@ -52,9 +52,9 @@ function LoginInner() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#1a110b] flex items-center justify-center px-4 overflow-hidden">
+    <div className="relative min-h-screen bg-[#120d0a] flex items-center justify-center px-4 overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(166,146,86,0.22),transparent_60%)]" />
-      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#2c1c13]/90 shadow-[0_30px_90px_rgba(0,0,0,0.55)] backdrop-blur p-8 sm:p-10">
+      <div className="relative w-full max-w-md rounded-3xl border border-white/10 bg-[#1b1510]/90 shadow-[0_30px_90px_rgba(0,0,0,0.55)] backdrop-blur p-8 sm:p-10">
         <Image
           src="/images/logo-header-dark.png"
           alt="La Cannelle"
@@ -111,7 +111,7 @@ function LoginInner() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#1a110b]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#120d0a]" />}>
       <LoginInner />
     </Suspense>
   )

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ScrollToTopButton } from "./ScrollToTopButton";
+import { ScrollProgress } from "./Motion";
 
 function applyRevealStyles(element: HTMLElement) {
   const delay = element.getAttribute("data-lux-delay");
@@ -78,5 +79,10 @@ export function ClientEnhancements() {
     };
   }, [pathname]);
 
-  return <ScrollToTopButton />;
+  return (
+    <>
+      <ScrollProgress />
+      <ScrollToTopButton />
+    </>
+  );
 }

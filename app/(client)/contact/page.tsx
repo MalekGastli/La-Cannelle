@@ -10,6 +10,7 @@ import { contactTranslations } from '@/lib/translations/contact';
 import { LuxurySelect } from '@/components/site/LuxurySelect';
 import SiteHeader from '@/components/site/SiteHeader';
 import SiteFooter from '@/components/site/SiteFooter';
+import { SplitText } from '@/components/site/Motion';
 import { INSTAGRAM_HANDLE_DISPLAY, INSTAGRAM_PROFILE_URL } from '@/lib/config/social';
 
 const normalizeInstagramPermalink = (url: string) => {
@@ -245,7 +246,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#efebe4] overflow-x-hidden">
+    <div className="min-h-screen bg-[#faf6ef] overflow-x-hidden">
       <SiteHeader
         language={language}
         toggleLanguage={toggleLanguage}
@@ -262,16 +263,15 @@ export default function ContactPage() {
       />
 
       {/* Hero Section - Premium */}
-      <section className="pt-40 pb-24 px-6 lg:px-8 bg-[#efebe4] relative overflow-hidden">
+      <section className="pt-40 pb-24 px-6 lg:px-8 bg-[#faf6ef] relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#A69256]/12 via-transparent to-transparent"></div>
         </div>
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 mb-6 font-display leading-tight">
-              {t.hero.title}
-            </h1>
+            <p className="eyebrow mb-4">Get In Touch</p>
+            <SplitText as="h1" immediate delay={100} className="block text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 mb-6 font-display leading-tight" text={t.hero.title} />
           </div>
           <div className={`transition-all duration-1000 delay-200 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
             <p className="text-xl text-gray-600 font-light max-w-2xl mx-auto leading-relaxed">
@@ -287,11 +287,11 @@ export default function ContactPage() {
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Contact Form - Premium Design */}
             <div className="lg:col-span-2">
-              <div className={`bg-white rounded-sm shadow-sm p-10 border border-gray-200 ${
+              <div className={`bg-white rounded-3xl shadow-sm p-10 border border-gray-200 ${
                 isVisible ? 'animate-fade-in-left' : 'opacity-0'
               }`}>
                 <div className="flex items-center gap-4 mb-10">
-                  <div className="w-14 h-14 bg-[#A69256]/15 rounded-sm flex items-center justify-center">
+                  <div className="w-14 h-14 bg-[#A69256]/15 rounded-2xl flex items-center justify-center">
                     <MessageCircle className="text-[#A69256]" size={24} strokeWidth={1.5} />
                   </div>
                   <h2 className="text-3xl font-light text-[#404040] font-display">
@@ -311,7 +311,7 @@ export default function ContactPage() {
                         value={formData.name}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
+                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
                         placeholder={t.placeholders.name}
                       />
                     </div>
@@ -325,7 +325,7 @@ export default function ContactPage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
+                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
                         placeholder={t.placeholders.email}
                       />
                     </div>
@@ -346,7 +346,7 @@ export default function ContactPage() {
                         }}
                         inputMode="tel"
                         pattern="^\\+?[0-9\\s-]{7,15}$"
-                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
+                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
                         placeholder={t.placeholders.phone}
                       />
                     </div>
@@ -377,7 +377,7 @@ export default function ContactPage() {
                           value={formData.eventDate}
                           onClick={() => setIsDatePickerOpen(true)}
                           onFocus={() => setIsDatePickerOpen(true)}
-                          className="w-full cursor-pointer px-4 pr-14 py-3 border border-[#A6A6A6] rounded focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] contact-date-input placeholder:text-[#A6A6A6]"
+                          className="w-full cursor-pointer px-4 pr-14 py-3 border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] contact-date-input placeholder:text-[#A6A6A6]"
                           placeholder="YYYY-MM-DD"
                           role="combobox"
                           aria-haspopup="dialog"
@@ -395,7 +395,7 @@ export default function ContactPage() {
                         </button>
 
                         {isDatePickerOpen && (
-                          <div className="absolute left-0 top-full z-50 mt-2 w-full max-w-[360px] overflow-hidden rounded-sm border border-[#A6A6A6]/70 bg-white/80 supports-[backdrop-filter]:bg-white/65 backdrop-blur-xl shadow-[0_18px_45px_rgba(0,0,0,0.14)]">
+                          <div className="absolute left-0 top-full z-50 mt-2 w-full max-w-[360px] overflow-hidden rounded-2xl border border-[#A6A6A6]/70 bg-white/80 supports-[backdrop-filter]:bg-white/65 backdrop-blur-xl shadow-[0_18px_45px_rgba(0,0,0,0.14)]">
                             <div className="flex items-center justify-between px-4 py-3 border-b border-black/10">
                               <button
                                 type="button"
@@ -445,7 +445,7 @@ export default function ContactPage() {
                                         applyEventDateValue(value);
                                         setIsDatePickerOpen(false);
                                       }}
-                                      className={`h-10 rounded text-sm font-medium transition-all ${
+                                      className={`h-10 rounded-xl text-sm font-medium transition-all ${
                                         disabled
                                           ? 'text-[#A6A6A6] cursor-not-allowed'
                                           : selected
@@ -504,7 +504,7 @@ export default function ContactPage() {
                         }}
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
+                        className="w-full px-4 py-3 border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
                         placeholder={t.placeholders.guests}
                       />
                     </div>
@@ -520,14 +520,14 @@ export default function ContactPage() {
                       onChange={handleInputChange}
                       required
                       rows={6}
-                      className="w-full px-4 py-3 border border-[#A6A6A6] rounded focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 resize-none text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
+                      className="w-full px-4 py-3 border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 resize-none text-[#404040] bg-[#F9F9F9] placeholder:text-[#A6A6A6]"
                       placeholder={t.placeholders.message}
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-[#A69256] text-[#1a110b] py-4 px-8 rounded font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
+                    className="w-full bg-[#A69256] text-[#120d0a] py-4 px-8 rounded-xl font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
                   >
                     <Send size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                     {t.contactForm.button}
@@ -539,7 +539,7 @@ export default function ContactPage() {
             {/* Sidebar - Premium Cards */}
             <div className="space-y-6">
               {/* Contact Information */}
-              <div className={`bg-[#e5dfd4] rounded-sm p-8 border border-gray-200 ${
+              <div className={`bg-[#f3ece1] rounded-3xl p-8 border border-gray-200 ${
                 isVisible ? 'animate-fade-in-right' : 'opacity-0'
               }`}>
                 <h3 className="text-2xl font-light text-gray-900 mb-6 font-display">
@@ -547,8 +547,8 @@ export default function ContactPage() {
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 bg-white rounded-sm hover:shadow-sm transition-all group">
-                    <div className="w-10 h-10 bg-[#A69256]/15 rounded flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-4 p-4 bg-white rounded-2xl hover:shadow-sm transition-all group">
+                    <div className="w-10 h-10 bg-[#A69256]/15 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Phone className="text-[#A69256]" size={18} strokeWidth={1.5} />
                     </div>
                     <div>
@@ -557,8 +557,8 @@ export default function ContactPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4 p-4 bg-white rounded-sm hover:shadow-sm transition-all group">
-                    <div className="w-10 h-10 bg-[#A69256]/15 rounded flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-4 p-4 bg-white rounded-2xl hover:shadow-sm transition-all group">
+                    <div className="w-10 h-10 bg-[#A69256]/15 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Mail className="text-[#A69256]" size={18} strokeWidth={1.5} />
                     </div>
                     <div>
@@ -566,8 +566,8 @@ export default function ContactPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-4 p-4 bg-white rounded-sm hover:shadow-sm transition-all group">
-                    <div className="w-10 h-10 bg-[#A69256]/15 rounded flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-start gap-4 p-4 bg-white rounded-2xl hover:shadow-sm transition-all group">
+                    <div className="w-10 h-10 bg-[#A69256]/15 rounded-xl flex items-center justify-center flex-shrink-0">
                       <MapPin className="text-[#A69256]" size={18} strokeWidth={1.5} />
                     </div>
                     <div>
@@ -575,8 +575,8 @@ export default function ContactPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-4 p-4 bg-white rounded-sm hover:shadow-sm transition-all group">
-                    <div className="w-10 h-10 bg-[#A69256]/15 rounded flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-start gap-4 p-4 bg-white rounded-2xl hover:shadow-sm transition-all group">
+                    <div className="w-10 h-10 bg-[#A69256]/15 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Clock className="text-[#A69256]" size={18} strokeWidth={1.5} />
                     </div>
                     <div>
@@ -590,7 +590,7 @@ export default function ContactPage() {
               </div>
 
               {/* Quick Order CTA */}
-              <div className={`bg-gradient-to-br from-[#261811] to-[#321f15] rounded-sm p-8 text-white relative overflow-hidden ${
+              <div className={`bg-gradient-to-br from-[#17120e] to-[#241a13] rounded-3xl p-8 text-white relative overflow-hidden ${
                 isVisible ? 'animate-scale-in' : 'opacity-0'
               }`} style={{ animationDelay: '200ms' }}>
                 <div className="absolute inset-0 opacity-10">
@@ -607,7 +607,7 @@ export default function ContactPage() {
                   <button
                     type="button"
                     onClick={() => router.push('/order')}
-                    className="w-full bg-[#A69256] text-[#1a110b] py-3 px-6 rounded font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
+                    className="w-full bg-[#A69256] text-[#120d0a] py-3 px-6 rounded-xl font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
                   >
                     {t.quickOrder.button}
                     <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
@@ -616,12 +616,12 @@ export default function ContactPage() {
               </div>
 
               {/* Instagram: real photography and a plain link, no invented follower stats */}
-              <div className="border-t border-black/15 pt-8">
-                <h3 className="font-display text-2xl tracking-tight">{t.social.title}</h3>
-                <p className="mt-1 text-sm text-black/60">{INSTAGRAM_HANDLE_DISPLAY}</p>
+              <div className="rounded-3xl border border-gray-200 bg-white p-8">
+                <h3 className="font-display text-xl font-light text-gray-900">{t.social.title}</h3>
+                <p className="mt-1 text-sm text-gray-600">{INSTAGRAM_HANDLE_DISPLAY}</p>
 
                 {hasInstagramPosts && firstInstagramPost ? (
-                  <div className="mt-6 overflow-hidden bg-[#e5dfd4]">
+                  <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-[#f3ece1]">
                     <iframe
                       title={`Instagram post ${firstInstagramPost.permalink}`}
                       src={`${firstInstagramPost.permalink}embed`}
@@ -632,7 +632,7 @@ export default function ContactPage() {
                     />
                   </div>
                 ) : (
-                  <div className="mt-6 grid grid-cols-3 gap-1.5">
+                  <div className="mt-6 grid grid-cols-3 gap-2">
                     {[
                       { src: '/images/fondant.jpg', alt: 'Fondant dessert' },
                       { src: '/images/mediterranean-buffet.jpg', alt: 'Mediterranean buffet' },
@@ -643,14 +643,14 @@ export default function ContactPage() {
                         href={INSTAGRAM_PROFILE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group block aspect-square overflow-hidden bg-[#261811]"
+                        className="group block aspect-square overflow-hidden rounded-xl bg-[#17120e]"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={photo.src}
                           alt={photo.alt}
                           loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                       </a>
                     ))}
@@ -661,10 +661,10 @@ export default function ContactPage() {
                   href={INSTAGRAM_PROFILE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 border-b border-black pb-1 text-sm font-semibold transition-colors hover:border-[#7a6a32] hover:text-[#7a6a32]"
+                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#17120e] px-6 py-3 font-medium text-white transition-colors hover:bg-[#A69256] hover:text-[#120d0a]"
                 >
                   {t.social.instagram}
-                  <ArrowUpRight size={16} />
+                  <ArrowUpRight size={18} />
                 </a>
               </div>
             </div>
@@ -673,14 +673,14 @@ export default function ContactPage() {
       </section>
 
       {/* Google Map Section - Premium */}
-      <section className="py-24 px-6 lg:px-8 bg-[#e5dfd4] lux-reveal" data-lux-delay="40">
+      <section className="py-24 px-6 lg:px-8 bg-[#f3ece1] lux-reveal" data-lux-delay="40">
         <div className="max-w-7xl mx-auto">
-          <div className={`bg-white rounded-sm shadow-sm overflow-hidden border border-gray-200 ${
+          <div className={`bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-200 ${
             isVisible ? 'animate-fade-in-up' : 'opacity-0'
           }`} style={{ animationDelay: '600ms' }}>
             <div className="p-8 border-b border-gray-200">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#A69256]/15 rounded-sm flex items-center justify-center">
+                <div className="w-12 h-12 bg-[#A69256]/15 rounded-2xl flex items-center justify-center">
                   <MapPin className="text-[#A69256]" size={20} strokeWidth={1.5} />
                 </div>
                 <h3 className="text-2xl font-light text-gray-900 font-display">

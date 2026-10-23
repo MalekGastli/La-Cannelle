@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Bodoni_Moda, Hanken_Grotesk } from "next/font/google";
+import { Playfair_Display, Open_Sans } from "next/font/google";
 import "./globals.css";
 import { ClientEnhancements } from "@/components/site/ClientEnhancements";
 
 export const runtime = "nodejs";
 
-const display = Bodoni_Moda({ subsets: ["latin"], style: ["normal", "italic"], variable: "--font-display", display: "swap" });
-const body = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const display = Playfair_Display({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+const body = Open_Sans({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 
 export const metadata: Metadata = {
   title: "la cannelle",
