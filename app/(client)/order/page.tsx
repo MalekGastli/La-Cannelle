@@ -1092,7 +1092,10 @@ export default function OrderPage() {
     
     if (!selectedMenu) return [];
     
-    const rawSteps = Array.isArray(selectedMenu?.steps) ? selectedMenu.steps : [];
+    const allSteps = Array.isArray(selectedMenu?.steps) ? selectedMenu.steps : [];
+    // Courses a menu does not include (0 portions) are not offered as a step
+    const includedSteps = allSteps.filter((step: any) => Number(step?.included) > 0);
+    const rawSteps = includedSteps.length > 0 ? includedSteps : allSteps;
     const mapped = rawSteps
       .map((step: any, index: number) => {
         const categoryKey = normalizeMenuStepKey(step?.label);
@@ -2687,11 +2690,14 @@ export default function OrderPage() {
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center">
           {menusData.map((menu) => {
             const steps = Array.isArray(menu.steps) ? menu.steps : [];
-            const dishesAvailable = Array.isArray(menu.products)
-              ? menu.products.length
-              : Array.isArray(menu.menuProducts)
-              ? menu.menuProducts.length
-              : 0;
+            const menuProductIds: number[] = Array.isArray(menu.products) ? menu.products : [];
+            const stepKeys = steps.map((step: any) => normalizeMenuStepKey(step?.label)).filter(Boolean);
+            // Count only the dishes that can actually be picked for this menu's courses
+            const dishesAvailable = menuItemsData.filter(
+              (item: any) =>
+                menuProductIds.includes(item.id) &&
+                (stepKeys.length === 0 || stepKeys.includes(normalizeMenuStepKey(item.category) || item.category))
+            ).length;
             const cardClassName =
               'group w-full max-w-[26rem] min-h-[34rem] rounded-3xl border border-white/40 ring-1 ring-black/5 overflow-hidden transition-all duration-300 text-left bg-gradient-to-b from-white/85 via-white/80 to-white/75 supports-[backdrop-filter]:bg-white/70 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.10)] hover:shadow-[0_30px_90px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 flex flex-col ' +
               ((pendingMenuId ? Number(pendingMenuId) : orderData.selectedMenu ? Number(orderData.selectedMenu) : null) === Number(menu.id)
@@ -2736,7 +2742,7 @@ export default function OrderPage() {
                     </p>
                     </div>
                   <div className="space-y-2 text-sm text-[#404040]/80">
-                    {steps.map((step: any, index: number) => (
+                    {steps.filter((step: any) => Number(step?.included) > 0).map((step: any, index: number) => (
                       <div key={`${menu.id}-step-${index}`} className="flex items-center gap-3 rounded-xl bg-white/60 backdrop-blur-sm border border-black/5 px-3 py-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#A69256]/15 text-[#A69256] border border-[#A69256]/20">
                           <Check size={12} />
@@ -2958,7 +2964,7 @@ export default function OrderPage() {
               
               {/* Items Summary */}
               <div className="pt-4 border-t border-gray-200">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">Selected Items</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">{L(language, 'Ausgewählte Gerichte', 'Selected items')}</h4>
                 <div className="space-y-3 pr-2">
                   {activeCategoryKeys.map((key) => {
                     const items = getItemsForStepCategory(key);
@@ -3126,9 +3132,9 @@ export default function OrderPage() {
                             </p>
                             
                             <div className="flex flex-wrap items-center gap-4 mb-4">
-                              <div className="text-2xl font-bold text-gray-900">€{product.price}</div>
+                              <div className="text-2xl font-bold text-gray-900">€{Number(product.price).toFixed(2)}</div>
                               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-                                {L(language, 'Anzahl der Gaeste', 'Number of Guests')} {minQuantity}
+                                {L(language, 'Anzahl der Gäste', 'Number of Guests')} {minQuantity}
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 {(language === 'DE' && Array.isArray(product.allergensDe) && product.allergensDe.length > 0 ? product.allergensDe : product.allergens).map((allergen: string, idx: number) => (
@@ -3185,9 +3191,9 @@ export default function OrderPage() {
                           
                           <button
                             onClick={() => addProductToOrder(currentCategory, product)}
-                            disabled={currentQuantity <= 0 || !product.available}
+                            disabled={!product.available}
                             className={`px-6 py-3 rounded-lg text-base font-semibold transition-colors ${
-                              currentQuantity > 0 && product.available
+                              product.available
                                 ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm dark:bg-[#CDA15B] dark:text-[#0D0D0D] dark:hover:bg-[#D4A67E]'
                                 : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-white/10 dark:text-[#B0B0B0] dark:border dark:border-white/10'
                             }`}
@@ -3200,7 +3206,7 @@ export default function OrderPage() {
                           <div className="mt-4 p-3 bg-white/60 backdrop-blur-md rounded-lg border border-amber-200/60 shadow-sm dark:bg-white/10 dark:border-[#A69256]/25">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                               <span className="text-amber-800 font-semibold dark:text-[#D1D1D1]">
-                                In order: <span className="text-xl">{quantityInOrder}</span>
+                                {L(language, 'In der Bestellung', 'In order')}: <span className="text-xl">{quantityInOrder}</span>
                               </span>
                               <div className="flex items-center gap-2">
                                 <button
@@ -3389,7 +3395,7 @@ export default function OrderPage() {
               
               {/* Items Summary */}
               <div className="pt-4 border-t border-gray-200">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">Selected Items</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">{L(language, 'Ausgewählte Gerichte', 'Selected items')}</h4>
                 <div className="space-y-3 pr-2">
                   {activeCategoryKeys.map((key) => {
                     const items = getItemsForStepCategory(key);
@@ -3559,7 +3565,7 @@ export default function OrderPage() {
                   ? (L(language, 'fest', 'fixed'))
                   : quantityMode === 'CLIENT'
                   ? (L(language, 'vom Kunden', 'client'))
-                  : (L(language, 'entspricht Gaesten', 'matches guests'));
+                  : (L(language, 'entspricht Gästen', 'matches guests'));
                 const unitPrice = Number(accessory?.price) || 0;
                 
                 return (
@@ -3577,9 +3583,9 @@ export default function OrderPage() {
                         </div>
                         
                         {/* Content Column */}
-                        <div className="flex-1">
-                          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                            <div className="flex-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col gap-4">
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3 mb-2">
                                 <h3 className="text-xl font-bold text-gray-900">{accessory.name}</h3>
                               </div>
@@ -4939,7 +4945,7 @@ export default function OrderPage() {
                     <p className="text-base font-semibold text-[#A69256]">€{productDetailsItem.price}</p>
                   </div>
                   <div className="rounded-lg bg-white/60 backdrop-blur-sm border border-black/10 p-3">
-                    <p className="text-[#404040]/60">{L(language, 'Anzahl der Gaeste', 'Number of Guests')}</p>
+                    <p className="text-[#404040]/60">{L(language, 'Anzahl der Gäste', 'Number of Guests')}</p>
                     <p className="text-base font-semibold text-[#404040]">{getMinOrderQuantity(productDetailsItem)}</p>
                   </div>
                   <div className="rounded-lg bg-white/60 backdrop-blur-sm border border-black/10 p-3">
@@ -5649,7 +5655,7 @@ export default function OrderPage() {
             {/* Menu Sub-steps Indicator (only shown when in menu step) */}
             {currentStep === 2 && dynamicMenuSteps.length > 0 && (
               <div className="mt-2 pt-2 border-t border-white/10">
-                <div className="flex items-center justify-center gap-1 flex-wrap">
+                <div className="flex items-center justify-start sm:justify-center gap-1 flex-nowrap sm:flex-wrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {dynamicMenuSteps.map((step, index) => {
                     const isCurrent = index === currentMenuSubStep;
                     const isCompleted = index < currentMenuSubStep;
@@ -5669,7 +5675,7 @@ export default function OrderPage() {
                             }
                             setCurrentMenuSubStep(index);
                           }}
-                          className={`flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                          className={`flex shrink-0 items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                             isCurrent
                               ? 'bg-white/10 text-white border border-white/15'
                             : isCompleted
@@ -5794,36 +5800,26 @@ export default function OrderPage() {
           <button
             type="button"
             onClick={() => setOrderSummaryModalOpen(true)}
-            className="w-full rounded-2xl border border-black/10 bg-white/90 supports-[backdrop-filter]:bg-white/75 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.14)] px-4 py-3 text-left"
+            className="w-full rounded-2xl border border-[#A69256]/35 bg-[#17120e]/95 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.35)] px-4 py-3 text-left text-white"
             aria-haspopup="dialog"
             aria-expanded={orderSummaryModalOpen}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black/50">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d6c27d]">
                   {t.productSelection.orderSummary}
                 </div>
-                <div className="mt-2 space-y-1 text-xs text-black/70">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="truncate">{t.eventInfo.date}:</span>
-                    <span className="font-semibold text-black">{orderData.eventDate || ui.notSpecified}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="truncate">{t.eventInfo.guests}:</span>
-                    <span className="font-semibold text-black">
-                      {dockGuestCount}
-                      {dockPricingGuestCount !== dockGuestCount ? ` (${dockPricingGuestCount} min)` : ''}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="truncate">{t.eventInfo.location}:</span>
-                    <span className="font-semibold text-black truncate max-w-[55%] text-right">{dockLocation}</span>
-                  </div>
+                <div className="mt-1 truncate text-xs text-white/80">
+                  {[orderData.eventDate || ui.notSpecified, `${dockGuestCount}${dockPricingGuestCount !== dockGuestCount ? ` (${dockPricingGuestCount} min)` : ''} ${L(language, 'Gäste', 'guests')}`, dockLocation].filter(Boolean).join(' · ')}
                 </div>
               </div>
-              <div className="shrink-0 mt-0.5 text-black/50">
-                <ChevronUp size={16} />
-              </div>
+              {orderData.selectedMenu ? (
+                <div className="shrink-0 text-right">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-white/55">{L(language, 'Gesamt', 'Total')}</div>
+                  <div className="text-base font-semibold text-[#d6c27d]">€{getOrderTotals().total.toFixed(2)}</div>
+                </div>
+              ) : null}
+              <ChevronUp size={16} className="shrink-0 text-white/60" />
             </div>
           </button>
         </div>
