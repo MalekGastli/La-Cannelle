@@ -17,6 +17,9 @@ const HOP_BY_HOP_HEADERS = new Set([
   'upgrade',
   'host',
   'content-length',
+  // fetch() hands us a decoded body, so the original encoding/validators no longer apply
+  'content-encoding',
+  'etag',
 ]);
 
 const forward = async (
@@ -30,6 +33,9 @@ const forward = async (
 
   const headers = new Headers(req.headers);
   for (const headerName of HOP_BY_HOP_HEADERS) headers.delete(headerName);
+  headers.delete('accept-encoding');
+  headers.delete('if-none-match');
+  headers.delete('if-modified-since');
 
   const method = req.method.toUpperCase();
   const maybeBody = method === 'GET' || method === 'HEAD' ? null : req.body;
