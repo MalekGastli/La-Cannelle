@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Language } from '@/lib/hooks/useTranslation';
+import { productName, productDesc } from '@/lib/i18n/catalog';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { L, P, localeOf, weekdaysOf } from '@/lib/i18n/inline';
 import { useRouter } from 'next/navigation';
@@ -2984,7 +2985,7 @@ export default function OrderPage() {
                         <div className="space-y-2 pl-3">
                           {items.map((item: any, itemIdx: number) => (
                             <div key={itemIdx} className="flex justify-between items-center text-sm">
-                              <span className="text-gray-800 truncate max-w-[60%]">{item.name}</span>
+                              <span className="text-gray-800 truncate max-w-[60%]">{productName(language, item.name)}</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-600">x{item.quantity}</span>
                                 <span className="font-semibold text-gray-900">€{getChargeForItemInCategory(key, item).chargedTotal.toFixed(2)}</span>
@@ -3111,7 +3112,7 @@ export default function OrderPage() {
                         {product.image ? (
                           <img
                             src={product.image}
-                            alt={product.name || 'Product image'}
+                            alt={productName(language, product.name) || 'Product image'}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -3127,7 +3128,7 @@ export default function OrderPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="text-xl font-bold text-gray-900">
-                                {product.name}
+                                {productName(language, product.name)}
                               </h3>
                               {!product.available && (
                                 <span className="px-3 py-1 bg-red-100 text-red-800 text-sm font-semibold rounded-lg">
@@ -3136,7 +3137,7 @@ export default function OrderPage() {
                               )}
                             </div>
                             <p className="text-gray-600 mb-4">
-                              {product.description}
+                              {productDesc(language, product.description)}
                             </p>
                             
                             <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -3415,7 +3416,7 @@ export default function OrderPage() {
                         <div className="space-y-2 pl-3">
                           {items.map((item: any, itemIdx: number) => (
                             <div key={itemIdx} className="flex justify-between items-center text-sm">
-                              <span className="text-gray-800 truncate max-w-[60%]">{item.name}</span>
+                              <span className="text-gray-800 truncate max-w-[60%]">{productName(language, item.name)}</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-600">x{item.quantity}</span>
                                 <span className="font-semibold text-gray-900">€{getChargeForItemInCategory(key, item).chargedTotal.toFixed(2)}</span>
@@ -3466,7 +3467,7 @@ export default function OrderPage() {
                   <div className="space-y-2">
                     {selectedAccessories.map((item: any, idx: number) => (
                       <div key={idx} className="flex justify-between items-center text-sm">
-                        <span className="text-gray-800">{item.name}</span>
+                        <span className="text-gray-800">{productName(language, item.name)}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-gray-600">x{item.quantity}</span>
                         <span className="font-semibold text-gray-900">€{(toPriceNumber(item?.price) * (Number(item?.quantity) || 0)).toFixed(2)}</span>
@@ -4934,10 +4935,10 @@ export default function OrderPage() {
               <div className="space-y-3">
                 <div>
                   <h4 className="text-2xl font-semibold text-[#404040] font-elegant">
-                    {productDetailsItem.name}
+                    {productName(language, productDetailsItem.name)}
                   </h4>
                   <p className="text-[#404040]/75 mt-2 leading-relaxed">
-                    {productDetailsItem.description || ui.noDescription}
+                    {productDesc(language, productDetailsItem.description) || ui.noDescription}
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 text-sm">
@@ -5214,7 +5215,7 @@ export default function OrderPage() {
                             return (
                               <div key={`${key}-${item?.id}`} className="flex items-start justify-between gap-3 rounded-lg border border-black/5 bg-white/60 p-3">
                                 <div className="min-w-0">
-                                  <div className="font-semibold text-black break-words">{item?.name}</div>
+                                  <div className="font-semibold text-black break-words">{productName(language, item?.name)}</div>
                                   <div className="mt-1 text-xs text-black/60">
                                     x{Number(item?.quantity) || 0} · €{toPriceNumber(item?.price).toFixed(2)}
                                     {charge.isIncluded ? ` · ${L(language, 'inkl.', 'included')}` : ''}
@@ -5249,7 +5250,7 @@ export default function OrderPage() {
                   {selectedAccessories.map((item: any) => (
                     <div key={`acc-${item?.id}`} className="flex items-start justify-between gap-3 rounded-lg border border-black/5 bg-white/60 p-3">
                       <div className="min-w-0">
-                        <div className="font-semibold text-black break-words">{item?.name}</div>
+                        <div className="font-semibold text-black break-words">{productName(language, item?.name)}</div>
                         <div className="mt-1 text-xs text-black/60">
                           x{Number(item?.quantity) || 0} · €{toPriceNumber(item?.price).toFixed(2)}
                         </div>

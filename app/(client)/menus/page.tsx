@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { productName, productDesc } from '@/lib/i18n/catalog';
 import { L, menuDesc, minPeopleLabel } from '@/lib/i18n/inline';
 import { createPortal } from 'react-dom';
 import { X, Phone, Mail, MapPin, Check, ChevronRight } from 'lucide-react';
@@ -213,8 +214,8 @@ export default function MenusPage() {
       if (!item || item.id == null || !item.name) {
         return null;
       }
-      const name = item.name;
-      const description = item.description;
+      const name = productName(language, item.name);
+      const description = productDesc(language, item.description);
       return {
         id: item.id,
         name,

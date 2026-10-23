@@ -45,6 +45,21 @@ const MENU_DESCRIPTIONS: Record<string, Record<'EN' | 'FR' | 'TR', string>> = {
     FR: 'Un grand choix pour les grandes occasions !',
     TR: 'Özel günler için geniş seçenekler!',
   },
+  'Das Standard Fingerfood-Menü': {
+    EN: 'Our standard finger food menu',
+    FR: 'Notre menu de bouchées standard',
+    TR: 'Standart fingerfood menümüz',
+  },
+  'Überschaulich aber preiswert!': {
+    EN: 'Compact but good value!',
+    FR: 'Simple mais économique !',
+    TR: 'Sade ama uygun fiyatlı!',
+  },
+  'Das Klassische Büffet!': {
+    EN: 'The classic buffet!',
+    FR: 'Le buffet classique !',
+    TR: 'Klasik büfe!',
+  },
 };
 
 export function menuDesc(language: Language, description?: string | null): string {

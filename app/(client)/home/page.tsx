@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import React, { useState, useEffect } from 'react';
+import { productName, productDesc } from '@/lib/i18n/catalog';
 import { L, menuDesc } from '@/lib/i18n/inline';
 import { ChevronRight, Phone, Mail, MapPin, Users, Award, Eye, Target, Building, Flag, Globe, Zap, ArrowUpRight, PlayCircle } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -168,20 +169,20 @@ export default function CateringHomepage() {
   const showcaseItems = (products.length
       ? products.slice(0, 3).map((product) => ({
         id: product.id,
-        name: product.name,
+        name: productName(language, product.name),
         category: product.category,
         price: product.price !== undefined ? `${product.price.toFixed(2)} EUR` : undefined,
-        description: product.description,
+        description: productDesc(language, product.description),
         image: product.image,
         popular: product.popularity ? product.popularity >= 80 : false,
         featured: product.popularity ? product.popularity >= 60 : false,
         productIds: [product.id],
       }))
     : t.menuShowcase.items.map((item) => ({
-        name: item.name,
+        name: productName(language, item.name),
         category: item.category,
         price: item.price,
-        description: item.description,
+        description: productDesc(language, item.description),
         image: item.image,
         popular: item.popular,
         featured: item.featured,
@@ -206,7 +207,7 @@ export default function CateringHomepage() {
         productIds: menu.products,
       }))
     : t.menus.items.map((item) => ({
-        name: item.name,
+        name: productName(language, item.name),
         desc: item.desc,
       }))) as Array<{
     id?: number;
