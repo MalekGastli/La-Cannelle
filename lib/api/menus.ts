@@ -79,6 +79,12 @@ export const menusApi = {
     throw new Error(response.error || 'Failed to update menu');
   },
 
+  async duplicateMenu(id: number): Promise<Menu> {
+    const response = await apiClient.post<Menu>(`/menus/${id}/duplicate`, {});
+    if (response.data) return response.data;
+    throw new Error(response.error || 'Failed to duplicate menu');
+  },
+
   async deleteMenu(id: number): Promise<void> {
     const response = await apiClient.delete(`/menus/${id}`);
     if (response.error) {

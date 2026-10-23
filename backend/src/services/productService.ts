@@ -1,4 +1,4 @@
-import { ProductCategory } from '@prisma/client';
+import { Prisma, ProductCategory } from '@prisma/client';
 import { prisma } from '../prisma';
 import { AppError } from '../middleware/errorHandler';
 import { normalizeImageValue } from '../utils/uploads';
@@ -45,6 +45,20 @@ const toOptionalString = (value: unknown) => {
   if (value === null || value === undefined) return undefined;
   const text = String(value).trim();
   return text.length ? text : undefined;
+};
+
+/** Keeps only { EN|FR|TR: { name, description } } with non-empty trimmed strings. */
+const sanitizeTranslations = (value: unknown) => {
+  if (!value || typeof value !== 'object') return null;
+  const out: Record<string, { name?: string; description?: string }> = {};
+  for (const lang of ['EN', 'FR', 'TR']) {
+    const entry = (value as any)[lang];
+    if (!entry || typeof entry !== 'object') continue;
+    const name = toOptionalString(entry.name);
+    const description = toOptionalString(entry.description);
+    if (name || description) out[lang] = { ...(name && { name }), ...(description && { description }) };
+  }
+  return Object.keys(out).length ? out : null;
 };
 
 export const productService = {
@@ -184,6 +198,7 @@ export const productService = {
         ingredientsDe: translatedIngredients,
         allergens,
         allergensDe: translatedAllergens,
+        translations: sanitizeTranslations((data as any).translations) ?? undefined,
         image,
         menuProducts: normalizedData.menuIds ? {
           create: normalizedData.menuIds.map(menuId => ({ menuId }))
@@ -229,6 +244,10 @@ export const productService = {
     delete updateData.descriptionDe;
     delete updateData.productCategories;
     delete updateData.productCategoriesDe;
+
+    if (updateData.translations !== undefined) {
+      updateData.translations = sanitizeTranslations(updateData.translations) ?? Prisma.DbNull;
+    }
 
     if (updateData.customCategory !== undefined) {
       updateData.customCategory = toOptionalString(updateData.customCategory) ?? null;
@@ -338,5 +357,90 @@ export const productService = {
       where: { id }
     });
     return { deleted: true };
+  },
+
+  /** One action applied to many products at once. */
+  async bulkUpdate(input: {
+    ids: number[];
+    action: 'setAvailable' | 'adjustPrice' | 'setCategory' | 'addToMenu' | 'removeFromMenu';
+    value?: any;
+  }) {
+    const ids = Array.from(new Set((input.ids || []).map(Number).filter((n) => Number.isInteger(n))));
+    if (!ids.length) throw new AppError('No products selected', 400);
+    const where = { id: { in: ids } };
+
+    switch (input.action) {
+      case 'setAvailable':
+        await prisma.product.updateMany({ where, data: { available: Boolean(input.value) } });
+        break;
+      case 'setCategory': {
+        const category = normalizeCategory(String(input.value || ''));
+        if (!category) throw new AppError('Category required', 400);
+        await prisma.product.updateMany({ where, data: { category } });
+        break;
+      }
+      case 'adjustPrice': {
+        // value: { mode: 'percent' | 'amount', amount: number } — positive raises, negative lowers
+        const mode = input.value?.mode === 'amount' ? 'amount' : 'percent';
+        const amount = Number(input.value?.amount);
+        if (!Number.isFinite(amount) || Math.abs(amount) > (mode === 'percent' ? 100 : 1000)) {
+          throw new AppError('Invalid price change', 400);
+        }
+        const products = await prisma.product.findMany({ where, select: { id: true, price: true } });
+        await prisma.$transaction(
+          products.map((product) => {
+            const next = mode === 'percent' ? product.price * (1 + amount / 100) : product.price + amount;
+            return prisma.product.update({
+              where: { id: product.id },
+              data: { price: Math.max(0, Math.round(next * 100) / 100) }
+            });
+          })
+        );
+        break;
+      }
+      case 'addToMenu': {
+        const menuId = Number(input.value);
+        if (!Number.isInteger(menuId)) throw new AppError('Menu required', 400);
+        await prisma.menuProduct.createMany({
+          data: ids.map((productId) => ({ menuId, productId })),
+          skipDuplicates: true
+        });
+        break;
+      }
+      case 'removeFromMenu': {
+        const menuId = Number(input.value);
+        if (!Number.isInteger(menuId)) throw new AppError('Menu required', 400);
+        await prisma.menuProduct.deleteMany({ where: { menuId, productId: { in: ids } } });
+        break;
+      }
+      default:
+        throw new AppError('Unknown action', 400);
+    }
+    return { updated: ids.length };
+  },
+
+  async duplicateProduct(id: number) {
+    const source = await prisma.product.findUnique({ where: { id }, include: { menuProducts: true } });
+    if (!source) throw new AppError('Product not found', 404);
+    return prisma.product.create({
+      data: {
+        name: `${source.name} (Kopie)`,
+        description: source.description,
+        category: source.category,
+        customCategory: source.customCategory,
+        price: source.price,
+        cost: source.cost,
+        available: false,
+        minOrderQuantity: source.minOrderQuantity,
+        ingredients: (source.ingredients as any) ?? undefined,
+        ingredientsDe: (source.ingredientsDe as any) ?? undefined,
+        allergens: (source.allergens as any) ?? undefined,
+        allergensDe: (source.allergensDe as any) ?? undefined,
+        translations: (source.translations as any) ?? undefined,
+        image: source.image,
+        menuProducts: { create: source.menuProducts.map((mp) => ({ menuId: mp.menuId })) }
+      },
+      include: { menuProducts: true }
+    });
   }
 };

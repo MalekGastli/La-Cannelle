@@ -13,6 +13,9 @@ router.get('/:id', asyncHandler(productController.getProductById));
 router.use(authenticate);
 router.use(requireResource('products'));
 
+router.patch('/bulk', asyncHandler(productController.bulkUpdate));
+router.delete('/', asyncHandler(productController.bulkDelete));
+router.post('/:id/duplicate', asyncHandler(productController.duplicateProduct));
 router.post('/', asyncHandler(productController.createProduct));
 router.put('/:id', asyncHandler(productController.updateProduct));
 router.delete('/:id', asyncHandler(productController.deleteProduct));

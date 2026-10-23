@@ -4,6 +4,11 @@ import { menuService } from '../services/menuService';
 import { legacyBackupRestoreService } from '../services/legacyBackupRestoreService';
 
 export const menuController = {
+  async duplicateMenu(req: AuthRequest, res: Response) {
+    const menu = await menuService.duplicateMenu(parseInt(req.params.id));
+    res.status(201).json(menu);
+  },
+
   async getMenus(req: AuthRequest, res: Response) {
     const { isActive, search, serviceId, includeImages } = req.query;
 

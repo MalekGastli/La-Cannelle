@@ -34,6 +34,27 @@ export const productController = {
     res.json(product);
   },
 
+  async bulkUpdate(req: AuthRequest, res: Response) {
+    res.json(await productService.bulkUpdate(req.body || {}));
+  },
+
+  async duplicateProduct(req: AuthRequest, res: Response) {
+    const product = await productService.duplicateProduct(parseInt(req.params.id));
+    res.status(201).json(product);
+  },
+
+  async bulkDelete(req: AuthRequest, res: Response) {
+    const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Number.isInteger) : [];
+    let deleted = 0;
+    let archived = 0;
+    for (const id of ids) {
+      const result: any = await productService.deleteProduct(id);
+      if (result.archived) archived += 1;
+      else deleted += 1;
+    }
+    res.json({ deleted, archived });
+  },
+
   async deleteProduct(req: AuthRequest, res: Response) {
     const { id } = req.params;
     try {

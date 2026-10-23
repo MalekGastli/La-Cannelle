@@ -27,3 +27,11 @@ Everything else needs a team member with the matching permission; customers can 
 
 `backend/scripts/vercel-build.sh` runs the migration, creates the owner (if `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set) and
 the three system roles. `JWT_SECRET` must be identical on the frontend and API projects.
+
+## Dishes & menus (`/menu_management`)
+
+- **Dishes tab:** search and filter, attention chips (no photo, hidden, low margin, not translated), inline price edit, visibility switch, duplicate, bulk actions (show/hide, price ±%, category, add to menu, delete).
+- **Dish editor:** photo upload (resized in the browser), price with margin and a suggested price from cost, EU allergen chips, menu membership, optional EN/FR/TR translations (they override the built-in dictionary in the shop).
+- **Menus tab:** courses per guest (0 = course not offered), price suggestion from the chosen dishes, availability dates, services, duplicate, active switch. Warns when a course has fewer dishes than portions per guest.
+- The previous editor is still available at `/menu_management/classic` (e.g. to restore the default menus).
+- API additions: `PATCH /api/products/bulk`, `DELETE /api/products` (ids in body), `POST /api/products/:id/duplicate`, `POST /api/menus/:id/duplicate`; `products.translations` (JSON) column.

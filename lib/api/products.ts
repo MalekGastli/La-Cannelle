@@ -17,7 +17,15 @@ export interface Product {
   image?: string;
   popularity: number;
   menus?: number[];
+  menuProducts?: Array<{ menuId: number; productId: number }>;
+  translations?: Partial<Record<'EN' | 'FR' | 'TR', { name?: string; description?: string }>> | null;
 }
+
+export type BulkAction =
+  | { action: 'setAvailable'; value: boolean }
+  | { action: 'adjustPrice'; value: { mode: 'percent' | 'amount'; amount: number } }
+  | { action: 'setCategory'; value: string }
+  | { action: 'addToMenu' | 'removeFromMenu'; value: number };
 
 export const productsApi = {
   async getProducts(filters?: {
@@ -72,5 +80,22 @@ export const productsApi = {
       throw new Error(response.error);
     }
     return response.data || {};
+  },
+
+  async bulkUpdate(ids: number[], change: BulkAction): Promise<void> {
+    const response = await apiClient.patch('/products/bulk', { ids, ...change });
+    if (response.error) throw new Error(response.error);
+  },
+
+  async bulkDelete(ids: number[]): Promise<{ deleted: number; archived: number }> {
+    const response = await apiClient.delete<{ deleted: number; archived: number }>('/products', { ids });
+    if (response.data) return response.data;
+    throw new Error(response.error || 'Failed to delete products');
+  },
+
+  async duplicateProduct(id: number): Promise<Product> {
+    const response = await apiClient.post<Product>(`/products/${id}/duplicate`, {});
+    if (response.data) return response.data;
+    throw new Error(response.error || 'Failed to duplicate product');
   },
 };

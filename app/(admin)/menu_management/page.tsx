@@ -1,2742 +1,493 @@
-﻿"use client";
+"use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { 
-  Menu, X, ChevronRight, Package, Calendar, DollarSign, 
-  Users, TrendingUp, Clock, Plus, Edit, Archive, Trash2,
-  Search, Filter, Save, XCircle, CheckCircle, AlertCircle, RefreshCw,
-  Utensils, Wine, Coffee, Dessert, Camera, FolderPlus,
-  ChevronDown, Layers, Tag, Grid, Eye, List, LayoutGrid, ShoppingBag, BarChart3, Briefcase
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  TrendingUp, Package, Menu as MenuIcon, Briefcase, Clock, Users, ShoppingBag, BarChart3, ShieldCheck,
+  Plus, Search, Copy, Pencil, Camera, Languages, EyeOff, Euro, UtensilsCrossed, BookOpen,
 } from 'lucide-react';
 
-import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { L } from '@/lib/i18n/inline';
+import { useAdminSession } from '@/lib/hooks/useAdminSession';
+import { productsApi, type BulkAction, type Product } from '@/lib/api/products';
+import { menusApi, type Menu } from '@/lib/api/menus';
+import { servicesApi, type Service } from '@/lib/api/services';
 import AdminLanguageToggle from '../components/AdminLanguageToggle';
 import AdminLayout from '../components/AdminLayout';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { useBodyScrollLock } from '../components/useBodyScrollLock';
-import LoadingOverlay from '../components/LoadingOverlay';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { menusApi } from '@/lib/api/menus';
-import { productsApi } from '@/lib/api/products';
-import { servicesApi, type Service } from '@/lib/api/services';
+import { adminButtonPrimary, adminButtonSecondary, adminCard, adminInput, adminSelect } from '../components/adminStyles';
+import ProductEditor, { draftFromProduct, draftToPayload, emptyDraft, type ProductDraft } from './ProductEditor';
+import MenuEditor, { draftFromMenu, emptyMenuDraft, menuDraftToPayload, type MenuDraft } from './MenuEditor';
+import { CATEGORIES, categoryLabel, euro, hasTranslations, marginOf } from './catalogueShared';
 
-type MenuType = {
-  id: number;
-  name: string;
-  description: string;
-  isActive: boolean;
-  startDate?: string;
-  endDate?: string;
-  price?: number;
-  products: number[];
-  services: number[];
-  image: string;
-  minPeople?: number | null;
-  steps?: MenuStep[];
-};
+type Tab = 'dishes' | 'menus';
+type Attention = '' | 'noPhoto' | 'hidden' | 'lowMargin' | 'noTranslation';
 
-type MenuStep = {
-  label: string;
-  included: number;
-};
-
-type MenuItem = {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  customCategory?: string | null;
-  price: number;
-  cost: number;
-  available: boolean;
-  ingredients: string[];
-  ingredientsDe?: string[] | null;
-  allergens: string[];
-  allergensDe?: string[] | null;
-  menus: number[];
-  image: string;
-  popularity: number;
-};
-
-type NewItemState = Omit<MenuItem, 'id' | 'popularity'> & {
-  id?: number;
-  popularity?: number;
-};
-
-type NewMenuState = Omit<MenuType, 'id' | 'products'> & {
-  id?: number;
-  products: number[];
-};
-
-export default function AdminMenuManagement() {
-  const router = useRouter();
-  const [isVisible, setIsVisible] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [menuFilter, setMenuFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('available');
-  const [editingItem, setEditingItem] = useState<MenuItem | MenuType | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showAddMenuForm, setShowAddMenuForm] = useState(false);
-  const [selectedMenu, setSelectedMenu] = useState<MenuType | null>(null);
-  const [viewMode, setViewMode] = useState('split'); // 'split', 'menus', 'products'
-  const [expandedMenu, setExpandedMenu] = useState<number | null>(null);
-  const [selectedMenuForDetail, setSelectedMenuForDetail] = useState<MenuType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMutating, setIsMutating] = useState(false);
-  const [mutatingLabel, setMutatingLabel] = useState('');
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmDeleteMenuId, setConfirmDeleteMenuId] = useState<number | null>(null);
+export default function AdminCatalogue() {
   const { language, toggleLanguage } = useTranslation('admin');
-  const locale = language === 'DE' ? 'de-DE' : 'en-US';
-  const isDE = language === 'DE';
+  const session = useAdminSession();
+  const isDe = language === 'DE';
+  const locale = isDe ? 'de-DE' : 'en-US';
+  const t = (de: string, en: string) => L(language, de, en);
 
-  const getMenuDisplayName = (menu: Pick<MenuType, 'name'>) => menu.name;
-  const getMenuDisplayDescription = (menu: Pick<MenuType, 'description'>) => menu.description;
-  const getProductDisplayName = (item: Pick<MenuItem, 'name'>) => item.name;
-  const getProductDisplayDescription = (item: Pick<MenuItem, 'description'>) => item.description;
-  const getServiceDisplayName = (service: Pick<Service, 'name' | 'nameDe'>) =>
-    isDE ? (service.nameDe || service.name) : service.name;
-  const copy = {
-    EN: {
-      nav: {
-        dashboard: 'Dashboard',
-        orders: 'Orders',
-        menu: 'Menu Management',
-        services: 'Services',
-        accessories: 'Accessories',
-        system: 'System Control',
-        customers: 'Customers',
-        reports: 'Reports',
-      },
-      admin: {
-        user: 'Admin User',
-        role: 'Administrator',
-      },
-      header: {
-        title: 'Menu Management',
-        subtitle: 'Manage menus, products, categories, and availability',
-        totalProducts: 'Total Products',
-        totalMenus: 'Menus',
-      },
-      productsPanel: {
-        showingInMenu: (count: number) => `Showing ${count} products in this menu`,
-        showingAll: (count: number) => `Showing ${count} products`,
-        noProductsInMenu: 'No products in this menu yet',
-        noProductsMatching: 'No products found matching your criteria',
-      },
-      menu: {
-        starts: 'Starts',
-        ends: 'Ends',
-        noImage: 'No image',
-        noImageAvailable: 'No Image Available',
-        previewAlt: 'Preview',
-        menuPreviewAlt: 'Menu preview',
-        untitledMenu: 'Untitled menu',
-        noDescription: 'No description',
-        noDescriptionProvided: 'No description provided.',
-        noServices: 'No services',
-        noServicesYet: 'No services created yet.',
-        servicesCount: (count: number) => `${count} services`,
-        priceCurrency: 'EUR',
-        confirmDeleteMenuTitle: 'Delete menu',
-        confirmDeleteMenuBody: 'Do you really want to delete this menu?',
-        editItem: 'Edit Menu Item',
-        addItem: 'Add New Menu Item',
-        dishImage: 'Dish Image',
-        menuImage: 'Menu Image',
-        uploadImage: 'Upload image',
-        imageUrl: 'Or Enter Image URL',
-        name: 'Name',
-        nameEn: 'Name (EN)',
-        nameDe: 'Name (DE)',
-        category: 'Category',
-        menuSection: 'Menu Section',
-        type: 'Type',
-        description: 'Description',
-        descriptionEn: 'Description (EN)',
-        descriptionDe: 'Description (DE)',
-        customCategory: 'Custom category',
-        sellingPrice: 'Selling Price (€)',
-        cost: 'Cost (€)',
-        prepTime: 'Prep Time (min)',
-        productCategories: 'Product Categories',
-        includeMenus: 'Include in Menus',
-        assignMenus: 'Assign to Menus',
-        menuTiers: 'Menu Tiers',
-        menuSteps: 'Menu steps',
-        stepLabel: 'Step name',
-        includedDishes: 'Included dishes',
-        addStep: 'Add step',
-        minPeople: 'Minimum people',
-        minPeopleLabel: 'Minimum people',
-        dishesAvailable: 'Dishes available',
-        ingredients: 'Ingredients',
-        noMenusYet: 'No menus created yet',
-        createFirstMenu: 'Create Your First Menu',
-        createMenu: 'Create Menu',
-        editMenu: 'Edit Menu',
-        priceOptional: 'Price (optional)',
-        menuActive: 'Menu is active',
-        custom: 'Custom',
-        costLabel: 'Cost',
-        includedInMenus: 'Included in menus:',
-        popularity: 'Popularity',
-        menusTitle: 'Menus',
-        menuHint: 'Click on a menu to view details',
-        only: 'Only',
-        menuSections: 'Menu Sections:',
-        splitView: 'Split View',
-        productsOnly: 'Products Only',
-      },
-      actions: {
-        active: 'Active',
-        inactive: 'Inactive',
-        available: 'Available',
-        unavailable: 'Unavailable',
-        saveChanges: 'Save Changes',
-        saveMenu: 'Save Menu',
-        cancel: 'Cancel',
-        addIngredient: 'Add Ingredient',
-        edit: 'Edit',
-        addMenu: 'Add Menu',
-        addProduct: 'Add Product',
-        addProductToMenu: 'Add Product to Menu',
-        addFirstProduct: 'Add Your First Product',
-        deleteMenuTitle: 'Delete menu',
-        editMenuTitle: 'Edit menu',
-        archiveItemTitle: 'Archive Item',
-        deleteItemTitle: 'Delete Item',
-        restoreItemTitle: 'Restore Item',
-        removeIngredientTitle: 'Remove ingredient',
-      },
-      filters: {
-        allCategories: 'All Categories',
-        fingerfoods: 'Fingerfood',
-        starters: 'Starters',
-        soups: 'Soups',
-        mains: 'Main Courses',
-        desserts: 'Desserts',
-        drinks: 'Drinks',
-        sides: 'Sides',
-        allMenus: 'All Menus',
-        unassigned: 'Not in any menu',
-        allStatus: 'All Status',
-        available: 'Available',
-        unavailable: 'Unavailable',
-        searchProducts: 'Search products...',
-      },
-      categories: {
-        fingerfood: 'Fingerfood',
-        starter: 'Starter',
-        soup: 'Soup',
-        main: 'Main Course',
-        dessert: 'Dessert',
-        drink: 'Drink',
-        side: 'Side',
-      },
-      placeholders: {
-        imageUrl: 'https://example.com/image.jpg',
-        dishName: 'Enter dish name',
-        dishDescription: 'Describe the dish, ingredients, and special features',
-        price: '0.00',
-        prepTime: '15',
-        ingredients: 'e.g., Atlantic salmon, lemon, butter',
-        menuName: 'Menu name',
-        menuType: 'fixed, tasting, themed',
-        menuDescription: 'Describe this menu',
-        stepLabel: 'e.g., Starters',
-      },
-      notifications: {
-        productCreated: 'Product created.',
-        productCreateFailed: 'Unable to create product.',
-        productUpdated: 'Product updated.',
-        productUpdateFailed: 'Unable to update product.',
-        productDeleted: 'Product deleted.',
-        productArchived: 'Product archived (already in orders).',
-        productDeleteFailed: 'Unable to delete product right now.',
-      },
-    },
-    DE: {
-      nav: {
-        dashboard: 'Übersicht',
-        orders: 'Bestellungen',
-        menu: 'Menüverwaltung',
-        services: 'Dienstleistungen',
-        accessories: 'Zubehör',
-        system: 'Systemsteuerung',
-        customers: 'Kunden',
-        reports: 'Berichte',
-      },
-      admin: {
-        user: 'Admin Benutzer',
-        role: 'Administrator',
-      },
-      header: {
-        title: 'Menüverwaltung',
-        subtitle: 'Menüs, Produkte, Kategorien und Verfügbarkeit verwalten',
-        totalProducts: 'Produkte gesamt',
-        totalMenus: 'Menüs',
-      },
-      productsPanel: {
-        showingInMenu: (count: number) => `${count} Produkte in diesem Menü`,
-        showingAll: (count: number) => `${count} Produkte`,
-        noProductsInMenu: 'Noch keine Produkte in diesem Menü',
-        noProductsMatching: 'Keine Produkte passend zu Ihren Filtern gefunden',
-      },
-      menu: {
-        starts: 'Startet',
-        ends: 'Endet',
-        noImage: 'Kein Bild',
-        noImageAvailable: 'Kein Bild verfügbar',
-        previewAlt: 'Vorschau',
-        menuPreviewAlt: 'Menü-Vorschau',
-        untitledMenu: 'Unbenanntes Menü',
-        noDescription: 'Keine Beschreibung',
-        noDescriptionProvided: 'Keine Beschreibung vorhanden.',
-        noServices: 'Keine Services',
-        noServicesYet: 'Noch keine Services vorhanden.',
-        servicesCount: (count: number) => `${count} Services`,
-        priceCurrency: 'EUR',
-        confirmDeleteMenuTitle: 'Menü löschen',
-        confirmDeleteMenuBody: 'Möchten Sie dieses Menü wirklich löschen?',
-        editItem: 'Menüpunkt bearbeiten',
-        addItem: 'Neuen Menüpunkt hinzufügen',
-        dishImage: 'Gerichtebild',
-        menuImage: 'Menübild',
-        uploadImage: 'Bild hochladen',
-        imageUrl: 'Oder Bild-URL eingeben',
-        name: 'Name',
-        nameEn: 'Name (EN)',
-        nameDe: 'Name (DE)',
-        category: 'Kategorie',
-        menuSection: 'Menüabschnitt',
-        type: 'Typ',
-        description: 'Beschreibung',
-        descriptionEn: 'Beschreibung (EN)',
-        descriptionDe: 'Beschreibung (DE)',
-        customCategory: 'Benutzerdefinierte Kategorie',
-        sellingPrice: 'Verkaufspreis (€)',
-        cost: 'Kosten (€)',
-        prepTime: 'Vorbereitungszeit (Min)',
-        productCategories: 'Produktkategorien',
-        includeMenus: 'In Menüs aufnehmen',
-        assignMenus: 'Menüs zuordnen',
-        menuTiers: 'Menü-Stufen',
-        menuSteps: 'Menü-Schritte',
-        stepLabel: 'Schrittname',
-        includedDishes: 'Enthaltene Gerichte',
-        addStep: 'Schritt hinzufügen',
-        minPeople: 'Mindestpersonen',
-        minPeopleLabel: 'Mindestpersonen',
-        dishesAvailable: 'Verfügbare Gerichte',
-        ingredients: 'Zutaten',
-        noMenusYet: 'Noch keine Menüs erstellt',
-        createFirstMenu: 'Erstellen Sie Ihr erstes Menü',
-        createMenu: 'Menü erstellen',
-        editMenu: 'Menü bearbeiten',
-        priceOptional: 'Preis (optional)',
-        menuActive: 'Menü ist aktiv',
-        custom: 'Individuell',
-        costLabel: 'Kosten',
-        includedInMenus: 'In Menüs enthalten:',
-        popularity: 'Beliebtheit',
-        menusTitle: 'Menüs',
-        menuHint: 'Klicke auf ein Menü, um Details zu sehen',
-        only: 'Nur',
-        menuSections: 'Menüabschnitte:',
-        splitView: 'Geteilte Ansicht',
-        productsOnly: 'Nur Produkte',
-      },
-      actions: {
-        active: 'Aktiv',
-        inactive: 'Inaktiv',
-        available: 'Verfügbar',
-        unavailable: 'Nicht verfügbar',
-        saveChanges: 'Änderungen speichern',
-        saveMenu: 'Menü speichern',
-        cancel: 'Abbrechen',
-        addIngredient: 'Zutat hinzufügen',
-        edit: 'Bearbeiten',
-        addMenu: 'Menü hinzufügen',
-        addProduct: 'Produkt hinzufügen',
-        addProductToMenu: 'Produkt zum Menü hinzufügen',
-        addFirstProduct: 'Erstes Produkt hinzufügen',
-        deleteMenuTitle: 'Menü löschen',
-        editMenuTitle: 'Menü bearbeiten',
-        archiveItemTitle: 'Artikel archivieren',
-        deleteItemTitle: 'Artikel löschen',
-        restoreItemTitle: 'Artikel wiederherstellen',
-        removeIngredientTitle: 'Zutat entfernen',
-      },
-      filters: {
-        allCategories: 'Alle Kategorien',
-        fingerfoods: 'Fingerfood',
-        starters: 'Vorspeisen',
-        soups: 'Suppen',
-        mains: 'Hauptgerichte',
-        desserts: 'Desserts',
-        drinks: 'Getränke',
-        sides: 'Beilagen',
-        allMenus: 'Alle Menüs',
-        unassigned: 'In keinem Menü',
-        allStatus: 'Alle Status',
-        available: 'Verfügbar',
-        unavailable: 'Nicht verfügbar',
-        searchProducts: 'Produkte suchen...',
-      },
-      categories: {
-        fingerfood: 'Fingerfood',
-        starter: 'Vorspeise',
-        soup: 'Suppe',
-        main: 'Hauptgericht',
-        dessert: 'Dessert',
-        drink: 'Getränk',
-        side: 'Beilage',
-      },
-      placeholders: {
-        imageUrl: 'https://example.com/image.jpg',
-        dishName: 'Gerichtname eingeben',
-        dishDescription: 'Gericht, Zutaten und Besonderheiten beschreiben',
-        price: '0.00',
-        prepTime: '15',
-        ingredients: 'z.B. Atlantischer Lachs, Zitrone, Butter',
-        menuName: 'Menü-Name',
-        menuType: 'fest, tasting, thematisch',
-        menuDescription: 'Dieses Menü beschreiben',
-        stepLabel: 'z.B. Vorspeisen',
-      },
-      notifications: {
-        productCreated: 'Produkt erstellt.',
-        productCreateFailed: 'Produkt konnte nicht erstellt werden.',
-        productUpdated: 'Produkt aktualisiert.',
-        productUpdateFailed: 'Produkt konnte nicht aktualisiert werden.',
-        productDeleted: 'Produkt gelöscht.',
-        productArchived: 'Produkt archiviert (bereits in Bestellungen).',
-        productDeleteFailed: 'Produkt konnte gerade nicht gelöscht werden.',
-      },
-    },
-  } as const;
-  const t = copy[language] ?? copy.EN;
-
-  const navigation = [
-    { id: 'dashboard', name: t.nav.dashboard, icon: TrendingUp, path: '/dashboard' },
-    { id: 'orders', name: t.nav.orders, icon: Package, path: '/orders' },
-    { id: 'menu', name: t.nav.menu, icon: Menu, path: '/menu_management' },
-    { id: 'services', name: t.nav.services, icon: Briefcase, path: '/services_management' },
-    { id: 'accessories', name: t.nav.accessories, icon: ShoppingBag, path: '/accessories' },
-    { id: 'system', name: t.nav.system, icon: Clock, path: '/system_control' },
-    { id: 'customers', name: t.nav.customers, icon: Users, path: '/customers' },
-    { id: 'reports', name: t.nav.reports, icon: BarChart3, path: '/reports' }
-  ];
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  const baseMenuStepCategories = useMemo(() => ([
-    { value: 'starter', label: language === 'DE' ? 'Vorspeise' : 'Starter' },
-    { value: 'main', label: language === 'DE' ? 'Hauptgang' : 'Main' },
-    { value: 'side', label: language === 'DE' ? 'Beilage' : 'Side' },
-    { value: 'dessert', label: language === 'DE' ? 'Dessert' : 'Dessert' },
-    { value: 'beverage', label: language === 'DE' ? 'Getränke' : 'Drinks' },
-    { value: 'fingerfood', label: language === 'DE' ? 'Fingerfood' : 'Fingerfood' },
-    { value: 'canape', label: language === 'DE' ? 'Canape' : 'Canape' },
-    { value: 'appetizer', label: language === 'DE' ? 'Appetizer' : 'Appetizer' },
-    { value: 'salad', label: language === 'DE' ? 'Salat' : 'Salad' },
-    { value: 'soup', label: language === 'DE' ? 'Suppe' : 'Soup' },
-    { value: 'pasta', label: language === 'DE' ? 'Pasta' : 'Pasta' },
-    { value: 'seafood', label: language === 'DE' ? 'Meeresfrüchte' : 'Seafood' },
-    { value: 'meat', label: language === 'DE' ? 'Fleisch' : 'Meat' },
-    { value: 'vegetarian', label: language === 'DE' ? 'Vegetarisch' : 'Vegetarian' },
-    { value: 'vegan', label: language === 'DE' ? 'Vegan' : 'Vegan' },
-    { value: 'gluten-free', label: language === 'DE' ? 'Glutenfrei' : 'Gluten-Free' },
-    { value: 'dairy-free', label: language === 'DE' ? 'Laktosefrei' : 'Dairy-Free' },
-    { value: 'spicy', label: language === 'DE' ? 'Scharf' : 'Spicy' },
-    { value: 'signature', label: language === 'DE' ? 'Signature' : 'Signature' },
-    { value: 'seasonal', label: language === 'DE' ? 'Saisonal' : 'Seasonal' },
-    { value: 'kid-friendly', label: language === 'DE' ? 'Kinderfreundlich' : 'Kid-Friendly' },
-    { value: 'chef-special', label: language === 'DE' ? 'Chef-Special' : 'Chef-Special' },
-    { value: 'tapas', label: language === 'DE' ? 'Tapas' : 'Tapas' },
-    { value: 'bbq', label: language === 'DE' ? 'BBQ' : 'BBQ' },
-    { value: 'breakfast', label: language === 'DE' ? 'Frühstück' : 'Breakfast' },
-    { value: 'brunch', label: language === 'DE' ? 'Brunch' : 'Brunch' }
-  ]), [language]);
-
-  const defaultMenuSteps: MenuStep[] = [
-    { label: 'fingerfood', included: 0 },
-    { label: 'starter', included: 0 },
-    { label: 'main', included: 0 },
-    { label: 'side', included: 0 },
-    { label: 'dessert', included: 0 },
-    { label: 'beverage', included: 0 }
-  ];
-
-  const buildDefaultMenuSteps = () => defaultMenuSteps.map(step => ({ ...step }));
-
-  const [menus, setMenus] = useState<MenuType[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [servicesCatalog, setServicesCatalog] = useState<Service[]>([]);
-  const [editingMenu, setEditingMenu] = useState<MenuType | null>(null);
-
-  const menuStepCategories = useMemo(() => {
-    const base = baseMenuStepCategories;
-    const existing = new Set(base.map((c) => String(c.value).trim().toLowerCase()));
-    const custom = new Map<string, string>(); // key -> label
-
-    menuItems.forEach((item) => {
-      const raw = String(item?.customCategory || '').trim();
-      if (!raw) return;
-      const key = raw.toLowerCase();
-      if (existing.has(key)) return;
-      if (!custom.has(key)) custom.set(key, raw);
-    });
-
-    const extra = Array.from(custom.values())
-      .sort((a, b) => a.localeCompare(b, locale))
-      .map((label) => ({ value: label, label }));
-
-    return extra.length ? [...base, ...extra] : base;
-  }, [baseMenuStepCategories, menuItems, locale]);
-
-  useBodyScrollLock(Boolean(editingItem || showAddForm || showAddMenuForm || selectedMenuForDetail || editingMenu));
-
-  const normalizeMenu = (menu: any): MenuType => ({
-    id: menu.id,
-    name: menu.name,
-    description: menu.description || '',
-    isActive: !!menu.isActive,
-    startDate: menu.startDate || undefined,
-    endDate: menu.endDate || undefined,
-    price: menu.price ?? undefined,
-    products: menu.menuProducts
-      ? menu.menuProducts.map((mp: any) => mp.productId)
-      : menu.products || [],
-    services: menu.menuServices
-      ? menu.menuServices.map((ms: any) => ms.serviceId)
-      : menu.serviceIds || [],
-    image: menu.image || '',
-    minPeople: menu.minPeople ?? null,
-    steps: Array.isArray(menu.steps)
-      ? menu.steps.map((step: any) => ({
-           label: typeof step?.label === 'string' ? step.label : '',
-           included: Number.isFinite(step?.included) ? step.included : 0
-          })).filter((step: MenuStep) => step.label)
-       : []
-  });
-
-  const MenuDetailModal = ({ menu, onClose }: { menu: MenuType; onClose: () => void }) => (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center p-4 sm:p-6 overflow-y-auto"
-      onClick={onClose}
-    >
-      {(() => {
-        const displayName = menu.name;
-        const displayDescription = menu.description;
-        const getStepLabel = (step: MenuStep) => step.label;
-
-        return (
-      <div
-        className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{displayName}</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="grid md:grid-cols-2 gap-0 flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 space-y-3">
-            <p className="text-gray-700 leading-relaxed">{displayDescription || t.menu.noDescriptionProvided}</p>
-            <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-              <span className={`px-3 py-1 rounded-full font-semibold ${menu.isActive ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                {menu.isActive ? t.actions.active : t.actions.inactive}
-              </span>
-              {menu.price !== undefined && (
-                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full font-semibold">
-                  {t.menu.priceCurrency} {menu.price}
-                </span>
-              )}
-            </div>
-            {menu.minPeople ? (
-              <div className="text-sm text-gray-600">{t.menu.minPeopleLabel}: {menu.minPeople}</div>
-            ) : null}
-            {menu.steps && menu.steps.length > 0 && (
-              <div className="mt-2">
-                <p className="text-xs uppercase tracking-wide text-gray-700 mb-2">{t.menu.menuSteps}</p>
-                <ul className="space-y-1 text-sm text-gray-700">
-                  {menu.steps.map((step, index) => (
-                    <li key={`step-${index}`} className="flex items-center justify-between">
-                      <span>{getStepLabel(step)}</span>
-                      <span className="font-semibold text-gray-900">{step.included}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-gray-500 mt-3">
-                  {t.menu.dishesAvailable}: {menu.products?.length ?? 0}
-                </p>
-              </div>
-            )}
-            <div className="text-sm text-gray-600 space-y-1">
-              {menu.startDate && <p>{t.menu.starts}: {new Date(menu.startDate).toLocaleDateString(locale)}</p>}
-              {menu.endDate && <p>{t.menu.ends}: {new Date(menu.endDate).toLocaleDateString(locale)}</p>}
-            </div>
-          </div>
-          <div className="p-4 sm:p-6 bg-gray-50">
-            <div className="aspect-video w-full bg-white border border-gray-200 rounded-xl overflow-hidden">
-              {menu.image ? (
-                <img src={menu.image} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-700">{t.menu.noImage}</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-        );
-      })()}
-    </div>
+  const navigation = useMemo(
+    () => [
+      { id: 'dashboard', name: t('Übersicht', 'Dashboard'), icon: TrendingUp, path: '/dashboard' },
+      { id: 'orders', name: t('Bestellungen', 'Orders'), icon: Package, path: '/orders' },
+      { id: 'menu', name: t('Speisen & Menüs', 'Dishes & Menus'), icon: MenuIcon, path: '/menu_management' },
+      { id: 'services', name: 'Services', icon: Briefcase, path: '/services_management' },
+      { id: 'accessories', name: t('Zubehör', 'Accessories'), icon: ShoppingBag, path: '/accessories' },
+      { id: 'system', name: t('Systemsteuerung', 'System Control'), icon: Clock, path: '/system_control' },
+      { id: 'customers', name: t('Kunden', 'Customers'), icon: Users, path: '/customers' },
+      { id: 'reports', name: t('Berichte', 'Reports'), icon: BarChart3, path: '/reports' },
+      { id: 'team', name: 'Team', icon: ShieldCheck, path: '/team' },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [language]
   );
 
-  const normalizeProduct = (product: any): MenuItem => ({
-    id: product.id,
-    name: product.name,
-    description: product.description || '',
-    category: (product.category || '').toLowerCase(),
-    customCategory: typeof product.customCategory === 'string' ? product.customCategory : null,
-    price: product.price ?? 0,
-    cost: product.cost ?? 0,
-    available: !!product.available,
-    ingredients: Array.isArray(product.ingredients) ? product.ingredients : [],
-    ingredientsDe: Array.isArray(product.ingredientsDe) ? product.ingredientsDe : null,
-    allergens: Array.isArray(product.allergens) ? product.allergens : [],
-    allergensDe: Array.isArray(product.allergensDe) ? product.allergensDe : null,
-    menus: product.menus
-      ? product.menus
-      : product.menuProducts
-      ? product.menuProducts.map((mp: any) => mp.menuId)
-      : [],
-    image: product.image || '',
-    popularity: product.popularity ?? 0
-  });
+  const [tab, setTab] = useState<Tab>('dishes');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
-  const showNotification = (type: 'success' | 'error', message: string, duration = 2500) => {
-    setNotification({ type, message });
-    if (duration > 0) {
-      setTimeout(() => setNotification(null), duration);
-    }
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [status, setStatus] = useState<'all' | 'visible' | 'hidden'>('all');
+  const [attention, setAttention] = useState<Attention>('');
+  const [selection, setSelection] = useState<Set<number>>(new Set());
+
+  const [productEditor, setProductEditor] = useState<{ id?: number; draft: ProductDraft; name: string } | null>(null);
+  const [menuEditor, setMenuEditor] = useState<{ id?: number; draft: MenuDraft } | null>(null);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; run: () => Promise<void> } | null>(null);
+  const [priceEdit, setPriceEdit] = useState<{ id: number; value: string } | null>(null);
+  const [bulkPrice, setBulkPrice] = useState<{ percent: string } | null>(null);
+
+  const canProductsCreate = session.can('products.create');
+  const canProductsEdit = session.can('products.edit');
+  const canProductsDelete = session.can('products.delete');
+  const canMenusCreate = session.can('menus.create');
+  const canMenusEdit = session.can('menus.edit');
+  const canMenusDelete = session.can('menus.delete');
+
+  const flash = (message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice((current) => (current === message ? '' : current)), 4000);
   };
 
-  const syncSelectedMenus = (nextMenus: MenuType[]) => {
-    if (selectedMenu) {
-      const updatedMenu = nextMenus.find(menu => menu.id === selectedMenu.id) || null;
-      setSelectedMenu(updatedMenu);
-    }
-    if (selectedMenuForDetail) {
-      const updatedDetailMenu = nextMenus.find(menu => menu.id === selectedMenuForDetail.id) || null;
-      setSelectedMenuForDetail(updatedDetailMenu);
-    }
-  };
-
-  const runMutation = async (label: string, action: () => Promise<void>) => {
-    setIsMutating(true);
-    setMutatingLabel(label);
+  const load = useCallback(async () => {
+    setError('');
     try {
-      await action();
-    } finally {
-      setIsMutating(false);
-      setMutatingLabel('');
-    }
-  };
-
-  // Load data from backend
-  const loadMenusAndProducts = async () => {
-    try {
-      setIsLoading(true);
-      const [menuResponse, productResponse, serviceResponse] = await Promise.all([
-        menusApi.getMenus({ includeImages: true }),
+      const [p, m, s] = await Promise.all([
         productsApi.getProducts(),
-        servicesApi.getServices()
+        menusApi.getMenus({ includeImages: true }),
+        servicesApi.getServices().catch(() => [] as Service[]),
       ]);
-
-      const normalizedMenus = menuResponse.map(normalizeMenu);
-      setMenus(normalizedMenus);
-      setMenuItems(productResponse.map(normalizeProduct));
-      setServicesCatalog(serviceResponse);
-      syncSelectedMenus(normalizedMenus);
-    } catch (err) {
-      console.error('Failed to load menus/products', err);
-      const message = err instanceof Error ? err.message : (language === 'DE' ? 'Fehler beim Laden' : 'Failed to load data');
-      showNotification('error', message, 3500);
+      setProducts(p);
+      setMenus(m);
+      setServices(s as Service[]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadMenusAndProducts();
   }, []);
 
-const [newItem, setNewItem] = useState<NewItemState>({
-     name: '',
-     description: '',
-     category: 'starter',
-     customCategory: '',
-     price: 0,
-     cost: 0,
-     available: true,
-     ingredients: [''],
-     allergens: [],
-     menus: [],
-     image: ''
-  });
+  useEffect(() => { load(); }, [load]);
 
-  // New menu form state
-  const [newMenu, setNewMenu] = useState<NewMenuState>({
-    name: '',
-    description: '',
-    isActive: true,
-    startDate: '',
-    endDate: '',
-    price: 0,
-    products: [],
-    services: [],
-    image: '',
-    minPeople: null,
-    steps: buildDefaultMenuSteps()
-  });
-
-  // Filter menu items
-  const filteredItems = menuItems.filter(item => {
-    const query = searchTerm.toLowerCase().trim();
-    const matchesSearch = !query
-      || [item.name, item.description, item.customCategory || ''].join(' ').toLowerCase().includes(query);
-    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
-    const matchesMenu = menuFilter === 'all' || 
-                       (menuFilter === 'unassigned' && item.menus.length === 0) ||
-                       item.menus.includes(parseInt(menuFilter));
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'available' && item.available) ||
-                         (statusFilter === 'unavailable' && !item.available);
-
-    return matchesSearch && matchesCategory && matchesMenu && matchesStatus;
-  });
-
-  // Get products for selected menu
-  const getProductsForSelectedMenu = (): MenuItem[] => {
-    if (!selectedMenu) return menuItems;
-    return menuItems.filter(item => selectedMenu.products.includes(item.id));
-  };
-
-  // Get products in a specific menu
-  const getProductsInMenu = (menuId: number): MenuItem[] => {
-    const menu = menus.find(m => m.id === menuId);
-    if (!menu) return [];
-    return menuItems.filter(item => menu.products.includes(item.id));
-  };
-
-  // CRUD Operations for Menu Items
-  const addMenuItem = async (itemData?: NewItemState | MenuItem) => {
-    const base = itemData || newItem;
-    await runMutation(language === 'DE' ? 'Speichert...' : 'Saving...', async () => {
-      try {
-        const payload: any = { ...(base as any) };
-        delete payload.ingredientsDe;
-        delete payload.allergensDe;
-        const created = await productsApi.createProduct(payload);
-        const normalized = normalizeProduct(created);
-        setMenuItems([...menuItems, normalized]);
-
-        if (base.menus && (base.menus as number[]).length > 0) {
-          const updatedMenus = menus.map(menu => {
-            if ((base.menus as number[]).includes(menu.id)) {
-              return { ...menu, products: [...menu.products, normalized.id] };
-            }
-            return menu;
-          });
-          setMenus(updatedMenus);
-        }
-
-        resetNewItemForm();
-        setShowAddForm(false);
-        showNotification('success', t.notifications.productCreated);
-      } catch (err: unknown) {
-        console.error('Failed to create product', err);
-        const message = err instanceof Error ? err.message : t.notifications.productCreateFailed;
-        showNotification('error', message);
-      }
-    });
-  };
-
-  const updateMenuItem = async (updatedItem: MenuItem) => {
-    const oldItem = menuItems.find(item => item.id === updatedItem.id);
-    if (!oldItem) return;
-    await runMutation(language === 'DE' ? 'Speichert...' : 'Saving...', async () => {
-      try {
-        const payload: any = {
-          ...updatedItem,
-          menuIds: updatedItem.menus,
-        };
-        // Let backend normalize + auto-translate arrays when EN values change.
-        delete payload.ingredientsDe;
-        delete payload.allergensDe;
-        const saved = await productsApi.updateProduct(updatedItem.id, payload as any);
-        const normalized = normalizeProduct(saved);
-
-        setMenuItems(menuItems.map(item =>
-          item.id === normalized.id ? normalized : item
-        ));
-
-        if (JSON.stringify(oldItem.menus) !== JSON.stringify(normalized.menus)) {
-          const updatedMenus = menus.map(menu => {
-            let products = [...menu.products];
-            if (oldItem.menus.includes(menu.id) && !normalized.menus.includes(menu.id)) {
-              products = products.filter(productId => productId !== normalized.id);
-            } else if (!oldItem.menus.includes(menu.id) && normalized.menus.includes(menu.id)) {
-              products.push(normalized.id);
-            }
-            return { ...menu, products };
-          });
-          setMenus(updatedMenus);
-          syncSelectedMenus(updatedMenus);
-        }
-
-        setEditingItem(null);
-        showNotification('success', t.notifications.productUpdated);
-      } catch (err) {
-        console.error('Failed to update product', err);
-        const message = err instanceof Error ? err.message : t.notifications.productUpdateFailed;
-        showNotification('error', message);
-      }
-    });
-  };
-
-// CRUD Operations for Menus
-  const addMenu = async (menuData?: NewMenuState | MenuType) => {
-    await runMutation(language === 'DE' ? 'Speichert...' : 'Saving...', async () => {
-      try {
-        const payload: any = { ...(menuData || newMenu) };
-        if (Array.isArray(payload.steps)) {
-          payload.steps = payload.steps.map((step: any) => {
-            const next = { ...step };
-            delete (next as any).labelDe;
-            return next;
-          });
-        }
-        await menusApi.createMenu({ ...payload, serviceIds: payload.services } as any);
-        await loadMenusAndProducts();
-        setShowAddMenuForm(false);
-        if (!menuData) {
-          resetNewMenuForm();
-        }
-        showNotification('success', language === 'DE' ? 'Menü gespeichert' : 'Menu saved');
-      } catch (err) {
-        console.error('Failed to create menu', err);
-        const message = err instanceof Error ? err.message : (language === 'DE' ? 'Menü konnte nicht gespeichert werden' : 'Failed to create menu');
-        showNotification('error', message, 3500);
-      }
-    });
-  };
-
-  const updateMenu = async (updatedMenu: MenuType) => {
-    await runMutation(language === 'DE' ? 'Speichert...' : 'Saving...', async () => {
-      try {
-        const payload: any = { ...(updatedMenu as any), serviceIds: updatedMenu.services };
-        if (Array.isArray(payload.steps)) {
-          payload.steps = payload.steps.map((step: any) => {
-            const next = { ...step };
-            delete (next as any).labelDe;
-            return next;
-          });
-        }
-        const saved = await menusApi.updateMenu(updatedMenu.id, payload);
-        const normalized = normalizeMenu(saved);
-        setMenus(menus.map(menu =>
-          menu.id === normalized.id ? normalized : menu
-        ));
-        await loadMenusAndProducts();
-        showNotification('success', language === 'DE' ? 'Menü aktualisiert' : 'Menu updated');
-      } catch (err) {
-        console.error('Failed to update menu', err);
-        const message = err instanceof Error ? err.message : (language === 'DE' ? 'Menü konnte nicht aktualisiert werden' : 'Failed to update menu');
-        showNotification('error', message, 3500);
-      }
-    });
-  };
-
- const toggleMenuActive = async (menuId: number) => {
-    const target = menus.find(m => m.id === menuId);
-    if (!target) return;
-    await runMutation(language === 'DE' ? 'Aktualisiere...' : 'Updating...', async () => {
-      try {
-        const saved = await menusApi.updateMenu(menuId, { ...target, isActive: !target.isActive } as any);
-        const normalized = normalizeMenu(saved);
-        setMenus(menus.map(menu => menu.id === menuId ? normalized : menu));
-        showNotification('success', language === 'DE' ? 'Menü aktualisiert' : 'Menu updated');
-      } catch (err) {
-        console.error('Failed to toggle menu', err);
-        const message = err instanceof Error ? err.message : (language === 'DE' ? 'Menü konnte nicht aktualisiert werden' : 'Failed to update menu');
-        showNotification('error', message, 3500);
-      }
-    });
-  };
-
-  const deleteMenu = async (menuId: number) => {
-    await runMutation(language === 'DE' ? 'Lösche...' : 'Deleting...', async () => {
-      try {
-        await menusApi.deleteMenu(menuId);
-        await loadMenusAndProducts();
-        if (selectedMenu?.id === menuId) {
-          setSelectedMenu(null);
-        }
-        if (selectedMenuForDetail?.id === menuId) {
-          setSelectedMenuForDetail(null);
-        }
-        showNotification('success', language === 'DE' ? 'Menü gelöscht' : 'Menu deleted');
-      } catch (err) {
-        console.error('Failed to delete menu', err);
-        const message = err instanceof Error ? err.message : (language === 'DE' ? 'Menü konnte nicht gelöscht werden' : 'Failed to delete menu');
-        showNotification('error', message, 3500);
-      }
-    });
-  };
-
-  const requestDeleteMenu = (menuId: number) => {
-    setConfirmDeleteMenuId(menuId);
-    setConfirmOpen(true);
-  };
-
-  const archiveMenuItem = (id: number) => {
-    setMenuItems(menuItems.map(item => 
-      item.id === id ? { ...item, available: false } : item
-    ));
-  };
-
-  const deleteMenuItem = async (id: number) => {
-    await runMutation(language === 'DE' ? 'Lösche...' : 'Deleting...', async () => {
-      try {
-        const result = await productsApi.deleteProduct(id);
-        // Remove item from all menus first
-        const updatedMenus = menus.map(menu => ({
-          ...menu,
-          products: menu.products.filter(productId => productId !== id)
-        }));
-        setMenus(updatedMenus);
-        syncSelectedMenus(updatedMenus);
-
-        // Then delete the item locally
-        setMenuItems(menuItems.filter(item => item.id !== id));
-        if (result.archived) {
-          showNotification('success', t.notifications.productArchived);
-        } else {
-          showNotification('success', t.notifications.productDeleted);
-        }
-      } catch (err) {
-        console.error('Failed to delete product', err);
-        const message = err instanceof Error ? err.message : t.notifications.productDeleteFailed;
-        showNotification('error', message);
-      }
-    });
-  };
-
-  const restoreMenuItem = (id: number) => {
-    setMenuItems(menuItems.map(item => 
-      item.id === id ? { ...item, available: true } : item
-    ));
-  };
-
-  // Helper functions
-  const toggleMenuAssociation = (menuId: number) => {
-    setNewItem(prev => ({
-      ...prev,
-      menus: prev.menus.includes(menuId)
-        ? prev.menus.filter(id => id !== menuId)
-        : [...prev.menus, menuId]
-    }));
-  };
-
-  const addIngredient = () => {
-    setNewItem(prev => ({
-      ...prev,
-      ingredients: [...prev.ingredients, '']
-    }));
-  };
-
-  const updateIngredient = (index: number, value: string) => {
-    const newIngredients = [...newItem.ingredients];
-    newIngredients[index] = value;
-    setNewItem(prev => ({ ...prev, ingredients: newIngredients }));
-  };
-
-  const removeIngredient = (index: number) => {
-    setNewItem(prev => ({
-      ...prev,
-      ingredients: prev.ingredients.filter((_, i) => i !== index)
-    }));
-  };
-
-  const resetNewItemForm = () => {
-    setNewItem({
-      name: '',
-      description: '',
-      category: 'starter',
-      customCategory: '',
-      price: 0,
-      cost: 0,
-      available: true,
-      ingredients: [''],
-      allergens: [],
-      menus: [],
-      image: ''
-    });
-  };
-
-  const resetNewMenuForm = () => {
-    setNewMenu({
-      name: '',
-      description: '',
-      isActive: true,
-      startDate: '',
-      endDate: '',
-      price: 0,
-      products: [],
-      services: [],
-      image: '',
-      minPeople: null,
-      steps: buildDefaultMenuSteps()
-    });
-  };
-
-  const getMenuName = (menuId: number) => {
-    const menu = menus.find(m => m.id === menuId);
-    return menu ? getMenuDisplayName(menu) : (isDE ? 'Unbekanntes Menü' : 'Unknown Menu');
-  };
-
-  const viewMenuDetails = (menu: MenuType) => {
-    setSelectedMenuForDetail(menu);
-    // If in split view, also select the menu
-    if (viewMode === 'split') {
-      setSelectedMenu(menu);
+  const run = async (job: () => Promise<void>, success?: string) => {
+    setBusy(true);
+    setError('');
+    try {
+      await job();
+      await load();
+      if (success) flash(success);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const ImageWithFallback = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
-    const placeholder = '/images/placeholder.png';
-    const safeSrc = src && src.trim() ? src : placeholder;
-    const [imgSrc, setImgSrc] = useState(safeSrc);
-    const [hasError, setHasError] = useState(false);
-
-    useEffect(() => {
-      setImgSrc(src && src.trim() ? src : placeholder);
-      setHasError(false);
-    }, [src]);
-
-    return (
-      <div className={`relative ${className}`}>
-        {hasError ? (
-          <div className="w-full h-full bg-gradient-to-br from-amber-50 to-stone-100 flex items-center justify-center">
-            <div className="text-center">
-              <Utensils className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-700 text-sm">{t.menu.noImageAvailable}</p>
-            </div>
-          </div>
-        ) : (
-          <img
-            src={imgSrc}
-            alt={alt}
-            className="w-full h-full object-cover"
-            onError={() => setHasError(true)}
-          />
-        )}
-      </div>
-    );
+  /* ---------- derived ---------- */
+  const lowMargin = (p: Product) => {
+    const m = marginOf(p.price, p.cost);
+    return m !== null && m < 0.4;
   };
+  const counts = useMemo(() => ({
+    all: products.length,
+    hidden: products.filter((p) => !p.available).length,
+    noPhoto: products.filter((p) => !p.image).length,
+    lowMargin: products.filter(lowMargin).length,
+    noTranslation: products.filter((p) => !hasTranslations(p)).length,
+  }), [products]);
 
-  const EditFormModal = ({ item, onSave, onClose }: { item: MenuItem; onSave: (updatedItem: MenuItem) => void; onClose: () => void }) => {
-    const [localItem, setLocalItem] = useState<MenuItem>(() => ({
-      ...item,
-      ingredients: item.ingredients.length > 0 ? item.ingredients : ['']
-    }));
-    const [localImagePreview, setLocalImagePreview] = useState(item.image);
-    const [priceInput, setPriceInput] = useState(() =>
-      Number.isFinite(item.price) ? String(item.price) : ''
-    );
-    const [costInput, setCostInput] = useState(() =>
-      Number.isFinite(item.cost) ? String(item.cost) : ''
-    );
-
-    const handleLocalSave = (updatedItem: MenuItem) => {
-      setLocalItem(updatedItem);
-    };
-
-    const updateLocalIngredient = (index: number, value: string) => {
-      setLocalItem((prev) => {
-        const nextIngredients = [...prev.ingredients];
-        nextIngredients[index] = value;
-        return { ...prev, ingredients: nextIngredients };
-      });
-    };
-
-    const handleImageUploadLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = typeof reader.result === 'string' ? reader.result : '';
-          setLocalImagePreview(base64String);
-          handleLocalSave({ ...localItem, image: base64String });
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-
-    const toggleLocalMenuAssociation = (menuId: number) => {
-      handleLocalSave({
-        ...localItem,
-        menus: localItem.menus.includes(menuId)
-          ? localItem.menus.filter(id => id !== menuId)
-          : [...localItem.menus, menuId]
-      });
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto">
-        <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 font-elegant">{t.menu.editItem}</h2>
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-                <X size={24} />
-              </button>
-            </div>
-          </div>
-
-          <div className="p-6 space-y-6">
-            <div className="grid md:grid-cols-4 gap-6">
-              <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.dishImage}</label>
-                <div className="space-y-4">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                    <div className="aspect-square w-full overflow-hidden rounded-lg mb-4">
-                      {localImagePreview ? (
-                        <img 
-                          src={localImagePreview} 
-                          alt={t.menu.previewAlt}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
-                          <Camera className="w-12 h-12 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block">
-                        <span className="sr-only">{t.menu.uploadImage}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUploadLocal}
-                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.imageUrl}</label>
-                    <input
-                      type="text"
-                      value={localItem.image}
-                      onChange={(e) => handleLocalSave({ ...localItem, image: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                      placeholder={t.placeholders.imageUrl}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-3 space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.nameEn}</label>
-                    <input
-                      type="text"
-                      value={localItem.name}
-                      onChange={(e) => handleLocalSave({ ...localItem, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                      placeholder={t.placeholders.dishName}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.category}</label>
-                    <select
-                      value={localItem.category}
-                      onChange={(e) => handleLocalSave({ ...localItem, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900"
-                    >
-                      <option value="fingerfood">{t.categories.fingerfood}</option>
-                      <option value="starter">{t.categories.starter}</option>
-                      <option value="soup">{t.categories.soup}</option>
-                      <option value="main">{t.categories.main}</option>
-                      <option value="dessert">{t.categories.dessert}</option>
-                      <option value="beverage">{t.categories.drink}</option>
-                      <option value="side">{t.categories.side}</option>
-                  </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.customCategory}</label>
-                  <input
-                    type="text"
-                    value={localItem.customCategory || ''}
-                    onChange={(e) => handleLocalSave({ ...localItem, customCategory: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder="e.g., seafood"
-                  />
-                </div>
-
-                <div className="grid gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.descriptionEn}</label>
-                    <textarea
-                      value={localItem.description}
-                      onChange={(e) => handleLocalSave({ ...localItem, description: e.target.value })}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                      placeholder={t.placeholders.dishDescription}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.sellingPrice}</label>
-                    <input
-                      type="number"
-                      value={priceInput}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        setPriceInput(raw);
-                        const parsed = Number(raw);
-                        if (raw === '') {
-                          handleLocalSave({ ...localItem, price: 0 });
-                          return;
-                        }
-                        if (Number.isFinite(parsed)) {
-                          handleLocalSave({ ...localItem, price: parsed });
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                      placeholder={t.placeholders.price}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.cost}</label>
-                    <input
-                      type="number"
-                      value={costInput}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        setCostInput(raw);
-                        const parsed = Number(raw);
-                        if (raw === '') {
-                          handleLocalSave({ ...localItem, cost: 0 });
-                          return;
-                        }
-                        if (Number.isFinite(parsed)) {
-                          handleLocalSave({ ...localItem, cost: parsed });
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                      placeholder={t.placeholders.price}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">{t.menu.includeMenus}</label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg">
-                    {menus.map(menu => (
-                      <div key={menu.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`menu-${menu.id}`}
-                          checked={localItem.menus.includes(menu.id)}
-                          onChange={() => toggleLocalMenuAssociation(menu.id)}
-                          className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                        />
-                        <label 
-                          htmlFor={`menu-${menu.id}`}
-                          className="text-sm text-gray-700 cursor-pointer"
-                        >
-                          {getMenuDisplayName(menu)}
-                        </label>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          menu.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {menu.isActive ? t.actions.active : t.actions.inactive}
-                        </span>
-                      </div>
-                    ))}
-                    {menus.length === 0 && (
-                      <p className="text-sm text-gray-500 text-center py-2">{t.menu.noMenusYet}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">{t.menu.menuSteps}</label>
-                  <div className="space-y-3 rounded-lg border border-gray-200 p-3 bg-gray-50">
-                    {localItem.menus.length === 0 && (
-                      <p className="text-sm text-gray-500">{t.filters.unassigned}</p>
-                    )}
-                    {localItem.menus.map((menuId: number) => {
-                      const menu = menus.find(m => m.id === menuId);
-                      if (!menu) return null;
-                      const steps = Array.isArray(menu.steps) ? menu.steps : [];
-                       return (
-                         <div key={menuId} className="rounded-lg border border-gray-200 bg-white p-3">
-                          <p className="text-sm font-semibold text-gray-900 mb-2">{getMenuDisplayName(menu)}</p>
-                          {steps.length > 0 ? (
-                            <div className="space-y-1 text-sm text-gray-700">
-                              {steps.map((step: MenuStep, index: number) => (
-                                <div key={`menu-${menuId}-step-${index}`} className="flex items-center justify-between">
-                                  <span>{step.label}</span>
-                                  <span className="font-semibold text-gray-900">{step.included}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-500">{t.menu.noMenusYet}</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">{t.menu.ingredients}</label>
-                  <div className="space-y-3">
-                    {(localItem.ingredients.length > 0 ? localItem.ingredients : ['']).map((ingredient, index) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <input
-                          type="text"
-                          value={ingredient}
-                          onChange={(e) => updateLocalIngredient(index, e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                          placeholder={t.placeholders.ingredients}
-                        />
-                        {localItem.ingredients.length > 1 && (
-                          <button
-                            onClick={() =>
-                              setLocalItem((prev) => ({
-                                ...prev,
-                                ingredients: prev.ingredients.filter((_, i) => i !== index)
-                              }))
-                            }
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title={t.actions.removeIngredientTitle}
-                          >
-                            <X size={16} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setLocalItem((prev) => ({ ...prev, ingredients: [...prev.ingredients, ''] }))}
-                    className="mt-2 px-4 py-2 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium flex items-center gap-2"
-                  >
-                    <Plus size={16} />
-                    {t.actions.addIngredient}
-                  </button>
-                </div>
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => {
-                      const parsedPrice = Number(priceInput);
-                      const parsedCost = Number(costInput);
-                      onSave({
-                        ...localItem,
-                        price: Number.isFinite(parsedPrice) ? parsedPrice : 0,
-                        cost: Number.isFinite(parsedCost) ? parsedCost : 0,
-                      });
-                    }}
-                    className="flex-1 bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 transition-colors font-medium flex items-center justify-center gap-2"
-                  >
-                    <Save size={20} />
-                    {t.actions.saveChanges}
-                  </button>
-                  <button
-                    onClick={onClose}
-                    className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    {t.actions.cancel}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  
-const AddFormModal = () => {
-  const [localItem, setLocalItem] = useState<NewItemState>(newItem);
-
-  const updateLocalIngredient = (index: number, value: string) => {
-    const next = [...localItem.ingredients];
-    next[index] = value;
-    setLocalItem({ ...localItem, ingredients: next });
-  };
-
-  const handleImageUploadLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = typeof reader.result === 'string' ? reader.result : '';
-      setLocalItem((prev) => ({ ...prev, image: base64String }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) setShowAddForm(false);
-      }}
-    >
-      <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 font-elegant">{t.menu.addItem}</h2>
-            <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-              <X size={24} />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-6">
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.dishImage}</label>
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                  <div className="aspect-square w-full overflow-hidden rounded-lg mb-4">
-                    {localItem.image ? (
-                      <img src={localItem.image} alt={t.menu.previewAlt} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
-                        <Camera className="w-12 h-12 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block">
-                      <span className="sr-only">{t.menu.uploadImage}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUploadLocal}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
-                      />
-                    </label>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.imageUrl}</label>
-                  <input
-                    type="text"
-                    value={localItem.image.startsWith('data:') ? '' : localItem.image}
-                    onChange={(e) => setLocalItem({ ...localItem, image: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder={t.placeholders.imageUrl}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="md:col-span-3 space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.nameEn}</label>
-                  <input
-                    type="text"
-                    value={localItem.name}
-                    onChange={(e) => setLocalItem({ ...localItem, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder={t.placeholders.dishName}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.category}</label>
-                  <select
-                    value={localItem.category}
-                    onChange={(e) => setLocalItem({ ...localItem, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900"
-                  >
-                    <option value="fingerfood">{t.categories.fingerfood}</option>
-                    <option value="starter">{t.categories.starter}</option>
-                    <option value="soup">{t.categories.soup}</option>
-                    <option value="main">{t.categories.main}</option>
-                    <option value="dessert">{t.categories.dessert}</option>
-                    <option value="beverage">{t.categories.drink}</option>
-                    <option value="side">{t.categories.side}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.customCategory}</label>
-                <input
-                  type="text"
-                  value={localItem.customCategory || ''}
-                  onChange={(e) => setLocalItem({ ...localItem, customCategory: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                  placeholder="e.g., seafood"
-                />
-              </div>
-
-              <div className="grid gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.descriptionEn}</label>
-                  <textarea
-                    value={localItem.description}
-                    onChange={(e) => setLocalItem({ ...localItem, description: e.target.value })}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder={t.placeholders.dishDescription}
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.sellingPrice}</label>
-                  <input
-                    type="number"
-                    value={localItem.price}
-                    onChange={(e) => setLocalItem({ ...localItem, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder={t.placeholders.price}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.cost}</label>
-                  <input
-                    type="number"
-                    value={localItem.cost}
-                    onChange={(e) => setLocalItem({ ...localItem, cost: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder={t.placeholders.price}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-
-              <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">{t.menu.assignMenus}</label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg">
-                    {menus.map(menu => (
-                      <div key={menu.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`new-menu-${menu.id}`}
-                          checked={localItem.menus.includes(menu.id)}
-                          onChange={(e) => {
-                            const updatedMenus = e.target.checked
-                              ? [...localItem.menus, menu.id]
-                              : localItem.menus.filter(id => id !== menu.id);
-                            setLocalItem({ ...localItem, menus: updatedMenus });
-                          }}
-                          className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                        />
-                        <label htmlFor={`new-menu-${menu.id}`} className="text-sm text-gray-700 cursor-pointer">
-                          {getMenuDisplayName(menu)}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">{t.menu.ingredients}</label>
-                <div className="space-y-3">
-                  {localItem.ingredients.map((ingredient, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={ingredient}
-                        onChange={(e) => updateLocalIngredient(index, e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                        placeholder={t.placeholders.ingredients}
-                      />
-                      {localItem.ingredients.length > 1 && (
-                        <button
-                          onClick={() =>
-                            setLocalItem(prev => ({
-                              ...prev,
-                              ingredients: prev.ingredients.filter((_, i) => i !== index)
-                            }))
-                          }
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title={t.actions.removeIngredientTitle}
-                        >
-                          <X size={16} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => setLocalItem(prev => ({ ...prev, ingredients: [...prev.ingredients, ''] }))}
-                  className="mt-2 px-4 py-2 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 transition-colors text-sm font-medium flex items-center gap-2"
-                >
-                  <Plus size={16} />
-                  {t.actions.addIngredient}
-                </button>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={() => {
-                    setNewItem(localItem);
-                    addMenuItem(localItem);
-                    setShowAddForm(false);
-                    resetNewItemForm();
-                  }}
-                  className="flex-1 bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                  <Save size={20} />
-                  {t.actions.saveChanges}
-                </button>
-                <button
-                  onClick={() => setShowAddForm(false)}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                  {t.actions.cancel}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AddMenuFormModal = () => {
-  const [localMenuState, setLocalMenuState] = useState<NewMenuState>(newMenu);
-  const [localMenuImagePreview, setLocalMenuImagePreview] = useState(localMenuState.image);
-
-  useEffect(() => {
-    setLocalMenuState(newMenu);
-  }, [newMenu]);
-
-  useEffect(() => {
-    setLocalMenuImagePreview(localMenuState.image || '');
-  }, [localMenuState.image]);
-
-  const handleMenuImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = typeof reader.result === 'string' ? reader.result : '';
-        setLocalMenuImagePreview(base64String);
-        setLocalMenuState({ ...localMenuState, image: base64String });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const updateMenuStep = (index: number, updates: Partial<MenuStep>) => {
-    const nextSteps = [...(localMenuState.steps || [])];
-    nextSteps[index] = { ...nextSteps[index], ...updates };
-    setLocalMenuState({ ...localMenuState, steps: nextSteps });
-  };
-
-  const addMenuStep = () => {
-    setLocalMenuState({
-      ...localMenuState,
-      steps: [...(localMenuState.steps || []), { label: '', included: 0 }]
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter((p) => {
+      if (q && !`${p.name} ${p.description}`.toLowerCase().includes(q)) return false;
+      if (category !== 'all' && String(p.category).toUpperCase() !== category) return false;
+      if (status === 'visible' && !p.available) return false;
+      if (status === 'hidden' && p.available) return false;
+      if (attention === 'noPhoto' && p.image) return false;
+      if (attention === 'hidden' && p.available) return false;
+      if (attention === 'lowMargin' && !lowMargin(p)) return false;
+      if (attention === 'noTranslation' && hasTranslations(p)) return false;
+      return true;
     });
-  };
+  }, [products, search, category, status, attention]);
 
-  const removeMenuStep = (index: number) => {
-    const nextSteps = [...(localMenuState.steps || [])];
-    nextSteps.splice(index, 1);
-    setLocalMenuState({ ...localMenuState, steps: nextSteps });
-  };
+  const selectedIds = useMemo(() => Array.from(selection).filter((id) => products.some((p) => p.id === id)), [selection, products]);
+  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selection.has(p.id));
+  const menuCountOf = (p: Product) => (p.menuProducts || []).length;
 
-  const handleSaveMenu = () => {
-    addMenu(localMenuState);
-  };
+  /* ---------- actions ---------- */
+  const openNewProduct = () => setProductEditor({ draft: emptyDraft(), name: '' });
+  const openProduct = (p: Product) => setProductEditor({ id: p.id, draft: draftFromProduct(p), name: p.name });
 
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) setShowAddMenuForm(false);
-      }}
-    >
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 font-elegant">{t.menu.createMenu}</h2>
-          <button onClick={() => setShowAddMenuForm(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X size={24} />
-          </button>
-        </div>
+  const saveProduct = (draft: ProductDraft) =>
+    run(async () => {
+      const payload = draftToPayload(draft);
+      if (productEditor?.id) await productsApi.updateProduct(productEditor.id, payload as any);
+      else await productsApi.createProduct(payload as any);
+      setProductEditor(null);
+    }, t('Gericht gespeichert.', 'Dish saved.'));
 
-        <div className="p-6 space-y-6">
-          <div className="grid lg:grid-cols-[260px_1fr] gap-6 items-start">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">{t.menu.menuImage}</label>
-              <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-white border border-gray-200">
-                {localMenuImagePreview ? (
-                  <img src={localMenuImagePreview} alt={t.menu.menuPreviewAlt} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Camera className="w-10 h-10 text-gray-300" />
-                  </div>
-                )}
-              </div>
-              <label className="block mt-3">
-                <span className="sr-only">{t.menu.uploadImage}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleMenuImageUpload}
-                  className="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
-                />
-              </label>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.imageUrl}</label>
-                <input
-                  type="text"
-                  value={localMenuState.image}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, image: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                  placeholder={t.placeholders.imageUrl}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.name}</label>
-                <input
-                  type="text"
-                  value={localMenuState.name}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                  placeholder={t.placeholders.menuName}
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.priceOptional}</label>
-                  <input
-                    type="number"
-                    value={localMenuState.price ?? 0}
-                    onChange={(e) => setLocalMenuState({ ...localMenuState, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder={t.placeholders.price}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.minPeople}</label>
-                  <input
-                    type="number"
-                    value={localMenuState.minPeople ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setLocalMenuState({
-                        ...localMenuState,
-                        minPeople: value === '' ? null : parseInt(value, 10)
-                      });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {language === 'DE' ? 'Services (für Kundenwahl)' : 'Services (for client selection)'}
-                </label>
-                {servicesCatalog.length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    {t.menu.noServicesYet}
-                  </p>
-                ) : (
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {servicesCatalog.map((service) => {
-                      const checked = (localMenuState.services || []).includes(service.id);
-                      return (
-                        <label
-                          key={service.id}
-                          className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                            checked ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white hover:bg-gray-50'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              const next = checked
-                                ? (localMenuState.services || []).filter((id) => id !== service.id)
-                                : [...(localMenuState.services || []), service.id];
-                              setLocalMenuState({ ...localMenuState, services: next });
-                            }}
-                            className="h-4 w-4 accent-amber-600"
-                          />
-                          <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden shrink-0">
-                            {service.image ? (
-                              <img src={service.image} alt={getServiceDisplayName(service)} className="h-full w-full object-cover" />
-                            ) : null}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">{getServiceDisplayName(service)}</div>
-                            <div className="text-xs text-gray-600">{service.occasion}</div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.description}</label>
-                <textarea
-                  value={localMenuState.description}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                  placeholder={t.placeholders.menuDescription}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.menuSteps}</label>
-                <div className="space-y-3">
-                  {(localMenuState.steps || []).map((step, index) => (
-                    <div key={`step-${index}`} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                      <select
-                        value={step.label}
-                        onChange={(e) => updateMenuStep(index, { label: e.target.value })}
-                        className="col-span-12 sm:col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900"
-                      >
-                        <option value="">{t.placeholders.stepLabel}</option>
-                        {menuStepCategories.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-
-                      <input
-                        type="number"
-                        value={step.included}
-                        onChange={(e) => updateMenuStep(index, { included: parseInt(e.target.value, 10) || 0 })}
-                        className="col-span-12 sm:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                        min="0"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeMenuStep(index)}
-                        className="col-span-12 sm:col-span-1 w-fit justify-self-end sm:justify-self-auto p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        aria-label={t.actions.deleteItemTitle}
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addMenuStep}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 hover:text-amber-800"
-                  >
-                    <Plus size={16} />
-                    {t.menu.addStep}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {t.menu.dishesAvailable}: {localMenuState.products?.length ?? 0}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                <input
-                  type="checkbox"
-                  id="menu-active"
-                  checked={localMenuState.isActive}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, isActive: e.target.checked })}
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                />
-                <label htmlFor="menu-active" className="text-sm text-gray-700">{t.menu.menuActive}</label>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={handleSaveMenu}
-                  className="flex-1 bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                  <Save size={20} />
-                  {t.actions.saveMenu}
-                </button>
-                <button
-                  onClick={() => setShowAddMenuForm(false)}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                  {t.actions.cancel}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const EditMenuFormModal = ({ menu }: { menu: MenuType }) => {
-  const [localMenuState, setLocalMenuState] = useState<MenuType>(menu);
-  const [localMenuImagePreview, setLocalMenuImagePreview] = useState(menu.image || '');
-
-  useEffect(() => {
-    setLocalMenuState({
-      ...menu,
-      steps: menu.steps && menu.steps.length > 0 ? menu.steps : buildDefaultMenuSteps()
+  const askDeleteProduct = (ids: number[]) =>
+    setConfirm({
+      title: ids.length === 1 ? t('Gericht löschen?', 'Delete dish?') : t(`${ids.length} Gerichte löschen?`, `Delete ${ids.length} dishes?`),
+      message: t('Bereits bestellte Gerichte werden nur ausgeblendet, damit alte Bestellungen vollständig bleiben.', 'Dishes that were already ordered are only hidden so past orders stay complete.'),
+      run: async () => {
+        await run(async () => {
+          const result = await productsApi.bulkDelete(ids);
+          setSelection(new Set());
+          setProductEditor(null);
+          flash(t(`${result.deleted} gelöscht, ${result.archived} ausgeblendet.`, `${result.deleted} deleted, ${result.archived} hidden.`));
+        });
+      },
     });
-  }, [menu]);
 
-  useEffect(() => {
-    setLocalMenuImagePreview(localMenuState.image || '');
-  }, [localMenuState.image]);
+  const bulk = (change: BulkAction, success: string) =>
+    run(async () => { await productsApi.bulkUpdate(selectedIds, change); }, success);
 
-  const handleMenuImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = typeof reader.result === 'string' ? reader.result : '';
-        setLocalMenuImagePreview(base64String);
-        setLocalMenuState({ ...localMenuState, image: base64String });
-      };
-      reader.readAsDataURL(file);
-    }
+  const toggleAvailable = (p: Product) =>
+    run(async () => { await productsApi.updateProduct(p.id, { available: !p.available } as any); });
+
+  const commitPrice = () => {
+    if (!priceEdit) return;
+    const value = Number(priceEdit.value.replace(',', '.'));
+    const id = priceEdit.id;
+    setPriceEdit(null);
+    if (!Number.isFinite(value) || value <= 0) return;
+    run(async () => { await productsApi.updateProduct(id, { price: value } as any); }, t('Preis aktualisiert.', 'Price updated.'));
   };
 
-  const updateMenuStep = (index: number, updates: Partial<MenuStep>) => {
-    const nextSteps = [...(localMenuState.steps || [])];
-    nextSteps[index] = { ...nextSteps[index], ...updates };
-    setLocalMenuState({ ...localMenuState, steps: nextSteps });
-  };
+  const duplicateProduct = (p: Product) =>
+    run(async () => {
+      const copy = await productsApi.duplicateProduct(p.id);
+      setProductEditor({ id: copy.id, draft: draftFromProduct(copy), name: copy.name });
+    }, t('Kopie angelegt – bitte prüfen und speichern.', 'Copy created – review it and save.'));
 
-  const addMenuStep = () => {
-    setLocalMenuState({
-      ...localMenuState,
-      steps: [...(localMenuState.steps || []), { label: '', included: 0 }]
+  const openNewMenu = () => setMenuEditor({ draft: emptyMenuDraft() });
+  const openMenu = (m: Menu) => setMenuEditor({ id: m.id, draft: draftFromMenu(m) });
+
+  const saveMenu = (draft: MenuDraft) =>
+    run(async () => {
+      const payload = menuDraftToPayload(draft);
+      if (menuEditor?.id) await menusApi.updateMenu(menuEditor.id, payload as any);
+      else await menusApi.createMenu(payload as any);
+      setMenuEditor(null);
+    }, t('Menü gespeichert.', 'Menu saved.'));
+
+  const duplicateMenu = (m: Menu) =>
+    run(async () => { await menusApi.duplicateMenu(m.id); }, t('Kopie angelegt (inaktiv).', 'Copy created (inactive).'));
+
+  const askDeleteMenu = (m: Menu) =>
+    setConfirm({
+      title: t('Menü löschen?', 'Delete menu?'),
+      message: t(`„${m.name}“ wird entfernt. Die Gerichte bleiben erhalten.`, `“${m.name}” will be removed. The dishes are kept.`),
+      run: async () => { await run(async () => { await menusApi.deleteMenu(m.id); setMenuEditor(null); }, t('Menü gelöscht.', 'Menu deleted.')); },
     });
-  };
 
-  const removeMenuStep = (index: number) => {
-    const nextSteps = [...(localMenuState.steps || [])];
-    nextSteps.splice(index, 1);
-    setLocalMenuState({ ...localMenuState, steps: nextSteps });
-  };
+  const toggleMenuActive = (m: Menu) =>
+    run(async () => { await menusApi.updateMenu(m.id, { isActive: !m.isActive } as any); });
 
-  const handleSaveMenu = async () => {
-    await updateMenu({ ...localMenuState });
-    setEditingMenu(null);
-  };
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 sm:p-6 overflow-y-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) setEditingMenu(null);
-      }}
+  const chip = (key: Attention, label: string, count: number, icon: React.ReactNode) => (
+    <button
+      key={key}
+      type="button"
+      aria-pressed={attention === key}
+      disabled={count === 0 && attention !== key}
+      onClick={() => setAttention(attention === key ? '' : key)}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-40 ${attention === key ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-stone-200 bg-white text-gray-700 hover:bg-stone-50'}`}
     >
-      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 font-elegant">{t.menu.editMenu}</h2>
-          <button onClick={() => setEditingMenu(null)} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X size={24} />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-6">
-          <div className="grid lg:grid-cols-[260px_1fr] gap-6 items-start">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-3">{t.menu.menuImage}</label>
-              <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-white border border-gray-200">
-                {localMenuImagePreview ? (
-                  <img src={localMenuImagePreview} alt={t.menu.menuPreviewAlt} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Camera className="w-10 h-10 text-gray-300" />
-                  </div>
-                )}
-              </div>
-              <label className="block mt-3">
-                <span className="sr-only">{t.menu.uploadImage}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleMenuImageUpload}
-                  className="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
-                />
-              </label>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.imageUrl}</label>
-                <input
-                  type="text"
-                  value={localMenuState.image}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, image: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                  placeholder={t.placeholders.imageUrl}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.name}</label>
-                <input
-                  type="text"
-                  value={localMenuState.name}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                  placeholder={t.placeholders.menuName}
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.priceOptional}</label>
-                  <input
-                    type="number"
-                    value={localMenuState.price ?? 0}
-                    onChange={(e) => setLocalMenuState({ ...localMenuState, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    placeholder={t.placeholders.price}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.minPeople}</label>
-                  <input
-                    type="number"
-                    value={localMenuState.minPeople ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setLocalMenuState({
-                        ...localMenuState,
-                        minPeople: value === '' ? null : parseInt(value, 10)
-                      });
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {language === 'DE' ? 'Services (für Kundenwahl)' : 'Services (for client selection)'}
-                </label>
-                {servicesCatalog.length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    {t.menu.noServicesYet}
-                  </p>
-                ) : (
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {servicesCatalog.map((service) => {
-                      const checked = (localMenuState.services || []).includes(service.id);
-                      return (
-                        <label
-                          key={service.id}
-                          className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                            checked ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white hover:bg-gray-50'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              const next = checked
-                                ? (localMenuState.services || []).filter((id) => id !== service.id)
-                                : [...(localMenuState.services || []), service.id];
-                              setLocalMenuState({ ...localMenuState, services: next });
-                            }}
-                            className="h-4 w-4 accent-amber-600"
-                          />
-                          <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden shrink-0">
-                            {service.image ? (
-                              <img src={service.image} alt={getServiceDisplayName(service)} className="h-full w-full object-cover" />
-                            ) : null}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">{getServiceDisplayName(service)}</div>
-                            <div className="text-xs text-gray-600">{service.occasion}</div>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.description}</label>
-                <textarea
-                  value={localMenuState.description}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                  placeholder={t.placeholders.menuDescription}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.menu.menuSteps}</label>
-                <div className="space-y-3">
-                  {(localMenuState.steps || []).map((step, index) => (
-                    <div key={`step-${index}`} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                      <select
-                        value={step.label}
-                        onChange={(e) => updateMenuStep(index, { label: e.target.value })}
-                        className="col-span-12 sm:col-span-5 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900"
-                      >
-                        <option value="">{t.placeholders.stepLabel}</option>
-                        {menuStepCategories.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-
-                      <input
-                        type="number"
-                        value={step.included}
-                        onChange={(e) => updateMenuStep(index, { included: parseInt(e.target.value, 10) || 0 })}
-                        className="col-span-12 sm:col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                        min="0"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeMenuStep(index)}
-                        className="col-span-12 sm:col-span-1 w-fit justify-self-end sm:justify-self-auto p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        aria-label={t.actions.deleteItemTitle}
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addMenuStep}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 hover:text-amber-800"
-                  >
-                    <Plus size={16} />
-                    {t.menu.addStep}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {t.menu.dishesAvailable}: {localMenuState.products?.length ?? 0}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                <input
-                  type="checkbox"
-                  id="menu-active-edit"
-                  checked={localMenuState.isActive}
-                  onChange={(e) => setLocalMenuState({ ...localMenuState, isActive: e.target.checked })}
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                />
-                <label htmlFor="menu-active-edit" className="text-sm text-gray-700">{t.menu.menuActive}</label>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={handleSaveMenu}
-                  className="flex-1 bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                  <Save size={20} />
-                  {t.actions.saveMenu}
-                </button>
-                <button
-                  onClick={() => setEditingMenu(null)}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                  {t.actions.cancel}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      {icon}{label}<span className="rounded-full bg-black/5 px-1.5 text-xs tabular-nums">{count}</span>
+    </button>
   );
-};
 
-const MenuCard = ({ menu, isSelected }: { menu: MenuType; isSelected: boolean }) => (
-  (() => {
-    const displayName = getMenuDisplayName(menu) || t.menu.untitledMenu;
-    const displayDescription = getMenuDisplayDescription(menu) || '';
-
-    return (
-  <div
-    role="button"
-    tabIndex={0}
-    onClick={() => setSelectedMenu(isSelected ? null : menu)}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        setSelectedMenu(isSelected ? null : menu);
-      }
-    }}
-    className={`w-full text-left p-4 rounded-xl border transition-all duration-300 cursor-pointer ${
-      isSelected
-        ? 'border-amber-500 bg-amber-100/60 ring-2 ring-amber-200 shadow-sm'
-        : 'bg-white border-gray-200 hover:border-amber-300 hover:bg-amber-50'
-    }`}
-  >
-    <div className="flex items-start gap-3">
-      <div className="h-14 w-14 rounded-xl overflow-hidden border border-gray-200 bg-white flex-shrink-0">
-        <ImageWithFallback src={menu.image} alt={displayName} className="h-14 w-14" />
+  /* ---------- render ---------- */
+  const dishes = (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2" aria-label={t('Was Aufmerksamkeit braucht', 'Needs attention')}>
+        {chip('noPhoto', t('Ohne Foto', 'No photo'), counts.noPhoto, <Camera size={14} />)}
+        {chip('hidden', t('Versteckt', 'Hidden'), counts.hidden, <EyeOff size={14} />)}
+        {chip('lowMargin', t('Niedrige Marge', 'Low margin'), counts.lowMargin, <Euro size={14} />)}
+        {chip('noTranslation', t('Ohne Übersetzung', 'Not translated'), counts.noTranslation, <Languages size={14} />)}
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <h4 className="text-lg font-semibold text-gray-900 truncate">{displayName}</h4>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              menu.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}>
-              {menu.isActive ? t.actions.active : t.actions.inactive}
-            </span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            requestDeleteMenu(menu.id);
-          }}
-          className="p-2 rounded-full hover:bg-red-50 text-red-600 border border-red-200 shadow-sm"
-          title={t.actions.deleteMenuTitle}
-        >
-          <Trash2 size={16} />
-        </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingMenu(menu);
-              }}
-              className="p-2 rounded-full hover:bg-amber-50 text-amber-700 border border-amber-200 shadow-sm"
-              title={t.actions.editMenuTitle}
-            >
-              <Edit size={16} />
-            </button>
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[12rem] flex-1">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input className={`${adminInput} !pl-9`} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('Gericht suchen …', 'Search dishes…')} aria-label={t('Gericht suchen', 'Search dishes')} />
         </div>
-
-        <p className="text-sm text-gray-600 line-clamp-2">{displayDescription || t.menu.noDescription}</p>
-        <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-          <span>
-            {menu.services?.length
-              ? t.menu.servicesCount(menu.services.length)
-              : t.menu.noServices}
-          </span>
-          {menu.price !== undefined
-            ? <span>{t.menu.priceCurrency} {menu.price}</span>
-            : <span>{t.menu.custom}</span>}
-        </div>
-      </div>
-    </div>
-  </div>
-    );
-  })()
-);
-
-const ProductCard = ({ item }: { item: MenuItem }) => (
-    <div
-      className={`bg-white rounded-2xl shadow-sm border border-stone-100 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:shadow-md ${
-        isVisible ? 'animate-fade-in-up' : 'opacity-0'
-      } ${!item.available ? 'opacity-60' : ''}`}
-    >
-      {/* Image Section */}
-      <div className="relative h-48 w-full overflow-hidden">
-        <ImageWithFallback 
-          src={item.image}
-          alt={getProductDisplayName(item)}
-          className="w-full h-full"
-        />
-        <div className="absolute top-4 left-4 flex flex-col gap-1">
-          <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium capitalize text-gray-700">
-            {item.category}
-          </span>
-        </div>
-        <div className="absolute top-4 right-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            item.available 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            {item.available ? t.actions.available : t.actions.unavailable}
-          </span>
-        </div>
+        <select className={`${adminSelect} !w-auto`} value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t('Kategorie', 'Category')}>
+          <option value="all">{t('Alle Kategorien', 'All categories')}</option>
+          {CATEGORIES.map((c) => <option key={c.key} value={c.key}>{isDe ? c.de : c.en}</option>)}
+        </select>
+        <select className={`${adminSelect} !w-auto`} value={status} onChange={(e) => setStatus(e.target.value as any)} aria-label="Status">
+          <option value="all">{t('Alle', 'All')}</option>
+          <option value="visible">{t('Sichtbar', 'Visible')}</option>
+          <option value="hidden">{t('Versteckt', 'Hidden')}</option>
+        </select>
       </div>
 
-      {/* Item Details */}
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{getProductDisplayName(item)}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-gray-600 capitalize">{item.category}</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-gray-900">{'€'}{item.price}</p>
-            <p className="text-sm text-gray-600">{t.menu.costLabel}: {'€'}{item.cost}</p>
-          </div>
-        </div>
-        
-        <p className="text-sm text-gray-700 line-clamp-2 mb-4">{getProductDisplayDescription(item)}</p>
-
-        {/* Menu Associations */}
-        <div className="mb-3">
-          <p className="text-xs text-gray-500 mb-1">{t.menu.includedInMenus}</p>
-          <div className="flex flex-wrap gap-1">
-            {item.menus.slice(0, 2).map((menuId: number) => {
-              const menu = menus.find(m => m.id === menuId);
-                return menu ? (
-                  <span key={menuId} className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">
-                   {getMenuDisplayName(menu)}
-                  </span>
-                ) : null;
-              })}
-            {item.menus.length > 2 && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
-                +{item.menus.length - 2}
-              </span>
-            )}
-            {item.menus.length === 0 && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
-                {t.filters.unassigned}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Popularity */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-gray-600">{t.menu.popularity}</span>
-            <span className="font-medium text-gray-900">{item.popularity}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-amber-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${item.popularity}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 pt-4 border-t border-gray-100">
-          <button
-            onClick={() => setEditingItem(item)}
-            className="flex-1 px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm font-medium flex items-center justify-center gap-1"
-          >
-            <Edit size={14} />
-            {t.actions.edit}
-          </button>
-          {item.available ? (
-            <button
-              onClick={() => archiveMenuItem(item.id)}
-              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-1"
-              title={t.actions.archiveItemTitle}
-            >
-              <Archive size={14} />
-            </button>
-          ) : (
-            <button
-              onClick={() => restoreMenuItem(item.id)}
-              className="px-3 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-50 transition-colors text-sm font-medium flex items-center gap-1"
-              title={t.actions.restoreItemTitle}
-            >
-              <CheckCircle size={14} />
-            </button>
+      {selectedIds.length > 0 && (
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-2xl border border-gray-900 bg-gray-900 px-4 py-3 text-sm text-white shadow-lg">
+          <strong>{t(`${selectedIds.length} ausgewählt`, `${selectedIds.length} selected`)}</strong>
+          <span className="flex-1" />
+          {canProductsEdit && (
+            <>
+              <button type="button" className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/20" onClick={() => bulk({ action: 'setAvailable', value: true }, t('Gerichte sichtbar.', 'Dishes visible.'))}>{t('Anzeigen', 'Show')}</button>
+              <button type="button" className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/20" onClick={() => bulk({ action: 'setAvailable', value: false }, t('Gerichte versteckt.', 'Dishes hidden.'))}>{t('Verstecken', 'Hide')}</button>
+              <button type="button" className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/20" onClick={() => setBulkPrice({ percent: '5' })}>{t('Preis ändern', 'Change price')}</button>
+              <select className="rounded-lg bg-white/10 px-2 py-1.5 text-white" aria-label={t('Kategorie setzen', 'Set category')} value="" onChange={(e) => e.target.value && bulk({ action: 'setCategory', value: e.target.value }, t('Kategorie geändert.', 'Category changed.'))}>
+                <option className="text-black" value="">{t('Kategorie …', 'Category…')}</option>
+                {CATEGORIES.map((c) => <option className="text-black" key={c.key} value={c.key}>{isDe ? c.de : c.en}</option>)}
+              </select>
+              <select className="rounded-lg bg-white/10 px-2 py-1.5 text-white" aria-label={t('Zu Menü hinzufügen', 'Add to menu')} value="" onChange={(e) => e.target.value && bulk({ action: 'addToMenu', value: Number(e.target.value) }, t('Zum Menü hinzugefügt.', 'Added to menu.'))}>
+                <option className="text-black" value="">{t('Zu Menü …', 'Add to menu…')}</option>
+                {menus.map((m) => <option className="text-black" key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </>
           )}
-          <button
-            onClick={() => deleteMenuItem(item.id)}
-            className="px-3 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
-            title={t.actions.deleteItemTitle}
-          >
-            <Trash2 size={14} />
-          </button>
+          {canProductsDelete && <button type="button" className="rounded-lg bg-red-600 px-3 py-1.5 hover:bg-red-700" onClick={() => askDeleteProduct(selectedIds)}>{t('Löschen', 'Delete')}</button>}
+          <button type="button" className="rounded-lg px-2 py-1.5 underline" onClick={() => setSelection(new Set())}>{t('Auswahl aufheben', 'Clear')}</button>
         </div>
-      </div>
+      )}
+
+      {filtered.length > 0 && (
+        <label className="flex items-center gap-2 px-1 text-sm text-gray-600">
+          <input type="checkbox" className="accent-gray-900" checked={allFilteredSelected}
+            onChange={(e) => setSelection(e.target.checked ? new Set([...selection, ...filtered.map((p) => p.id)]) : new Set([...selection].filter((id) => !filtered.some((p) => p.id === id))))} />
+          {t(`${filtered.length} Gerichte`, `${filtered.length} dishes`)}
+        </label>
+      )}
+
+      <ul className="space-y-2">
+        {filtered.map((p) => {
+          const margin = marginOf(p.price, p.cost);
+          return (
+            <li key={p.id} className={`${adminCard} flex items-center gap-3 !rounded-2xl p-3 sm:gap-4 sm:p-4 ${selection.has(p.id) ? 'ring-2 ring-gray-900' : ''}`}>
+              <input type="checkbox" className="accent-gray-900" aria-label={t('Auswählen', 'Select')} checked={selection.has(p.id)}
+                onChange={(e) => { const next = new Set(selection); if (e.target.checked) next.add(p.id); else next.delete(p.id); setSelection(next); }} />
+              <button type="button" onClick={() => openProduct(p)} className="flex min-w-0 flex-1 items-center gap-3 text-left" disabled={!session.can('products.view')}>
+                <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:h-16 sm:w-16">
+                  {p.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+                  ) : <Camera size={18} className="absolute inset-0 m-auto text-gray-400" />}
+                </span>
+                <span className="min-w-0">
+                  <span className={`block line-clamp-2 font-semibold sm:truncate ${p.available ? 'text-gray-900' : 'text-gray-500'}`}>{p.name}</span>
+                  <span className="block truncate text-xs text-gray-500">
+                    {categoryLabel(String(p.category), isDe)} · {t(`in ${menuCountOf(p)} Menüs`, `in ${menuCountOf(p)} menus`)}
+                    {!hasTranslations(p) && <span className="ml-1 text-amber-700">· {t('nicht übersetzt', 'not translated')}</span>}
+                  </span>
+                </span>
+              </button>
+              <div className="text-right">
+                {priceEdit?.id === p.id ? (
+                  <input autoFocus inputMode="decimal" className="w-20 rounded-lg border border-amber-500 px-2 py-1 text-right text-sm" value={priceEdit.value}
+                    onChange={(e) => setPriceEdit({ id: p.id, value: e.target.value })} onBlur={commitPrice}
+                    onKeyDown={(e) => { if (e.key === 'Enter') commitPrice(); if (e.key === 'Escape') setPriceEdit(null); }} aria-label={t('Preis', 'Price')} />
+                ) : (
+                  <button type="button" className="rounded-lg px-2 py-1 text-sm font-semibold hover:bg-stone-100 disabled:hover:bg-transparent" disabled={!canProductsEdit}
+                    title={canProductsEdit ? t('Preis ändern', 'Edit price') : undefined} onClick={() => setPriceEdit({ id: p.id, value: String(p.price) })}>
+                    {euro(p.price, locale)}
+                  </button>
+                )}
+                {margin !== null && <span className={`block text-[11px] ${margin < 0.4 ? 'text-red-600' : 'text-gray-500'}`}>{Math.round(margin * 100)} % {t('Marge', 'margin')}</span>}
+              </div>
+              <button type="button" role="switch" aria-checked={p.available} aria-label={t('Sichtbar im Shop', 'Visible in shop')} disabled={!canProductsEdit || busy}
+                onClick={() => toggleAvailable(p)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${p.available ? 'bg-emerald-500' : 'bg-stone-300'}`}>
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${p.available ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
+              <div className="hidden gap-1 sm:flex">
+                {canProductsEdit && <button type="button" className="rounded-lg p-2 text-gray-600 hover:bg-stone-100" aria-label={t('Bearbeiten', 'Edit')} onClick={() => openProduct(p)}><Pencil size={16} /></button>}
+                {canProductsCreate && <button type="button" className="rounded-lg p-2 text-gray-600 hover:bg-stone-100" aria-label={t('Duplizieren', 'Duplicate')} onClick={() => duplicateProduct(p)}><Copy size={16} /></button>}
+              </div>
+            </li>
+          );
+        })}
+        {!loading && filtered.length === 0 && (
+          <li className={`${adminCard} p-8 text-center text-gray-600`}>
+            {products.length === 0 ? t('Noch keine Gerichte. Legen Sie das erste an.', 'No dishes yet. Add the first one.') : t('Keine Treffer für diese Filter.', 'Nothing matches these filters.')}
+          </li>
+        )}
+      </ul>
     </div>
   );
 
-  const ViewModeToggle = () => (
-    <div className="bg-white rounded-lg border border-gray-200 p-1 flex items-center gap-1">
-      <button
-        onClick={() => setViewMode('split')}
-        className={`px-2 py-2 rounded-md flex items-center gap-2 text-xs sm:text-sm font-medium ${
-          viewMode === 'split' ? 'bg-amber-100 text-amber-700' : 'text-black hover:bg-gray-50'
-        }`}
-      >
-        <LayoutGrid size={16} />
-        <span className="hidden sm:inline">{t.menu.splitView}</span>
-      </button>
-      <button
-        onClick={() => setViewMode('menus')}
-        className={`px-2 py-2 rounded-md flex items-center gap-2 text-xs sm:text-sm font-medium ${
-          viewMode === 'menus' ? 'bg-amber-100 text-amber-700' : 'text-black hover:bg-gray-50'
-        }`}
-      >
-        <List size={16} />
-        <span className="hidden sm:inline">{t.menu.menusTitle} {t.menu.only}</span>
-      </button>
-      <button
-        onClick={() => setViewMode('products')}
-        className={`px-2 py-2 rounded-md flex items-center gap-2 text-xs sm:text-sm font-medium ${
-          viewMode === 'products' ? 'bg-amber-100 text-amber-700' : 'text-black hover:bg-gray-50'
-        }`}
-      >
-        <Grid size={16} />
-        <span className="hidden sm:inline">{t.menu.productsOnly}</span>
-      </button>
+  const menuGrid = (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {menus.map((m) => {
+        const dishCount = (m.menuProducts || []).length;
+        const courses = (m.steps || []).filter((s) => Number(s.included) > 0);
+        return (
+          <article key={m.id} className={`${adminCard} flex flex-col overflow-hidden !rounded-2xl ${m.isActive ? '' : 'opacity-75'}`}>
+            <button type="button" className="relative block h-36 w-full bg-stone-100 text-left" onClick={() => openMenu(m)} disabled={!session.can('menus.view')}>
+              {m.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+              ) : <Camera size={22} className="absolute inset-0 m-auto text-gray-400" />}
+              {!m.isActive && <span className="absolute left-3 top-3 rounded-full bg-gray-900 px-2.5 py-1 text-xs font-semibold text-white">{t('Inaktiv', 'Inactive')}</span>}
+            </button>
+            <div className="flex flex-1 flex-col gap-2 p-4">
+              <h3 className="font-semibold text-gray-900">{m.name}</h3>
+              <p className="text-sm text-gray-600">
+                {m.price != null ? t(`${euro(m.price, locale)} p. P.`, `${euro(m.price, locale)} per person`) : t('Preis auf Anfrage', 'Price on request')}
+                {m.minPeople ? ` · ${t(`ab ${m.minPeople} Gästen`, `min. ${m.minPeople} guests`)}` : ''}
+              </p>
+              <p className="text-xs text-gray-500">
+                {courses.map((s) => `${s.included}× ${categoryLabel(String(s.label).toUpperCase(), isDe)}`).join(' · ') || t('Keine Gänge festgelegt', 'No courses set')}
+              </p>
+              <p className="text-xs text-gray-500">{t(`${dishCount} Gerichte zur Auswahl`, `${dishCount} dishes to choose from`)}</p>
+              <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                <button type="button" role="switch" aria-checked={m.isActive} aria-label={t('Aktiv', 'Active')} disabled={!canMenusEdit || busy} onClick={() => toggleMenuActive(m)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${m.isActive ? 'bg-emerald-500' : 'bg-stone-300'}`}>
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${m.isActive ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+                <span className="flex gap-1">
+                  {canMenusCreate && <button type="button" className="rounded-lg p-2 text-gray-600 hover:bg-stone-100" aria-label={t('Duplizieren', 'Duplicate')} onClick={() => duplicateMenu(m)}><Copy size={16} /></button>}
+                  <button type="button" className={`${adminButtonSecondary} !px-3 !py-1.5 text-xs`} onClick={() => openMenu(m)}><Pencil size={14} />{canMenusEdit ? t('Bearbeiten', 'Edit') : t('Ansehen', 'View')}</button>
+                </span>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+      {!loading && menus.length === 0 && <div className={`${adminCard} p-8 text-center text-gray-600 sm:col-span-2 xl:col-span-3`}>{t('Noch keine Menüs.', 'No menus yet.')}</div>}
     </div>
   );
-
-  const overlayLabel = isLoading
-    ? (language === 'DE' ? 'Lade...' : 'Loading...')
-    : mutatingLabel || (language === 'DE' ? 'Bitte warten...' : 'Please wait...');
 
   return (
     <AdminLayout
       navigation={navigation}
-      title={t.header.title}
-      adminUserLabel={t.admin.user}
-      adminRoleLabel={t.admin.role}
+      title={t('Speisen & Menüs', 'Dishes & menus')}
+      adminUserLabel={session.me?.name || 'Admin'}
+      adminRoleLabel={session.me?.roleName || ''}
       languageToggle={<AdminLanguageToggle language={language} onToggle={toggleLanguage} />}
       locale={locale}
-      openMenuLabel={language === 'DE' ? 'Menü öffnen' : 'Open menu'}
-      closeMenuLabel={language === 'DE' ? 'Menü schließen' : 'Close menu'}
-      headerMeta={
-        <div className="flex items-center gap-2 sm:gap-4">
-          <button
-            type="button"
-            onClick={loadMenusAndProducts}
-            disabled={isLoading || isMutating}
-            className="px-3 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{language === 'DE' ? 'Aktualisieren' : 'Refresh'}</span>
-          </button>
-          <ViewModeToggle />
-          <span className="hidden md:inline text-sm text-gray-600">
-            {t.header.totalProducts}: {menuItems.length} | {t.header.totalMenus}: {menus.length}
-          </span>
-          {isLoading ? <LoadingSpinner label={language === 'DE' ? 'Lade...' : 'Loading...'} /> : null}
-        </div>
-      }
     >
-      <LoadingOverlay open={isLoading || isMutating} label={overlayLabel} minDurationMs={900} />
-      {isLoading ? (
-        <div className="py-10">
-          <LoadingSpinner label={language === 'DE' ? 'Lade...' : 'Loading...'} />
-        </div>
-      ) : null}
-      {notification && (
-        <div className="fixed top-6 right-6 z-50">
-          <div
-            className={`px-4 py-3 rounded-lg shadow-lg text-white ${
-              notification.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'
-            }`}
-          >
-            {notification.message}
-          </div>
-        </div>
-      )}
+      <div className="space-y-5">
+        {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
+        {notice && <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{notice}</div>}
 
-      <style jsx global>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fade-in-up {
-          animation: fade-in-up 0.5s ease-out forwards;
-        }
-
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
-          {/* Header with Add Buttons */}
-          <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 font-elegant">{t.header.title}</h2>
-              <p className="text-gray-600">{t.header.subtitle}</p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                onClick={() => setShowAddMenuForm(true)}
-                className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center gap-2"
-              >
-                <FolderPlus size={20} />
-                {t.actions.addMenu}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div role="tablist" className="inline-flex rounded-2xl border border-stone-200 bg-white p-1">
+            {([['dishes', t('Gerichte', 'Dishes'), UtensilsCrossed, products.length], ['menus', t('Menüs', 'Menus'), BookOpen, menus.length]] as const).map(([key, label, Icon, n]) => (
+              <button key={key} role="tab" aria-selected={tab === key} type="button" onClick={() => setTab(key)}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${tab === key ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-stone-100'}`}>
+                <Icon size={16} />{label}<span className="text-xs opacity-70">{n}</span>
               </button>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium flex items-center gap-2"
-              >
-                <Plus size={20} />
-                {t.actions.addProduct}
-              </button>
-            </div>
+            ))}
           </div>
+          {tab === 'dishes' && canProductsCreate && <button type="button" className={adminButtonPrimary} onClick={openNewProduct}><Plus size={16} />{t('Gericht hinzufügen', 'Add dish')}</button>}
+          {tab === 'menus' && canMenusCreate && <button type="button" className={adminButtonPrimary} onClick={openNewMenu}><Plus size={16} />{t('Menü anlegen', 'New menu')}</button>}
+        </div>
 
-          {/* Filters and Search */}
-          <div className={`bg-white rounded-2xl p-6 shadow-sm border border-stone-100 backdrop-blur-sm mb-6 ${
-            isVisible ? 'animate-fade-in-up' : 'opacity-0'
-          }`}>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder={t.filters.searchProducts}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder-gray-500"
-                />
-              </div>
-              
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900"
-                >
-                <option value="all">{t.filters.allCategories}</option>
-                <option value="fingerfood">{t.filters.fingerfoods}</option>
-                <option value="starter">{t.filters.starters}</option>
-                <option value="soup">{t.filters.soups}</option>
-                <option value="main">{t.filters.mains}</option>
-                <option value="dessert">{t.filters.desserts}</option>
-                <option value="beverage">{t.filters.drinks}</option>
-                <option value="side">{t.filters.sides}</option>
-                </select>
+        {loading ? <p className="text-gray-600">{t('Lädt …', 'Loading…')}</p> : tab === 'dishes' ? dishes : menuGrid}
 
-              <select
-                value={menuFilter}
-                onChange={(e) => setMenuFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900"
-              >
-                <option value="all">{t.filters.allMenus}</option>
-                <option value="unassigned">{t.filters.unassigned}</option>
-                {menus.map(menu => (
-                  <option key={menu.id} value={menu.id}>
-                    {getMenuDisplayName(menu)}
-                  </option>
-                ))}
-              </select>
+        <p className="pt-2 text-center text-xs text-gray-500">
+          <a href="/menu_management/classic" className="underline">{t('Klassischer Editor', 'Classic editor')}</a>
+          {' · '}{t('für Spezialfälle wie die Wiederherstellung der Standardmenüs', 'for special cases such as restoring the default menus')}
+        </p>
+      </div>
 
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900"
-              >
-                <option value="all">{t.filters.allStatus}</option>
-                <option value="available">{t.filters.available}</option>
-                <option value="unavailable">{t.filters.unavailable}</option>
-              </select>
-
-              <div className="text-sm text-gray-600 flex items-center justify-start md:justify-center md:col-span-5 lg:col-span-1">
-                {filteredItems.length} products found
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content Area */}
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Menus Panel - Left */}
-            {(viewMode === 'split' || viewMode === 'menus') && (
-              <div className={`bg-white rounded-2xl shadow-sm border border-stone-100 backdrop-blur-sm ${
-                viewMode === 'split' ? 'lg:w-[320px] xl:w-[360px] 2xl:w-[420px] shrink-0' : 'w-full'
-              }`}>
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-gray-900 font-elegant">{t.menu.menusTitle}</h3>
-                    <span className="text-sm text-gray-600">{menus.length} menus</span>
-                  </div>
-                  <p className="text-gray-600 text-sm mt-1">{t.menu.menuHint}</p>
-                </div>
-                
-                <div className="p-4">
-                  <div className="grid grid-cols-1 gap-3 max-h-none overflow-visible lg:max-h-[calc(100vh-300px)] lg:overflow-y-auto">
-                    {menus.map(menu => (
-                      <MenuCard 
-                        key={menu.id} 
-                        menu={menu}
-                        isSelected={selectedMenu?.id === menu.id}
-                      />
-                    ))}
-                    {menus.length === 0 && (
-                      <div className="col-span-full text-center py-12">
-                        <Layers size={48} className="mx-auto text-gray-400 mb-4" />
-                        <p className="text-gray-500 text-lg">{t.menu.noMenusYet}</p>
-                        <button
-                          onClick={() => setShowAddMenuForm(true)}
-                          className="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center gap-2 mx-auto"
-                        >
-                          <FolderPlus size={20} />
-                          {t.menu.createFirstMenu}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Products Panel - Right */}
-            {(viewMode === 'split' || viewMode === 'products') && (
-              <div className={`bg-white rounded-2xl shadow-sm border border-stone-100 backdrop-blur-sm ${
-                viewMode === 'split' ? 'lg:flex-1' : 'w-full'
-              }`}>
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-gray-900 font-elegant">
-                      {selectedMenu
-                        ? `${getMenuDisplayName(selectedMenu)} - ${isDE ? 'Produkte' : 'Products'}`
-                        : (isDE ? 'Alle Produkte' : 'All Products')}
-                    </h3>
-
-                  </div>
-                <p className="text-gray-600 text-sm mt-1">
-                    {selectedMenu
-                      ? t.productsPanel.showingInMenu(getProductsForSelectedMenu().length)
-                      : t.productsPanel.showingAll(filteredItems.length)
-                    }
-                  </p>
-                </div>
-                
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 max-h-none overflow-visible lg:max-h-[calc(100vh-300px)] lg:overflow-y-auto">
-                    {(selectedMenu ? getProductsForSelectedMenu() : filteredItems).map((item, index) => (
-                      <ProductCard key={item.id} item={item} />
-                    ))}
-                    
-                    {(selectedMenu ? getProductsForSelectedMenu() : filteredItems).length === 0 && (
-                      <div className="md:col-span-3 text-center py-12">
-                        <Utensils size={48} className="mx-auto text-gray-400 mb-4" />
-                        <p className="text-gray-500 text-lg">
-                          {selectedMenu 
-                            ? t.productsPanel.noProductsInMenu
-                            : t.productsPanel.noProductsMatching
-                          }
-                        </p>
-                        <button
-                          onClick={() => {
-                            resetNewItemForm();
-                            setShowAddForm(true);
-                          }}
-                          className="mt-4 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium flex items-center gap-2 mx-auto"
-                        >
-                          <Plus size={20} />
-                          {selectedMenu ? t.actions.addProductToMenu : t.actions.addFirstProduct}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-      {/* Modals */}
-      {editingItem && (
-        <EditFormModal 
-          item={editingItem as MenuItem}
-          onSave={updateMenuItem}
-          onClose={() => setEditingItem(null)}
+      {productEditor && (
+        <ProductEditor
+          key={productEditor.id ?? 'new'}
+          initial={productEditor.draft}
+          isNew={!productEditor.id || productEditor.draft.name === ''}
+          menus={menus}
+          existingNames={products.map((p) => p.name)}
+          busy={busy}
+          canDelete={canProductsDelete}
+          language={language}
+          locale={locale}
+          t={t}
+          onSave={saveProduct}
+          onClose={() => setProductEditor(null)}
+          onDelete={productEditor.id ? () => askDeleteProduct([productEditor.id!]) : undefined}
         />
       )}
 
-      {showAddForm && <AddFormModal />}
-      {showAddMenuForm && <AddMenuFormModal />}
-      {editingMenu && <EditMenuFormModal menu={editingMenu} />}
-      
-      <ConfirmDialog
-        open={confirmOpen}
-        title={t.menu.confirmDeleteMenuTitle}
-        description={t.menu.confirmDeleteMenuBody}
-        confirmText={t.actions.deleteMenuTitle}
-        cancelText={t.actions.cancel}
-        isDanger
-        isLoading={isMutating}
-        onCancel={() => {
-          setConfirmOpen(false);
-          setConfirmDeleteMenuId(null);
-        }}
-        onConfirm={async () => {
-          if (confirmDeleteMenuId == null) return;
-          const targetId = confirmDeleteMenuId;
-          setConfirmOpen(false);
-          setConfirmDeleteMenuId(null);
-          await deleteMenu(targetId);
-        }}
-      />
+      {menuEditor && (
+        <MenuEditor
+          key={menuEditor.id ?? 'new'}
+          initial={menuEditor.draft}
+          isNew={!menuEditor.id}
+          products={products}
+          services={services}
+          busy={busy}
+          canDelete={canMenusDelete}
+          language={language}
+          locale={locale}
+          t={t}
+          onSave={saveMenu}
+          onClose={() => setMenuEditor(null)}
+          onDelete={menuEditor.id ? () => askDeleteMenu(menus.find((m) => m.id === menuEditor.id)!) : undefined}
+        />
+      )}
 
-      {/* Menu Detail Modal */}
-      {selectedMenuForDetail && (
-        <MenuDetailModal 
-          menu={selectedMenuForDetail}
-          onClose={() => setSelectedMenuForDetail(null)}
+      {bulkPrice && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold">{t('Preis ändern', 'Change price')}</h2>
+            <p className="mt-1 text-sm text-gray-600">{t(`Für ${selectedIds.length} Gerichte. Minus senkt, Plus erhöht den Preis.`, `For ${selectedIds.length} dishes. Minus lowers, plus raises the price.`)}</p>
+            <div className="mt-4 flex items-center gap-2">
+              <input autoFocus inputMode="decimal" className={adminInput} value={bulkPrice.percent} onChange={(e) => setBulkPrice({ percent: e.target.value })} aria-label="%" />
+              <span className="text-lg font-semibold">%</span>
+            </div>
+            <div className="mt-2 flex gap-2">
+              {['-10', '-5', '5', '10'].map((v) => <button key={v} type="button" className={`${adminButtonSecondary} !px-3 !py-1.5 text-xs`} onClick={() => setBulkPrice({ percent: v })}>{Number(v) > 0 ? `+${v}` : v} %</button>)}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" className={adminButtonSecondary} onClick={() => setBulkPrice(null)}>{t('Abbrechen', 'Cancel')}</button>
+              <button type="button" className={adminButtonPrimary} disabled={!Number.isFinite(Number(bulkPrice.percent.replace(',', '.'))) || Number(bulkPrice.percent.replace(',', '.')) === 0}
+                onClick={() => { const amount = Number(bulkPrice.percent.replace(',', '.')); setBulkPrice(null); bulk({ action: 'adjustPrice', value: { mode: 'percent', amount } }, t('Preise angepasst.', 'Prices updated.')); }}>
+                {t('Anwenden', 'Apply')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirm && (
+        <ConfirmDialog
+          open
+          title={confirm.title}
+          description={confirm.message}
+          confirmText={t('Bestätigen', 'Confirm')}
+          cancelText={t('Abbrechen', 'Cancel')}
+          isDanger
+          onCancel={() => setConfirm(null)}
+          onConfirm={async () => { const job = confirm.run; setConfirm(null); await job(); }}
         />
       )}
     </AdminLayout>

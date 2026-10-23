@@ -111,6 +111,7 @@ model Product {
   ingredientsDe     Json?
   allergens         Json?
   allergensDe       Json?
+  translations      Json?
   image             String?
   popularity        Int             @default(0)
   createdAt         DateTime        @default(now())

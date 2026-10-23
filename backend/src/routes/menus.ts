@@ -15,6 +15,7 @@ router.use(requireResource('menus'));
 
 router.post('/restore-defaults', asyncHandler(menuController.restoreDefaultMenus));
 router.post('/restore-legacy', asyncHandler(menuController.restoreLegacyMenusFromBackup));
+router.post('/:id/duplicate', asyncHandler(menuController.duplicateMenu));
 router.post('/', asyncHandler(menuController.createMenu));
 router.put('/:id', asyncHandler(menuController.updateMenu));
 router.delete('/:id', asyncHandler(menuController.deleteMenu));

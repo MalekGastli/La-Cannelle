@@ -198,40 +198,57 @@ export const menuService = {
       }
     });
 
-    // Update product associations if provided
-    if (data.productIds !== undefined) {
-      // Delete existing associations
-      await prisma.menuProduct.deleteMany({
-        where: { menuId: id }
-      });
-
-      // Create new associations
-      if (data.productIds.length > 0) {
+    // Update product / service associations if provided
+    if (data.productIds !== undefined || data.products !== undefined) {
+      const productIds = data.productIds ?? data.products ?? [];
+      await prisma.menuProduct.deleteMany({ where: { menuId: id } });
+      if (productIds.length > 0) {
         await prisma.menuProduct.createMany({
-          data: data.productIds.map(productId => ({ menuId: id, productId }))
+          data: productIds.map(productId => ({ menuId: id, productId })),
+          skipDuplicates: true
         });
       }
-
-      // Fetch updated menu
-      return this.getMenuById(id, { includeImages: true });
     }
 
     const serviceIds = data.serviceIds ?? data.services;
     if (serviceIds !== undefined) {
-      await prisma.menuService.deleteMany({
-        where: { menuId: id }
-      });
-
+      await prisma.menuService.deleteMany({ where: { menuId: id } });
       if (serviceIds.length > 0) {
         await prisma.menuService.createMany({
-          data: serviceIds.map(serviceId => ({ menuId: id, serviceId }))
+          data: serviceIds.map(serviceId => ({ menuId: id, serviceId })),
+          skipDuplicates: true
         });
       }
+    }
 
+    if (data.productIds !== undefined || data.products !== undefined || serviceIds !== undefined) {
       return this.getMenuById(id, { includeImages: true });
     }
 
     return menu;
+  },
+
+  async duplicateMenu(id: number) {
+    const source = await prisma.menu.findUnique({
+      where: { id },
+      include: { menuProducts: true, menuServices: true }
+    });
+    if (!source) throw new AppError('Menu not found', 404);
+    return prisma.menu.create({
+      data: {
+        name: `${source.name} (Kopie)`,
+        description: source.description,
+        isActive: false,
+        startDate: source.startDate,
+        endDate: source.endDate,
+        price: source.price,
+        image: source.image,
+        minPeople: source.minPeople,
+        steps: (source.steps as any) ?? undefined,
+        menuProducts: { create: source.menuProducts.map((mp) => ({ productId: mp.productId })) },
+        menuServices: { create: source.menuServices.map((ms) => ({ serviceId: ms.serviceId })) }
+      }
+    });
   },
 
   async deleteMenu(id: number) {

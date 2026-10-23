@@ -5,6 +5,9 @@ import type { Language } from '@/lib/hooks/useTranslation';
  * [German name, German description, [EN, FR, TR] name, [EN, FR, TR] description].
  * Anything not listed (e.g. products an admin adds later) is shown as typed.
  */
+/** Translations an admin typed in for a product; they win over the built-in dictionary. */
+export type ProductTranslations = Partial<Record<'EN' | 'FR' | 'TR', { name?: string; description?: string }>> | null;
+
 type Row = [string, string, [string, string, string], [string, string, string]];
 
 const ROWS: Row[] = [
@@ -110,10 +113,12 @@ const lookup = (index: Map<string, [string, string, string]>, language: Language
 };
 
 /** Localised product / dish name (the stored name is German). */
-export const productName = (language: Language, name?: string | null): string => lookup(NAME_INDEX, language, name || '');
+export const productName = (language: Language, name?: string | null, translations?: ProductTranslations): string =>
+  (language !== 'DE' && translations?.[language]?.name?.trim()) || lookup(NAME_INDEX, language, name || '');
 
 /** Localised product / dish description (the stored description is German). */
-export const productDesc = (language: Language, description?: string | null): string => lookup(DESC_INDEX, language, description || '');
+export const productDesc = (language: Language, description?: string | null, translations?: ProductTranslations): string =>
+  (language !== 'DE' && translations?.[language]?.description?.trim()) || lookup(DESC_INDEX, language, description || '');
 
 // Service and accessory descriptions that were entered in German in the database.
 const TEXT: Record<string, [string, string, string]> = {
@@ -151,3 +156,24 @@ export const serviceName = (language: Language, name?: string | null): string =>
   if (language === 'DE') return value;
   return SERVICE_NAMES[value.trim()]?.[SLOT[language]] ?? value;
 };
+
+const ALLERGEN_NAMES: Record<string, { FR: string; TR: string }> = {
+  Gluten: { FR: 'Gluten', TR: 'Gluten' },
+  Crustaceans: { FR: 'Crustacés', TR: 'Kabuklular' },
+  Eggs: { FR: 'Œufs', TR: 'Yumurta' },
+  Fish: { FR: 'Poisson', TR: 'Balık' },
+  Peanuts: { FR: 'Arachides', TR: 'Yer fıstığı' },
+  Soy: { FR: 'Soja', TR: 'Soya' },
+  Milk: { FR: 'Lait', TR: 'Süt' },
+  Nuts: { FR: 'Fruits à coque', TR: 'Sert kabuklu yemişler' },
+  Celery: { FR: 'Céleri', TR: 'Kereviz' },
+  Mustard: { FR: 'Moutarde', TR: 'Hardal' },
+  Sesame: { FR: 'Sésame', TR: 'Susam' },
+  Sulphites: { FR: 'Sulfites', TR: 'Sülfitler' },
+  Lupin: { FR: 'Lupin', TR: 'Acı bakla' },
+  Molluscs: { FR: 'Mollusques', TR: 'Yumuşakçalar' },
+};
+
+/** Allergen label for French / Turkish (English and German are stored with the product). */
+export const allergenName = (language: Language, english: string): string =>
+  language === 'FR' || language === 'TR' ? ALLERGEN_NAMES[english]?.[language] ?? english : english;

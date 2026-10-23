@@ -169,10 +169,10 @@ export default function CateringHomepage() {
   const showcaseItems = (products.length
       ? products.slice(0, 3).map((product) => ({
         id: product.id,
-        name: productName(language, product.name),
+        name: productName(language, product.name, product.translations),
         category: product.category,
         price: product.price !== undefined ? `${product.price.toFixed(2)} EUR` : undefined,
-        description: productDesc(language, product.description),
+        description: productDesc(language, product.description, product.translations),
         image: product.image,
         popular: product.popularity ? product.popularity >= 80 : false,
         featured: product.popularity ? product.popularity >= 60 : false,

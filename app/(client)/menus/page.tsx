@@ -209,13 +209,13 @@ export default function MenusPage() {
 
   const menuHighlights = useMemo(() => {
     const toHighlightItem = (
-      item: { id: number; name: string; description?: string; image?: string } | null | undefined
+      item: { id: number; name: string; description?: string; image?: string; translations?: any } | null | undefined
     ): MenuHighlightItem | null => {
       if (!item || item.id == null || !item.name) {
         return null;
       }
-      const name = productName(language, item.name);
-      const description = productDesc(language, item.description);
+      const name = productName(language, item.name, item.translations);
+      const description = productDesc(language, item.description, item.translations);
       return {
         id: item.id,
         name,
