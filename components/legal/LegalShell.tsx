@@ -5,14 +5,14 @@ import type { ReactNode } from "react";
 import SiteHeader from "@/components/site/SiteHeader";
 import SiteFooter from "@/components/site/SiteFooter";
 import Container from "@/components/site/Container";
-import { useTranslation } from "@/lib/hooks/useTranslation";
+import { useTranslation, pick } from "@/lib/hooks/useTranslation";
 import { commonTranslations } from "@/lib/translations/common";
 
 export default function LegalShell({ title, children }: { title: string; children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { language, toggleLanguage } = useTranslation("home");
-  const common = commonTranslations[language];
+  const common = pick(commonTranslations, language);
 
   return (
     <div className="min-h-screen bg-[#faf6ef] text-[#1a1410]">

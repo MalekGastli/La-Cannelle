@@ -1,4 +1,4 @@
-import type { Language } from '../hooks/useTranslation';
+import type { BaseLanguage as Language } from '../hooks/useTranslation';
 
 type AdminTranslations = {
   nav: {

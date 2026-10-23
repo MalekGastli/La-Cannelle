@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { L } from '@/lib/i18n/inline';
 import Link from "next/link";
 import { Menu, X, ArrowUpRight, ChevronDown, Phone, Mail, MapPin, PlayCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -74,8 +76,7 @@ export default function SiteHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, [transparentOnTop]);
 
-  const de = language === "DE";
-  const common = commonTranslations[language];
+  const common = commonTranslations[language === "DE" ? "DE" : "EN"];
   const phone = common.footer.contactPhone;
   const email = common.footer.contactEmail;
   const address = common.footer.contactAddress;
@@ -86,40 +87,38 @@ export default function SiteHeader({
       {
         href: "/home",
         label: nav.home,
-        description: de ? "Schnellzugriff auf die Highlights der Startseite." : "Quick links to the highlights on our home page.",
+        description: L(language, "Schnellzugriff auf die Highlights der Startseite.", "Quick links to the highlights on our home page."),
         items: [
-          { href: "/home#menu-snapshots", title: de ? "Menu Snapshots" : "Menu snapshots", description: de ? "Kuratiert & inspirierend" : "Curated and inspiring" },
-          { href: "/home#lookbook", title: "Lookbook", description: de ? "Galerie & Reels" : "Gallery and reels" },
-          { href: "/home#collections", title: de ? "Kollektionen" : "Collections", description: de ? "Beliebte Kategorien" : "Popular categories" },
-          { href: "/home#service-formats", title: "Services", description: de ? "Formate & Angebote" : "Formats and offerings" },
-          { href: "/home#testimonials", title: "Feedback", description: de ? "Was Kunden sagen" : "What clients say" },
+          { href: "/home#menu-snapshots", title: L(language, "Menu Snapshots", "Menu snapshots"), description: L(language, "Kuratiert & inspirierend", "Curated and inspiring") },
+          { href: "/home#lookbook", title: "Lookbook", description: L(language, "Galerie & Reels", "Gallery and reels") },
+          { href: "/home#collections", title: L(language, "Kollektionen", "Collections"), description: L(language, "Beliebte Kategorien", "Popular categories") },
+          { href: "/home#service-formats", title: "Services", description: L(language, "Formate & Angebote", "Formats and offerings") },
+          { href: "/home#testimonials", title: "Feedback", description: L(language, "Was Kunden sagen", "What clients say") },
         ],
       },
       {
         href: "/services",
         label: nav.services,
-        description: de
-          ? "Entdecken Sie unsere Catering-Formate – flexibel, elegant, zuverlässig."
-          : "Explore our catering formats — flexible, elegant, reliable.",
+        description: L(language, "Entdecken Sie unsere Catering-Formate – flexibel, elegant, zuverlässig.", "Explore our catering formats — flexible, elegant, reliable."),
         items: [
-          { href: "/services#office-catering", title: "Office Catering", description: de ? "Meetings, Lunch & Empfang" : "Meetings, lunch & receptions" },
-          { href: "/services#weddings", title: de ? "Hochzeiten" : "Weddings", description: de ? "Feierlich, stressfrei, perfekt" : "Elegant, seamless, unforgettable" },
-          { href: "/services#corporate-events", title: "Corporate Events", description: de ? "Professionell & hochwertig" : "Premium and polished" },
+          { href: "/services#office-catering", title: "Office Catering", description: L(language, "Meetings, Lunch & Empfang", "Meetings, lunch & receptions") },
+          { href: "/services#weddings", title: L(language, "Hochzeiten", "Weddings"), description: L(language, "Feierlich, stressfrei, perfekt", "Elegant, seamless, unforgettable") },
+          { href: "/services#corporate-events", title: "Corporate Events", description: L(language, "Professionell & hochwertig", "Premium and polished") },
         ],
       },
       {
         href: "/menus",
         label: nav.menus,
-        description: de ? "Kuratiert, saisonal und bereit zu bestellen." : "Curated, seasonal, and ready to order.",
+        description: L(language, "Kuratiert, saisonal und bereit zu bestellen.", "Curated, seasonal, and ready to order."),
         items: [
-          { href: "/menus", title: de ? "Menus entdecken" : "Browse menus", description: de ? "Alle Highlights ansehen" : "Explore all highlights" },
-          { href: "/home#menu-snapshots", title: de ? "Menu Snapshots" : "Menu snapshots", description: de ? "Schneller Überblick" : "Quick curated peek" },
-          { href: "/order", title: de ? "Direkt bestellen" : "Order now", description: de ? "In wenigen Schritten" : "In a few steps" },
+          { href: "/menus", title: L(language, "Menus entdecken", "Browse menus"), description: L(language, "Alle Highlights ansehen", "Explore all highlights") },
+          { href: "/home#menu-snapshots", title: L(language, "Menu Snapshots", "Menu snapshots"), description: L(language, "Schneller Überblick", "Quick curated peek") },
+          { href: "/order", title: L(language, "Direkt bestellen", "Order now"), description: L(language, "In wenigen Schritten", "In a few steps") },
         ],
       },
       { href: "/contact", label: nav.contact },
     ],
-    [de, nav]
+    [language, nav]
   );
 
   const orderHandler = onOrderClick ?? (() => {});
@@ -131,24 +130,6 @@ export default function SiteHeader({
         ? "text-white after:scale-x-100"
         : "text-white/70 hover:text-white after:scale-x-0 hover:after:scale-x-100"
     }`;
-
-  const langButton = (className: string, label: string) => (
-    <button
-      type="button"
-      onClick={toggleLanguage}
-      aria-label={language === "EN" ? a11y.switchToGerman : a11y.switchToEnglish}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/90 transition-colors hover:border-white/40 hover:bg-white/10 ${className}`}
-    >
-      <Image
-        src={FLAGS[language]}
-        alt={language === "EN" ? a11y.englishFlagAlt : a11y.germanFlagAlt}
-        width={18}
-        height={18}
-        className="h-[18px] w-auto rounded-sm"
-      />
-      <span>{label}</span>
-    </button>
-  );
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
@@ -185,7 +166,7 @@ export default function SiteHeader({
                 Reels
               </a>
               <Link href="/contact" className="inline-flex items-center gap-1.5 text-[color:var(--accent)] transition-colors hover:text-white">
-                {de ? "Angebot anfragen" : "Request a quote"}
+                {L(language, "Angebot anfragen", "Request a quote")}
                 <ArrowUpRight size={13} />
               </Link>
             </div>
@@ -256,7 +237,7 @@ export default function SiteHeader({
             </nav>
 
             <div className="hidden items-center gap-3 md:flex">
-              {langButton("", language)}
+              <LanguageSwitcher />
               <button
                 type="button"
                 onClick={() => orderHandler()}
@@ -334,7 +315,7 @@ export default function SiteHeader({
               })}
 
               <div className="mt-5 flex items-center gap-3">
-                {langButton("flex-1 py-3", language === "EN" ? "English" : "Deutsch")}
+                <LanguageSwitcher className="flex-1" />
                 <button
                   type="button"
                   onClick={() => {

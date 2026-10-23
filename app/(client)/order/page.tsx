@@ -1,5 +1,8 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import type { Language } from '@/lib/hooks/useTranslation';
+import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { L, P, localeOf, weekdaysOf } from '@/lib/i18n/inline';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useConsent, ConsentGate } from '@/components/site/ConsentProvider';
@@ -12,7 +15,7 @@ import { systemApi, type ClosedDate } from '@/lib/api/system';
 import { servicesApi, type Service } from '@/lib/api/services';
 import { PhoneNumberInput, type PhoneNumberInputMeta } from '@/components/site/PhoneNumberInput';
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
-import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useTranslation, pick } from '@/lib/hooks/useTranslation';
 import { commonTranslations } from '@/lib/translations/common';
 import { 
   Menu, X, ChevronRight, ChevronLeft, Phone, Mail, MapPin, 
@@ -51,6 +54,8 @@ const GERMAN_STATES = [
 ];
 
 const MIN_GUESTS = 10;
+/** Minimum net order value (EUR, excl. VAT), same idea as mymycatering's minimum order value. */
+const MIN_ORDER_VALUE = 199;
 
 const normalizePlaces = (data: any) => {
   const defaultPostCode = data?.['post code'] || '';
@@ -338,7 +343,7 @@ const DatePicker = ({
   value: string;
   onChange: (value: string) => void;
   minDate: Date;
-  language: 'EN' | 'DE';
+  language: Language;
   placeholder: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -348,7 +353,7 @@ const DatePicker = ({
     return new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
   });
   const pickerRef = useRef<HTMLDivElement | null>(null);
-  const locale = language === 'DE' ? 'de-DE' : 'en-US';
+  const locale = localeOf(language);
   const minDateStart = new Date(minDate);
   minDateStart.setHours(0, 0, 0, 0);
 
@@ -374,9 +379,7 @@ const DatePicker = ({
     year: 'numeric'
   });
 
-  const dayLabels = language === 'DE'
-    ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
-    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayLabels = weekdaysOf(language);
 
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
@@ -482,7 +485,7 @@ const TimePicker = ({
 }: {
   value: string;
   onChange: (value: string) => void;
-  language: 'EN' | 'DE';
+  language: Language;
   placeholder: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -535,7 +538,7 @@ const TimePicker = ({
           </div>
           {!slots.length && (
             <div className="px-4 py-3 text-sm text-gray-500">
-              {language === 'DE' ? 'Keine Zeiten verfügbar.' : 'No times available.'}
+              {L(language, 'Keine Zeiten verfügbar.', 'No times available.')}
             </div>
           )}
         </div>
@@ -595,7 +598,7 @@ const PostalCodeFields = ({
 export default function OrderPage() {
   const router = useRouter();
   const { t, language, toggleLanguage, setLanguage: setAppLanguage } = useTranslation('order');
-  const commonA11y = commonTranslations[language].accessibility;
+  const commonA11y = pick(commonTranslations, language).accessibility;
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
   const isCaptchaEnabled = Boolean(turnstileSiteKey);
   
@@ -708,79 +711,67 @@ export default function OrderPage() {
   const ui = useMemo(() => {
     const isDE = language === 'DE';
     return {
-      close: isDE ? 'Schließen' : 'Close',
-      moreInfo: isDE ? 'Mehr Infos' : 'More info',
-      noImage: isDE ? 'Kein Bild' : 'No image',
-      notAvailable: isDE ? 'Nicht verfügbar' : 'Not Available',
-      addToOrder: isDE ? 'Zur Bestellung hinzufügen' : 'Add to Order',
-      updateOrder: isDE ? 'Bestellung aktualisieren' : 'Update Order',
-      remove: isDE ? 'Entfernen' : 'Remove',
-      dishesAvailable: isDE ? 'Gerichte verfügbar' : 'dishes available',
+      close: L(language, 'Schließen', 'Close'),
+      moreInfo: L(language, 'Mehr Infos', 'More info'),
+      noImage: L(language, 'Kein Bild', 'No image'),
+      notAvailable: L(language, 'Nicht verfügbar', 'Not Available'),
+      addToOrder: L(language, 'Zur Bestellung hinzufügen', 'Add to Order'),
+      updateOrder: L(language, 'Bestellung aktualisieren', 'Update Order'),
+      remove: L(language, 'Entfernen', 'Remove'),
+      dishesAvailable: L(language, 'Gerichte verfügbar', 'dishes available'),
       fromPerGuest: (price: any) => {
         // Keep legacy key name but remove "Ab/From" prefix.
-        return isDE ? `€${price}/Gast` : `€${price}/guest`;
+        return L(language, `€${price}/Gast`, `€${price}/guest`);
       },
-      customPricing: isDE ? 'Preis auf Anfrage' : 'Custom Pricing',
-      exclVat: isDE ? 'zzgl. MwSt.' : 'Excl. VAT',
-      guestMinimum: (count: any) => isDE ? `${count} Gäste Minimum` : `${count} Guest Minimum`,
-      selectFood: isDE ? 'Speisen auswählen' : 'Select Food',
-      optionalAccessoriesTitle: isDE ? 'Optionales Zubehör' : 'Optional Accessories',
-      optionalAccessoriesSubtitle: isDE
-        ? 'Wählen Sie Teller, Besteck und weiteres Zubehör für Ihr Event'
-        : 'Select plates, cutlery, and other accessories for your event',
-      optionalAccessoriesHint: isDE
-        ? 'Keine Auswahl erforderlich – wählen Sie nur, was Sie brauchen'
-        : 'No selection required - choose only what you need',
-      continueWithoutAccessories: isDE ? 'Weiter ohne Zubehör' : 'Continue without accessories',
-      deliveryPaymentTitle: isDE ? 'Lieferung & Zahlung' : 'Delivery & Payment',
-      deliveryPaymentSubtitle: isDE
-        ? 'Bestätigen Sie Ihre Lieferdaten und schließen Sie die Zahlung ab'
-        : 'Confirm your delivery contact and complete payment',
-      deliveryContactTitle: isDE ? 'Lieferkontakt' : 'Delivery Contact',
-      deliveryContactSubtitle: isDE ? 'Wen sollen wir am Liefertag erreichen?' : 'Who should we reach on delivery day?',
-      productDetailsTitle: isDE ? 'Produktdetails' : 'Product details',
-      noDescription: isDE ? 'Keine Beschreibung verfügbar.' : 'No description available.',
-      price: isDE ? 'Preis' : 'Price',
-      notSpecified: isDE ? 'Nicht angegeben' : 'Not specified',
-      availability: isDE ? 'Verfügbarkeit' : 'Availability',
-      available: isDE ? 'Verfügbar' : 'Available',
-      notAvailableShort: isDE ? 'Nicht verfügbar' : 'Not available',
-      ingredients: isDE ? 'Zutaten' : 'Ingredients',
-      allergens: isDE ? 'Allergene' : 'Allergens',
-      bankTransferTitle: isDE ? 'Banküberweisung' : 'Bank Transfer Details',
-      bankTransferIntro: isDE ? 'Bitte nutzen Sie diese Daten für Ihre Überweisung:' : 'Please use these details for your transfer:',
-      bankTransferReference: isDE ? 'Verwenden Sie Ihre Bestellnummer als Verwendungszweck.' : 'Use your order ID as the payment reference.',
-      accountName: isDE ? 'Kontoinhaber' : 'Account Name',
-      bank: isDE ? 'Bank' : 'Bank',
-      yourBankName: isDE ? 'Ihre Bank' : 'Your Bank Name',
-      invoiceTitle: isDE ? 'Rechnung' : 'Invoice',
-      invoiceDescription: isDE 
-        ? 'Sie erhalten eine Rechnung per E-Mail innerhalb von 24 Stunden nach Ihrer Bestellung.'
-        : 'You will receive an invoice via email within 24 hours of placing your order.',
-      invoiceTerms: isDE 
-        ? 'Zahlbar innerhalb von 14 Tagen nach Erhalt der Rechnung.'
-        : 'Payable within 14 days of receiving the invoice.',
-      confirmOrder: isDE ? 'Bestellung bestätigen' : 'Confirm Order',
-      orderSubmitted: isDE ? 'Bestellung abgeschickt' : 'Order Submitted',
-      orderSubmittedMessage: isDE
-        ? 'Vielen Dank! Ihre Bestellung wurde erhalten. Sie erhalten in Kürze eine Bestätigungs-E-Mail mit allen Details.'
-        : 'Thank you! Your order has been received. You will receive a confirmation email shortly with all the details.',
-      paymentMethod: isDE ? 'Zahlungsmethode' : 'Payment Method',
+      customPricing: L(language, 'Preis auf Anfrage', 'Custom Pricing'),
+      exclVat: L(language, 'zzgl. MwSt.', 'Excl. VAT'),
+      guestMinimum: (count: any) => L(language, `${count} Gäste Minimum`, `${count} Guest Minimum`),
+      selectFood: L(language, 'Speisen auswählen', 'Select Food'),
+      optionalAccessoriesTitle: L(language, 'Optionales Zubehör', 'Optional Accessories'),
+      optionalAccessoriesSubtitle: L(language, 'Wählen Sie Teller, Besteck und weiteres Zubehör für Ihr Event', 'Select plates, cutlery, and other accessories for your event'),
+      optionalAccessoriesHint: L(language, 'Keine Auswahl erforderlich – wählen Sie nur, was Sie brauchen', 'No selection required - choose only what you need'),
+      continueWithoutAccessories: L(language, 'Weiter ohne Zubehör', 'Continue without accessories'),
+      deliveryPaymentTitle: L(language, 'Lieferung & Zahlung', 'Delivery & Payment'),
+      deliveryPaymentSubtitle: L(language, 'Bestätigen Sie Ihre Lieferdaten und schließen Sie die Zahlung ab', 'Confirm your delivery contact and complete payment'),
+      deliveryContactTitle: L(language, 'Lieferkontakt', 'Delivery Contact'),
+      deliveryContactSubtitle: L(language, 'Wen sollen wir am Liefertag erreichen?', 'Who should we reach on delivery day?'),
+      productDetailsTitle: L(language, 'Produktdetails', 'Product details'),
+      noDescription: L(language, 'Keine Beschreibung verfügbar.', 'No description available.'),
+      price: L(language, 'Preis', 'Price'),
+      notSpecified: L(language, 'Nicht angegeben', 'Not specified'),
+      availability: L(language, 'Verfügbarkeit', 'Availability'),
+      available: L(language, 'Verfügbar', 'Available'),
+      notAvailableShort: L(language, 'Nicht verfügbar', 'Not available'),
+      ingredients: L(language, 'Zutaten', 'Ingredients'),
+      allergens: L(language, 'Allergene', 'Allergens'),
+      bankTransferTitle: L(language, 'Banküberweisung', 'Bank Transfer Details'),
+      bankTransferIntro: L(language, 'Bitte nutzen Sie diese Daten für Ihre Überweisung:', 'Please use these details for your transfer:'),
+      bankTransferReference: L(language, 'Verwenden Sie Ihre Bestellnummer als Verwendungszweck.', 'Use your order ID as the payment reference.'),
+      accountName: L(language, 'Kontoinhaber', 'Account Name'),
+      bank: L(language, 'Bank', 'Bank'),
+      yourBankName: L(language, 'Ihre Bank', 'Your Bank Name'),
+      invoiceTitle: L(language, 'Rechnung', 'Invoice'),
+      invoiceDescription: L(language, 'Sie erhalten eine Rechnung per E-Mail innerhalb von 24 Stunden nach Ihrer Bestellung.', 'You will receive an invoice via email within 24 hours of placing your order.'),
+      invoiceTerms: L(language, 'Zahlbar innerhalb von 14 Tagen nach Erhalt der Rechnung.', 'Payable within 14 days of receiving the invoice.'),
+      confirmOrder: L(language, 'Bestellung bestätigen', 'Confirm Order'),
+      orderSubmitted: L(language, 'Bestellung abgeschickt', 'Order Submitted'),
+      orderSubmittedMessage: L(language, 'Vielen Dank! Ihre Bestellung wurde erhalten. Sie erhalten in Kürze eine Bestätigungs-E-Mail mit allen Details.', 'Thank you! Your order has been received. You will receive a confirmation email shortly with all the details.'),
+      paymentMethod: L(language, 'Zahlungsmethode', 'Payment Method'),
     };
   }, [language]);
   
   const postalCopy = useMemo(() => ({
-    state: language === 'DE' ? 'Bundesland' : 'State',
-    statePlaceholder: language === 'DE' ? 'Bundesland wählen' : 'Select state',
-    city: language === 'DE' ? 'Stadt' : 'City',
-    cityPlaceholder: language === 'DE' ? 'z.B. Berlin' : 'e.g. Berlin',
-    findPostal: language === 'DE' ? 'PLZ suchen' : 'Find postal codes',
-    searching: language === 'DE' ? 'Suche...' : 'Searching...',
-    selectPostal: language === 'DE' ? 'Postleitzahl wählen' : 'Select postal code',
-    postalCode: language === 'DE' ? 'Postleitzahl' : 'Postal Code',
-    postalPlaceholder: language === 'DE' ? 'z.B. 10115' : 'e.g. 10115',
-    germanyOnly: language === 'DE' ? 'Nur Deutschland (5-stellig).' : 'Germany only (5 digits).',
-    checking: language === 'DE' ? 'Prüfe...' : 'Checking...'
+    state: L(language, 'Bundesland', 'State'),
+    statePlaceholder: L(language, 'Bundesland wählen', 'Select state'),
+    city: L(language, 'Stadt', 'City'),
+    cityPlaceholder: L(language, 'z.B. Berlin', 'e.g. Berlin'),
+    findPostal: L(language, 'PLZ suchen', 'Find postal codes'),
+    searching: L(language, 'Suche...', 'Searching...'),
+    selectPostal: L(language, 'Postleitzahl wählen', 'Select postal code'),
+    postalCode: L(language, 'Postleitzahl', 'Postal Code'),
+    postalPlaceholder: L(language, 'z.B. 10115', 'e.g. 10115'),
+    germanyOnly: L(language, 'Nur Deutschland (5-stellig).', 'Germany only (5 digits).'),
+    checking: L(language, 'Prüfe...', 'Checking...')
   }), [language]);
   
   const categoryMeta = useMemo(() => ({
@@ -789,27 +780,27 @@ export default function OrderPage() {
     side: { label: t.productSelection?.sides || 'Sides', icon: Utensils, color: 'text-amber-600' },
     dessert: { label: t.productSelection?.desserts || 'Desserts', icon: Cookie, color: 'text-pink-600' },
     beverage: { label: t.productSelection?.drinks || 'Drinks', icon: Wine, color: 'text-blue-600' },
-    fingerfood: { label: language === 'DE' ? 'Fingerfood' : 'Finger Food', icon: Utensils, color: 'text-amber-700' },
-    canape: { label: language === 'DE' ? 'Canape' : 'Canape', icon: Utensils, color: 'text-amber-700' },
-    appetizer: { label: language === 'DE' ? 'Vorspeise' : 'Appetizer', icon: Utensils, color: 'text-amber-700' },
-    salad: { label: language === 'DE' ? 'Salat' : 'Salad', icon: Leaf, color: 'text-green-700' },
-    soup: { label: language === 'DE' ? 'Suppe' : 'Soup', icon: Utensils, color: 'text-orange-600' },
-    pasta: { label: language === 'DE' ? 'Pasta' : 'Pasta', icon: Utensils, color: 'text-orange-700' },
-    seafood: { label: language === 'DE' ? 'Meeresfrüchte' : 'Seafood', icon: Fish, color: 'text-sky-600' },
-    meat: { label: language === 'DE' ? 'Fleisch' : 'Meat', icon: Beef, color: 'text-red-700' },
-    vegetarian: { label: language === 'DE' ? 'Vegetarisch' : 'Vegetarian', icon: Leaf, color: 'text-green-700' },
-    vegan: { label: language === 'DE' ? 'Vegan' : 'Vegan', icon: Leaf, color: 'text-emerald-700' },
-    glutenfree: { label: language === 'DE' ? 'Glutenfrei' : 'Gluten-Free', icon: Wheat, color: 'text-amber-700' },
-    dairyfree: { label: language === 'DE' ? 'Laktosefrei' : 'Dairy-Free', icon: Milk, color: 'text-indigo-600' },
-    spicy: { label: language === 'DE' ? 'Scharf' : 'Spicy', icon: AlertCircle, color: 'text-red-600' },
-    signature: { label: language === 'DE' ? 'Signature' : 'Signature', icon: Award, color: 'text-amber-600' },
-    seasonal: { label: language === 'DE' ? 'Saisonal' : 'Seasonal', icon: Sparkles, color: 'text-amber-600' },
-    kidfriendly: { label: language === 'DE' ? 'Kinderfreundlich' : 'Kid-Friendly', icon: Heart, color: 'text-pink-600' },
-    chefspecial: { label: language === 'DE' ? 'Chef-Special' : 'Chef-Special', icon: Star, color: 'text-amber-600' },
+    fingerfood: { label: L(language, 'Fingerfood', 'Finger Food'), icon: Utensils, color: 'text-amber-700' },
+    canape: { label: L(language, 'Canape', 'Canape'), icon: Utensils, color: 'text-amber-700' },
+    appetizer: { label: L(language, 'Vorspeise', 'Appetizer'), icon: Utensils, color: 'text-amber-700' },
+    salad: { label: L(language, 'Salat', 'Salad'), icon: Leaf, color: 'text-green-700' },
+    soup: { label: L(language, 'Suppe', 'Soup'), icon: Utensils, color: 'text-orange-600' },
+    pasta: { label: L(language, 'Pasta', 'Pasta'), icon: Utensils, color: 'text-orange-700' },
+    seafood: { label: L(language, 'Meeresfrüchte', 'Seafood'), icon: Fish, color: 'text-sky-600' },
+    meat: { label: L(language, 'Fleisch', 'Meat'), icon: Beef, color: 'text-red-700' },
+    vegetarian: { label: L(language, 'Vegetarisch', 'Vegetarian'), icon: Leaf, color: 'text-green-700' },
+    vegan: { label: L(language, 'Vegan', 'Vegan'), icon: Leaf, color: 'text-emerald-700' },
+    glutenfree: { label: L(language, 'Glutenfrei', 'Gluten-Free'), icon: Wheat, color: 'text-amber-700' },
+    dairyfree: { label: L(language, 'Laktosefrei', 'Dairy-Free'), icon: Milk, color: 'text-indigo-600' },
+    spicy: { label: L(language, 'Scharf', 'Spicy'), icon: AlertCircle, color: 'text-red-600' },
+    signature: { label: L(language, 'Signature', 'Signature'), icon: Award, color: 'text-amber-600' },
+    seasonal: { label: L(language, 'Saisonal', 'Seasonal'), icon: Sparkles, color: 'text-amber-600' },
+    kidfriendly: { label: L(language, 'Kinderfreundlich', 'Kid-Friendly'), icon: Heart, color: 'text-pink-600' },
+    chefspecial: { label: L(language, 'Chef-Special', 'Chef-Special'), icon: Star, color: 'text-amber-600' },
     tapas: { label: 'Tapas', icon: Utensils, color: 'text-amber-700' },
-    bbq: { label: language === 'DE' ? 'BBQ' : 'BBQ', icon: Utensils, color: 'text-red-700' },
-    breakfast: { label: language === 'DE' ? 'Frühstück' : 'Breakfast', icon: Egg, color: 'text-yellow-700' },
-    brunch: { label: language === 'DE' ? 'Brunch' : 'Brunch', icon: Egg, color: 'text-yellow-700' }
+    bbq: { label: L(language, 'BBQ', 'BBQ'), icon: Utensils, color: 'text-red-700' },
+    breakfast: { label: L(language, 'Frühstück', 'Breakfast'), icon: Egg, color: 'text-yellow-700' },
+    brunch: { label: L(language, 'Brunch', 'Brunch'), icon: Egg, color: 'text-yellow-700' }
   }), [t, language]);
   
   // ============================================================================
@@ -964,6 +955,34 @@ export default function OrderPage() {
     }));
   }, [orderData.guestCount, orderData.selectedMenu, pendingMenuId, menusData, ignoreMenuMinPeople]);
   
+  // Portions follow the guest count: every selected dish is counted once per guest
+  // (like a tiered package), raised when the guest count / menu minimum grows and
+  // lowered again when it shrinks. Deliberate extra portions (above the guest count) are kept.
+  const prevEffectiveGuestsRef = useRef<number | null>(null);
+  useEffect(() => {
+    const target = getEffectiveGuestCount();
+    const previous = prevEffectiveGuestsRef.current;
+    prevEffectiveGuestsRef.current = target;
+    setOrderData((prev: any) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const key of Object.values(selectionKeyByCategory)) {
+        const list = prev[key];
+        if (!Array.isArray(list) || list.length === 0) continue;
+        next[key] = list.map((item: any) => {
+          const quantity = Number(item?.quantity) || 0;
+          const followsGuests = previous != null && quantity === previous && quantity !== target;
+          if (quantity < target || followsGuests) {
+            changed = true;
+            return { ...item, quantity: target };
+          }
+          return item;
+        });
+      }
+      return changed ? next : prev;
+    });
+  }, [orderData.guestCount, orderData.selectedMenu, pendingMenuId, menusData, ignoreMenuMinPeople]);
+
   // ============================================================================
   // HELPER FUNCTIONS (Inside component, but no hooks)
   // ============================================================================
@@ -1047,15 +1066,11 @@ export default function OrderPage() {
   const blockedMessage = useMemo(() => {
     if (isOrderingPaused) {
       const reason = systemStatus?.pauseReason ? ` (${systemStatus.pauseReason})` : '';
-      return language === 'DE'
-        ? `Bestellungen sind aktuell pausiert${reason}.`
-        : `Ordering is currently paused${reason}.`;
+      return L(language, `Bestellungen sind aktuell pausiert${reason}.`, `Ordering is currently paused${reason}.`);
     }
     if (isClosedDate) {
       const reason = closedDateEntry?.reason ? ` (${closedDateEntry.reason})` : '';
-      return language === 'DE'
-        ? `Das gewählte Datum ist geschlossen${reason}. Bitte wählen Sie ein anderes Datum.`
-        : `The selected date is closed${reason}. Please choose another date.`;
+      return L(language, `Das gewählte Datum ist geschlossen${reason}. Bitte wählen Sie ein anderes Datum.`, `The selected date is closed${reason}. Please choose another date.`);
     }
     return '';
   }, [closedDateEntry, isClosedDate, isOrderingPaused, language, systemStatus?.pauseReason]);
@@ -1112,10 +1127,10 @@ export default function OrderPage() {
   }, [menusData, orderData.selectedMenu, pendingMenuId, categoryMeta, categoryOrder]);
   
   const stepsConfig = useMemo(() => ([
-    { key: 'event', label: language === 'DE' ? 'Eventdetails' : 'Event Details' },
-    { key: 'menu', label: language === 'DE' ? 'Menuauswahl' : 'Menu Selection' },
-    { key: 'accessories', label: language === 'DE' ? 'Zubehör' : 'Accessories', icon: ShoppingBag, color: 'text-purple-600' },
-    { key: 'checkout', label: language === 'DE' ? 'Lieferung & Zahlung' : 'Delivery & Payment' }
+    { key: 'event', label: L(language, 'Eventdetails', 'Event Details') },
+    { key: 'menu', label: L(language, 'Menuauswahl', 'Menu Selection') },
+    { key: 'accessories', label: L(language, 'Zubehör', 'Accessories'), icon: ShoppingBag, color: 'text-purple-600' },
+    { key: 'checkout', label: L(language, 'Lieferung & Zahlung', 'Delivery & Payment') }
   ]), [language]);
   
   const activeCategoryKeys = useMemo(() => {
@@ -1307,10 +1322,10 @@ export default function OrderPage() {
   
   const validateEmailValue = (value: string) => {
     if (!value) {
-      return language === 'DE' ? 'E-Mail ist erforderlich.' : 'Email is required.';
+      return L(language, 'E-Mail ist erforderlich.', 'Email is required.');
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return language === 'DE' ? 'Bitte eine gültige E-Mail eingeben.' : 'Please enter a valid email address.';
+      return L(language, 'Bitte eine gültige E-Mail eingeben.', 'Please enter a valid email address.');
     }
     return '';
   };
@@ -1318,7 +1333,7 @@ export default function OrderPage() {
   const validatePhoneValue = (value: string) => {
     const trimmed = (value || '').trim();
     if (!trimmed) {
-      return language === 'DE' ? 'Telefonnummer ist erforderlich.' : 'Phone number is required.';
+      return L(language, 'Telefonnummer ist erforderlich.', 'Phone number is required.');
     }
 
     const country = ((phoneMeta.country as CountryCode | undefined) || 'DE') as CountryCode;
@@ -1326,7 +1341,7 @@ export default function OrderPage() {
       ? parsePhoneNumberFromString(trimmed)
       : parsePhoneNumberFromString(trimmed, country);
     if (!parsed || !parsed.isValid()) {
-      return language === 'DE' ? 'Bitte eine gültige Telefonnummer eingeben.' : 'Please enter a valid phone number.';
+      return L(language, 'Bitte eine gültige Telefonnummer eingeben.', 'Please enter a valid phone number.');
     }
 
     return '';
@@ -1336,7 +1351,7 @@ export default function OrderPage() {
     if (orderData.businessType !== 'business') {
       return '';
     }
-    return value ? '' : (language === 'DE' ? 'Firmenname ist erforderlich.' : 'Company name is required.');
+    return value ? '' : (L(language, 'Firmenname ist erforderlich.', 'Company name is required.'));
   };
   
   const updateContactInfoField = (field: string, value: string) => {
@@ -1373,9 +1388,7 @@ export default function OrderPage() {
   };
   
   const getGuestCountError = () => (
-    language === 'DE'
-      ? 'Anzahl der Gäste muss mindestens 10 sein.'
-      : 'Guest count must be 10 or more.'
+    L(language, 'Anzahl der Gäste muss mindestens 10 sein.', 'Guest count must be 10 or more.')
   );
   
   const handleGuestCountChange = (value: string) => {
@@ -1500,9 +1513,7 @@ export default function OrderPage() {
     }
     if (!/^\d{5}$/.test(postalCode)) {
       setPostalLookupError(
-        language === 'DE'
-          ? 'Bitte 5-stellige deutsche PLZ eingeben.'
-          : 'Enter a 5-digit German postal code.'
+        L(language, 'Bitte 5-stellige deutsche PLZ eingeben.', 'Enter a 5-digit German postal code.')
       );
       return;
     }
@@ -1523,9 +1534,7 @@ export default function OrderPage() {
       }
     } catch (error) {
       setPostalLookupError(
-        language === 'DE'
-          ? 'Postleitzahl nicht gefunden (nur Deutschland).'
-          : 'Postal code not found in Germany.'
+        L(language, 'Postleitzahl nicht gefunden (nur Deutschland).', 'Postal code not found in Germany.')
       );
     } finally {
       setPostalLookupLoading(false);
@@ -1537,9 +1546,7 @@ export default function OrderPage() {
     const city = (orderData.city || '').trim();
     if (!stateCode || !city) {
       setCityLookupError(
-        language === 'DE'
-          ? 'Bitte Bundesland und Stadt angeben.'
-          : 'Please select a state and city.'
+        L(language, 'Bitte Bundesland und Stadt angeben.', 'Please select a state and city.')
       );
       setCityLookupOptions([]);
       return;
@@ -1568,9 +1575,7 @@ export default function OrderPage() {
       }
     } catch (error) {
       setCityLookupError(
-        language === 'DE'
-          ? 'Keine PLZ für diese Stadt gefunden.'
-          : 'No postal codes found for this city.'
+        L(language, 'Keine PLZ für diese Stadt gefunden.', 'No postal codes found for this city.')
       );
       setCityLookupOptions([]);
     } finally {
@@ -1811,9 +1816,7 @@ export default function OrderPage() {
   const getMenuStepCompletionErrorMessage = (invalid: { categoryKey: string; selected: number; required: number }) => {
     const label = stepLabelByKey[invalid.categoryKey] || categoryMeta[invalid.categoryKey]?.label || invalid.categoryKey;
     const missing = Math.max(0, invalid.required - invalid.selected);
-    return language === 'DE'
-      ? `Bitte wählen Sie noch ${missing} Artikel für "${label}" (${invalid.selected}/${invalid.required}).`
-      : `Please select ${missing} more item(s) for "${label}" (${invalid.selected}/${invalid.required}).`;
+    return L(language, `Bitte wählen Sie noch ${missing} Artikel für "${label}" (${invalid.selected}/${invalid.required}).`, `Please select ${missing} more item(s) for "${label}" (${invalid.selected}/${invalid.required}).`);
   };
 
   const validateMenuSubStepsUpTo = (maxSubStepIndex: number) => {
@@ -1840,26 +1843,24 @@ export default function OrderPage() {
     switch (stepKey) {
       case 'event':
         if (!orderData.businessType) {
-          return language === 'DE' ? 'Bitte Anlass wählen.' : 'Please select an event type.';
+          return L(language, 'Bitte Anlass wählen.', 'Please select an event type.');
         }
         if (!orderData.eventDate) {
-          return language === 'DE' ? 'Bitte Datum wählen.' : 'Please select an event date.';
+          return L(language, 'Bitte Datum wählen.', 'Please select an event date.');
         }
         if (!orderData.eventTime) {
-          return language === 'DE' ? 'Bitte Uhrzeit wählen.' : 'Please select an event time.';
+          return L(language, 'Bitte Uhrzeit wählen.', 'Please select an event time.');
         }
         if (!hasValidGuestCount) {
           return getGuestCountError();
         }
         if (!hasValidPostal) {
-          return language === 'DE'
-            ? 'Bitte 5-stellige deutsche PLZ eingeben.'
-            : 'Enter a 5-digit German postal code.';
+          return L(language, 'Bitte 5-stellige deutsche PLZ eingeben.', 'Enter a 5-digit German postal code.');
         }
         return '';
       case 'menu':
         if (!orderData.selectedMenu && !pendingMenuId) {
-          return language === 'DE' ? 'Bitte ein Menu wählen.' : 'Please select a menu.';
+          return L(language, 'Bitte ein Menu wählen.', 'Please select a menu.');
         }
         {
           const invalidMenu = getFirstInvalidMenuSubStep(dynamicMenuSteps.length - 1);
@@ -1877,21 +1878,19 @@ export default function OrderPage() {
             return sanitizeAccessoryQuantity(draft ?? item.quantity) !== sanitizeAccessoryQuantity(item.quantity);
           });
           if (hasPendingAccessoryQuantity) {
-            return language === 'DE'
-              ? 'Bitte bestätigen Sie die Zubehör-Mengen, bevor Sie fortfahren.'
-              : 'Please confirm the accessory quantities before continuing.';
+            return L(language, 'Bitte bestätigen Sie die Zubehör-Mengen, bevor Sie fortfahren.', 'Please confirm the accessory quantities before continuing.');
           }
         }
         return '';
       case 'checkout':
         if (!orderData.contactInfo.firstName?.trim()) {
-          return language === 'DE' ? 'Vorname ist erforderlich.' : 'First name is required.';
+          return L(language, 'Vorname ist erforderlich.', 'First name is required.');
         }
         if (!orderData.contactInfo.lastName?.trim()) {
-          return language === 'DE' ? 'Nachname ist erforderlich.' : 'Last name is required.';
+          return L(language, 'Nachname ist erforderlich.', 'Last name is required.');
         }
         if (orderData.businessType === 'business' && !companyName) {
-          return language === 'DE' ? 'Firmenname ist erforderlich.' : 'Company name is required.';
+          return L(language, 'Firmenname ist erforderlich.', 'Company name is required.');
         }
         if (emailError) {
           return emailError;
@@ -1902,28 +1901,22 @@ export default function OrderPage() {
         // For business orders, we don't require payment method selection
         if (orderData.businessType !== 'business') {
           if (!orderData.paymentMethod) {
-            return language === 'DE' ? 'Bitte Zahlungsmethode wählen.' : 'Please select a payment method.';
+            return L(language, 'Bitte Zahlungsmethode wählen.', 'Please select a payment method.');
           }
           if (orderData.paymentMethod === 'credit-card') {
             const { number, expiry, cvc, name } = orderData.cardDetails;
             const digitsOnly = number.replace(/\s+/g, '');
             const expiryValid = /^\d{2}\/\d{2}$/.test(expiry);
             if (!digitsOnly || digitsOnly.length < 12 || !expiryValid || cvc.length < 3 || !name.trim()) {
-              return language === 'DE'
-                ? 'Bitte gültige Kartendaten eingeben.'
-                : 'Please enter valid card details.';
+              return L(language, 'Bitte gültige Kartendaten eingeben.', 'Please enter valid card details.');
             }
           }
         }
         if (!termsAccepted) {
-          return language === 'DE'
-            ? 'Bitte AGB und Datenschutz akzeptieren.'
-            : 'Please accept the terms and privacy policy.';
+          return L(language, 'Bitte AGB und Datenschutz akzeptieren.', 'Please accept the terms and privacy policy.');
         }
         if (isCaptchaEnabled && !captchaToken) {
-          return language === 'DE'
-            ? 'Bitte Captcha bestätigen.'
-            : 'Please complete the captcha.';
+          return L(language, 'Bitte Captcha bestätigen.', 'Please complete the captcha.');
         }
         return '';
       default:
@@ -1938,9 +1931,7 @@ export default function OrderPage() {
       setGuestCountError(guestCount >= MIN_GUESTS ? '' : getGuestCountError());
       if (stepKey === 'event' && !/^\d{5}$/.test(orderData.postalCode || '')) {
         setPostalLookupError(
-          language === 'DE'
-            ? 'Bitte 5-stellige deutsche PLZ eingeben.'
-            : 'Enter a 5-digit German postal code.'
+          L(language, 'Bitte 5-stellige deutsche PLZ eingeben.', 'Enter a 5-digit German postal code.')
         );
       }
     }
@@ -1971,16 +1962,14 @@ export default function OrderPage() {
       }
       if (!termsAccepted) {
         setTermsError(
-          language === 'DE'
-            ? 'Bitte AGB und Datenschutz akzeptieren.'
-            : 'Please accept the terms and privacy policy.'
+          L(language, 'Bitte AGB und Datenschutz akzeptieren.', 'Please accept the terms and privacy policy.')
         );
       }
       if (isCaptchaEnabled) {
         setCaptchaError(
           captchaToken
             ? ''
-            : (language === 'DE' ? 'Bitte Captcha bestätigen.' : 'Please complete the captcha.')
+            : (L(language, 'Bitte Captcha bestätigen.', 'Please complete the captcha.'))
         );
       } else {
         setCaptchaError('');
@@ -2118,6 +2107,23 @@ export default function OrderPage() {
       });
     }
     
+    if (currentStep === 2) {
+      const { subtotal } = getOrderTotals();
+      if (subtotal < MIN_ORDER_VALUE) {
+        showNotification(
+          'error',
+          P(language, {
+            DE: `Der Mindestbestellwert beträgt ${MIN_ORDER_VALUE} € (netto). Aktuell: ${subtotal.toFixed(2)} €.`,
+            EN: `The minimum order value is €${MIN_ORDER_VALUE} (excl. VAT). Currently: €${subtotal.toFixed(2)}.`,
+            FR: `La valeur minimale de commande est de ${MIN_ORDER_VALUE} € HT. Actuellement : ${subtotal.toFixed(2)} €.`,
+            TR: `Asgari sipariş tutarı ${MIN_ORDER_VALUE} € (KDV hariç). Şu an: ${subtotal.toFixed(2)} €.`,
+          }),
+          4000
+        );
+        return;
+      }
+    }
+
     if (currentStep === stepsConfig.length) {
       handleSubmitOrder();
       return;
@@ -2151,16 +2157,12 @@ export default function OrderPage() {
   const handleSubmitOrder = async () => {
     // Check if ordering is paused
     if (systemStatus?.orderingPaused) {
-      showNotification('error', language === 'DE'
-        ? 'Bestellungen sind aktuell pausiert. Bitte später erneut versuchen.'
-        : 'Ordering is currently paused. Please try again later.', 3000);
+      showNotification('error', L(language, 'Bestellungen sind aktuell pausiert. Bitte später erneut versuchen.', 'Ordering is currently paused. Please try again later.'), 3000);
       return;
     }
     
     if (isClosedDate) {
-      showNotification('error', language === 'DE'
-        ? 'Das ausgewählte Datum ist geschlossen. Bitte wählen Sie ein anderes Datum.'
-        : 'The selected date is closed. Please choose another date.', 3000);
+      showNotification('error', L(language, 'Das ausgewählte Datum ist geschlossen. Bitte wählen Sie ein anderes Datum.', 'The selected date is closed. Please choose another date.'), 3000);
       return;
     }
 
@@ -2175,9 +2177,7 @@ export default function OrderPage() {
     setContactErrors({ email: emailError, phone: phoneError });
     
     if (emailError || phoneError) {
-      showNotification('error', language === 'DE'
-        ? 'Bitte gültige Kontaktdaten angeben.'
-        : 'Please provide valid contact details.', 3000);
+      showNotification('error', L(language, 'Bitte gültige Kontaktdaten angeben.', 'Please provide valid contact details.'), 3000);
       return;
     }
     
@@ -2200,7 +2200,7 @@ export default function OrderPage() {
     const guestCount = parseInt(orderData.guestCount) || 0;
     const pricingGuestCount = getEffectiveGuestCount();
     const guestCountNote = guestCount > 0 && pricingGuestCount !== guestCount
-      ? (language === 'DE' ? `Eingegebene Gäste: ${guestCount}` : `Guests entered: ${guestCount}`)
+      ? (L(language, `Eingegebene Gäste: ${guestCount}`, `Guests entered: ${guestCount}`))
       : '';
     const mergedRequests = [companyDetails, accessoriesDetails, guestCountNote, baseRequests].filter(Boolean).join('\n\n');
     
@@ -2266,9 +2266,7 @@ export default function OrderPage() {
       });
       
       if (orderData.businessType === 'business') {
-        showNotification('success', language === 'DE'
-          ? 'Bestellung erfolgreich aufgegeben! Sie erhalten in Kürze eine Rechnung per E-Mail.'
-          : 'Order placed successfully! You will receive an invoice via email shortly.', 3000);
+        showNotification('success', L(language, 'Bestellung erfolgreich aufgegeben! Sie erhalten in Kürze eine Rechnung per E-Mail.', 'Order placed successfully! You will receive an invoice via email shortly.'), 3000);
       } else {
         showNotification('success', 'Order placed successfully! Order ID: ' + order.id, 2000);
       }
@@ -2283,9 +2281,7 @@ export default function OrderPage() {
         setCaptchaToken('');
         setCaptchaResetKey((value) => value + 1);
         setCaptchaError(
-          language === 'DE'
-            ? 'Captcha-Überprüfung fehlgeschlagen. Bitte erneut bestätigen.'
-            : 'Captcha verification failed. Please complete it again.'
+          L(language, 'Captcha-Überprüfung fehlgeschlagen. Bitte erneut bestätigen.', 'Captcha verification failed. Please complete it again.')
         );
       }
 
@@ -2344,7 +2340,7 @@ export default function OrderPage() {
     const earliestDate = new Date();
     earliestDate.setDate(earliestDate.getDate() + leadTimeDays);
     earliestDate.setHours(0, 0, 0, 0);
-    const locale = language === 'DE' ? 'de-DE' : 'en-US';
+    const locale = localeOf(language);
     const earliestDateLabel = earliestDate.toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit',
@@ -2442,19 +2438,17 @@ export default function OrderPage() {
                 <div>
                   <p className="order-eyebrow !text-[#7a6a32]">02</p>
                   <h3 className="order-h2">
-                    {language === 'DE' ? 'Service ausw\u00e4hlen' : 'Choose a service'}
+                    {L(language, 'Service ausw\u00e4hlen', 'Choose a service')}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {language === 'DE'
-                      ? 'W\u00e4hlen Sie eine Dienstleistung passend zum Anlass.'
-                      : 'Pick a service that matches your occasion.'}
+                    {L(language, 'W\u00e4hlen Sie eine Dienstleistung passend zum Anlass.', 'Pick a service that matches your occasion.')}
                   </p>
                 </div>
               </div>
 
               {fixedServices.length === 0 ? (
                 <div className="text-sm text-gray-600">
-                  {language === 'DE' ? 'Keine Services verf\u00fcgbar.' : 'No services available.'}
+                  {L(language, 'Keine Services verf\u00fcgbar.', 'No services available.')}
                 </div>
               ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -2501,19 +2495,19 @@ export default function OrderPage() {
                           
                           {!selected && serviceDescription && (
                             <div className="text-xs text-gray-400 mt-2 italic">
-                              {language === 'DE' ? 'Klicken zum Auswählen' : 'Click to select'}
+                              {L(language, 'Klicken zum Auswählen', 'Click to select')}
                             </div>
                           )}
                           
                           {!serviceDescription && (
                             <div className="text-xs text-gray-400 mt-2 italic">
-                              {language === 'DE' ? 'Keine Beschreibung verfügbar' : 'No description available'}
+                              {L(language, 'Keine Beschreibung verfügbar', 'No description available')}
                             </div>
                           )}
                           
                           {selected && (
                             <div className="text-xs text-amber-600 mt-2 font-medium">
-                              {language === 'DE' ? 'Erneut klicken zum Abwählen' : 'Click again to deselect'}
+                              {L(language, 'Erneut klicken zum Abwählen', 'Click again to deselect')}
                             </div>
                           )}
                         </div>
@@ -2534,7 +2528,7 @@ export default function OrderPage() {
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <h4 className="text-sm font-semibold text-amber-800 mb-1">
-                          {language === 'DE' ? 'Ausgewählter Service' : 'Selected Service'}
+                          {L(language, 'Ausgewählter Service', 'Selected Service')}
                         </h4>
                         <button
                           type="button"
@@ -2547,7 +2541,7 @@ export default function OrderPage() {
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                          {language === 'DE' ? 'Abwählen' : 'Deselect'}
+                          {L(language, 'Abwählen', 'Deselect')}
                         </button>
                       </div>
                       {(() => {
@@ -2569,9 +2563,7 @@ export default function OrderPage() {
                         }
                         return (
                           <p className="text-sm text-amber-600 italic">
-                            {language === 'DE' 
-                              ? 'Keine weitere Beschreibung verfügbar.' 
-                              : 'No further description available.'}
+                            {L(language, 'Keine weitere Beschreibung verfügbar.', 'No further description available.')}
                           </p>
                         );
                       })()}
@@ -2591,7 +2583,7 @@ export default function OrderPage() {
                 onChange={(value) => updateOrderData('eventDate', value)}
                 minDate={earliestDate}
                 language={language}
-                placeholder={language === 'DE' ? 'Datum wählen' : 'Select date'}
+                placeholder={L(language, 'Datum wählen', 'Select date')}
               />
               <p className="text-xs text-gray-500">{constraintText}</p>
               {isClosedDate && (
@@ -2604,7 +2596,7 @@ export default function OrderPage() {
                 value={orderData.eventTime}
                 onChange={(value) => updateOrderData('eventTime', value)}
                 language={language}
-                placeholder={language === 'DE' ? 'Uhrzeit wählen' : 'Select time'}
+                placeholder={L(language, 'Uhrzeit wählen', 'Select time')}
               />
             </div>
             <div className="space-y-2">
@@ -2633,41 +2625,41 @@ export default function OrderPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  {language === 'DE' ? 'Straße' : 'Street'} *
+                  {L(language, 'Straße', 'Street')} *
                 </label>
                 <input
                   type="text"
                   value={orderData.street || ''}
                   onChange={(e) => updateOrderData('street', e.target.value)}
                   autoComplete="street-address"
-                  placeholder={language === 'DE' ? 'z.B. Hauptstraße' : 'e.g. Main Street'}
+                  placeholder={L(language, 'z.B. Hauptstraße', 'e.g. Main Street')}
                   className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder:text-gray-500"
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  {language === 'DE' ? 'Hausnr.' : 'House no.'} *
+                  {L(language, 'Hausnr.', 'House no.')} *
                 </label>
                 <input
                   type="text"
                   value={orderData.houseNumber || ''}
                   onChange={(e) => updateOrderData('houseNumber', e.target.value)}
                   autoComplete="address-line2"
-                  placeholder={language === 'DE' ? 'z.B. 12' : 'e.g. 12'}
+                  placeholder={L(language, 'z.B. 12', 'e.g. 12')}
                   className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder:text-gray-500"
                 />
               </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {language === 'DE' ? 'Stadt' : 'City'} *
+                {L(language, 'Stadt', 'City')} *
               </label>
               <input
                 type="text"
                 value={orderData.city || ''}
                 onChange={(e) => updateOrderData('city', e.target.value)}
                 autoComplete="address-level2"
-                placeholder={language === 'DE' ? 'z.B. Berlin' : 'e.g. Berlin'}
+                placeholder={L(language, 'z.B. Berlin', 'e.g. Berlin')}
                 className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder:text-gray-500"
               />
             </div>
@@ -2725,7 +2717,7 @@ export default function OrderPage() {
                   {!menu.isActive && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                       <span className="text-white font-bold text-lg px-4 py-2 bg-red-600 rounded-lg">
-                        {language === 'DE' ? 'Derzeit nicht verfügbar' : 'Currently Unavailable'}
+                        {L(language, 'Derzeit nicht verfügbar', 'Currently Unavailable')}
                       </span>
                     </div>
                   )}
@@ -2791,13 +2783,13 @@ export default function OrderPage() {
       return (
         <div className="text-center py-12">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {language === 'DE' ? 'Menuauswahl abgeschlossen' : 'Menu Selection Complete'}
+                {L(language, 'Menuauswahl abgeschlossen', 'Menu Selection Complete')}
           </h3>
           <button
             onClick={() => setCurrentStep(3)}
             className="px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors"
           >
-            {language === 'DE' ? 'Weiter zu Zubehör' : 'Continue to Accessories'}
+            {L(language, 'Weiter zu Zubehör', 'Continue to Accessories')}
           </button>
         </div>
       );
@@ -2878,7 +2870,7 @@ export default function OrderPage() {
                 {pricingGuestCount !== guestCount && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-semibold text-gray-800">
-                      {language === 'DE' ? 'Menu-Portionen (Minimum):' : 'Menu portions (minimum):'}
+                      {L(language, 'Menu-Portionen (Minimum):', 'Menu portions (minimum):')}
                     </span>
                     <span className="font-semibold text-gray-900">{pricingGuestCount}</span>
                   </div>
@@ -2905,7 +2897,7 @@ export default function OrderPage() {
               {/* Category Sub-steps Navigation */}
               <div className="pt-4 border-t border-gray-200">
                 <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">
-                  {language === 'DE' ? 'Menu-Kategorien' : 'Menu Categories'}
+                  {L(language, 'Menu-Kategorien', 'Menu Categories')}
                 </h4>
                 <div className="space-y-2">
                   {dynamicMenuSteps.map((step, index) => {
@@ -2950,7 +2942,7 @@ export default function OrderPage() {
                               )}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
-                              {language === 'DE' ? 'Inklusive:' : 'Included:'} {step.included}
+                              {L(language, 'Inklusive:', 'Included:')} {step.included}
                             </div>
                           </div>
                         </div>
@@ -2992,7 +2984,7 @@ export default function OrderPage() {
               {getCategorySummaryRows().length > 0 && (
                 <div className="pt-4 border-t border-gray-200">
                   <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">
-                    {language === 'DE' ? 'Inklusive vs. Extras' : 'Included vs Extras'}
+                    {L(language, 'Inklusive vs. Extras', 'Included vs Extras')}
                   </h4>
                   <div className="space-y-3">
                     {getCategorySummaryRows().map((row) => (
@@ -3000,14 +2992,14 @@ export default function OrderPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-[#404040] dark:text-[#D1D1D1]">{row.label}</span>
                           <span className="text-xs text-[#404040]/70 dark:text-[#B0B0B0]">
-                            {(language === 'DE' ? 'Inklusive' : 'Included')} {row.included}
+                            {(L(language, 'Inklusive', 'Included'))} {row.included}
                           </span>
                         </div>
                         <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-[#404040]/80 dark:text-[#B0B0B0]">
-                          <span>{(language === 'DE' ? 'Ausgewählt' : 'Selected')}: {row.selected}</span>
-                          <span>{(language === 'DE' ? 'Extras' : 'Extras')}: {row.extra}</span>
+                          <span>{(L(language, 'Ausgewählt', 'Selected'))}: {row.selected}</span>
+                          <span>{(L(language, 'Extras', 'Extras'))}: {row.extra}</span>
                           <span className="text-right text-[#404040]/90 dark:text-[#D1D1D1]">
-                            {(language === 'DE' ? 'Extrakkosten' : 'Extras cost')}: €{row.extraCost.toFixed(2)}
+                            {(L(language, 'Extrakkosten', 'Extras cost'))}: €{row.extraCost.toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -3023,15 +3015,15 @@ export default function OrderPage() {
                     onClick={prevSubStep}
                     className="px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-[#f3ece1] transition-colors"
                   >
-                    {language === 'DE' ? 'Zurück' : 'Back'}
+                    {L(language, 'Zurück', 'Back')}
                   </button>
                   <button
                     onClick={nextSubStep}
                     className="px-4 py-2 text-sm font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
                   >
                     {currentMenuSubStep === dynamicMenuSteps.length - 1
-                      ? (language === 'DE' ? 'Weiter zu Zubehör' : 'Continue to Accessories')
-                      : (language === 'DE' ? 'Weiter' : 'Next')}
+                      ? (L(language, 'Weiter zu Zubehör', 'Continue to Accessories'))
+                      : (L(language, 'Weiter', 'Next'))}
                   </button>
                 </div>
               </div>
@@ -3048,9 +3040,7 @@ export default function OrderPage() {
                   {categoryTitle}
                 </h2>
                 <p className="text-gray-600">
-                  {language === 'DE' 
-                    ? `Wählen Sie aus den verfügbaren Optionen für ${categoryTitle.toLowerCase()}`
-                    : `Select from available options for ${categoryTitle.toLowerCase()}`
+                  {L(language, `Wählen Sie aus den verfügbaren Optionen für ${categoryTitle.toLowerCase()}`, `Select from available options for ${categoryTitle.toLowerCase()}`)
                   }
                 </p>
               </div>
@@ -3083,9 +3073,7 @@ export default function OrderPage() {
             </div>
             {extraCount > 0 && (
               <p className="mt-2 text-xs text-[#404040]/70 dark:text-[#B0B0B0]">
-                {language === 'DE' 
-                  ? 'Extras über die enthaltene Menge hinaus werden berechnet.'
-                  : 'Extras beyond the included count are charged.'}
+                {L(language, 'Extras über die enthaltene Menge hinaus werden berechnet.', 'Extras beyond the included count are charged.')}
               </p>
             )}
           </div>
@@ -3136,7 +3124,7 @@ export default function OrderPage() {
                             <div className="flex flex-wrap items-center gap-4 mb-4">
                               <div className="text-2xl font-bold text-gray-900">€{product.price}</div>
                               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-                                {language === 'DE' ? 'Anzahl der Gaeste' : 'Number of Guests'} {minQuantity}
+                                {L(language, 'Anzahl der Gaeste', 'Number of Guests')} {minQuantity}
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 {(language === 'DE' && Array.isArray(product.allergensDe) && product.allergensDe.length > 0 ? product.allergensDe : product.allergens).map((allergen: string, idx: number) => (
@@ -3237,9 +3225,7 @@ export default function OrderPage() {
             {products.length === 0 && (
               <div className="text-center py-12 border border-gray-200 rounded-xl bg-[#f3ece1]">
                 <p className="text-gray-600">
-                  {language === 'DE' 
-                    ? `Keine ${categoryTitle.toLowerCase()} verfügbar für dieses Menu.`
-                    : `No ${categoryTitle.toLowerCase()} available for this menu.`
+                  {L(language, `Keine ${categoryTitle.toLowerCase()} verfügbar für dieses Menu.`, `No ${categoryTitle.toLowerCase()} available for this menu.`)
                   }
                 </p>
               </div>
@@ -3275,7 +3261,7 @@ export default function OrderPage() {
     const currentSubtotal = subtotal + accessoriesSubtotal + flatServiceFee;
     
     const dbAccessories = (accessoriesData || []).map((a: any) => {
-      const fallbackUnit = language === 'DE' ? 'pro Stk' : 'each';
+      const fallbackUnit = L(language, 'pro Stk', 'each');
       return {
         id: a.id,
         name: language === 'DE' ? (a.nameDe || a.nameEn) : a.nameEn,
@@ -3292,76 +3278,66 @@ export default function OrderPage() {
     const legacyAccessories = [
       {
         id: 1,
-        name: language === 'DE' ? 'Porzellanteller (Premium)' : 'Premium Porcelain Dinner Plates',
-        description: language === 'DE'
-          ? 'Elegante weiße Porzellanteller für formelle Anlässe'
-          : 'Elegant white porcelain plates for formal dining',
-        details: language === 'DE' ? 'Set enthält nur Teller' : 'Set includes dinner plates only',
+        name: L(language, 'Porzellanteller (Premium)', 'Premium Porcelain Dinner Plates'),
+        description: L(language, 'Elegante weiße Porzellanteller für formelle Anlässe', 'Elegant white porcelain plates for formal dining'),
+        details: L(language, 'Set enthält nur Teller', 'Set includes dinner plates only'),
         price: 3.50,
-        unit: language === 'DE' ? 'pro Teller' : 'per plate',
+        unit: L(language, 'pro Teller', 'per plate'),
         quantityMode: 'GUEST_COUNT',
         fixedQuantity: null,
         image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop'
       },
       {
         id: 2,
-        name: language === 'DE' ? 'Edelstahl-Besteckset' : 'Stainless Steel Cutlery Set',
-        description: language === 'DE'
-          ? 'Komplettes Besteckset mit Messer, Gabel und Löffel'
-          : 'Complete cutlery set including knife, fork, and spoon',
-        details: language === 'DE' ? 'Polierter Edelstahl' : 'Polished stainless steel',
+        name: L(language, 'Edelstahl-Besteckset', 'Stainless Steel Cutlery Set'),
+        description: L(language, 'Komplettes Besteckset mit Messer, Gabel und Löffel', 'Complete cutlery set including knife, fork, and spoon'),
+        details: L(language, 'Polierter Edelstahl', 'Polished stainless steel'),
         price: 2.75,
-        unit: language === 'DE' ? 'pro Set' : 'per set',
+        unit: L(language, 'pro Set', 'per set'),
         quantityMode: 'GUEST_COUNT',
         fixedQuantity: null,
         image: 'https://images.unsplash.com/photo-1595435934247-5d33b7f92c70?w=400&h=300&fit=crop'
       },
       {
         id: 3,
-        name: language === 'DE' ? 'Leinenservietten' : 'Linen Napkins',
-        description: language === 'DE'
-          ? 'Hochwertige Leinenservietten in verschiedenen Farben'
-          : 'High-quality linen napkins in various colors',
-        details: language === 'DE' ? 'Erhältlich in Weiß, Schwarz oder Beige' : 'Available in white, black, or beige',
+        name: L(language, 'Leinenservietten', 'Linen Napkins'),
+        description: L(language, 'Hochwertige Leinenservietten in verschiedenen Farben', 'High-quality linen napkins in various colors'),
+        details: L(language, 'Erhältlich in Weiß, Schwarz oder Beige', 'Available in white, black, or beige'),
         price: 1.20,
-        unit: language === 'DE' ? 'pro Serviette' : 'per napkin',
+        unit: L(language, 'pro Serviette', 'per napkin'),
         quantityMode: 'GUEST_COUNT',
         fixedQuantity: null,
         image: 'https://images.unsplash.com/photo-1583845112203-1aa7e80d8d2c?w=400&h=300&fit=crop'
       },
       {
         id: 4,
-        name: language === 'DE' ? 'Weingläser' : 'Wine Glasses',
-        description: language === 'DE' ? 'Klassische, kristallklare Weingläser' : 'Classic crystal-clear wine glasses',
-        details: language === 'DE' ? 'Fassungsvermögen 350ml' : '12oz capacity',
+        name: L(language, 'Weingläser', 'Wine Glasses'),
+        description: L(language, 'Klassische, kristallklare Weingläser', 'Classic crystal-clear wine glasses'),
+        details: L(language, 'Fassungsvermögen 350ml', '12oz capacity'),
         price: 2.25,
-        unit: language === 'DE' ? 'pro Glas' : 'per glass',
+        unit: L(language, 'pro Glas', 'per glass'),
         quantityMode: 'GUEST_COUNT',
         fixedQuantity: null,
         image: 'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=400&h=300&fit=crop'
       },
       {
         id: 5,
-        name: language === 'DE' ? 'Buffet-Servierplatten' : 'Buffet Serving Platters',
-        description: language === 'DE'
-          ? 'Große ovale Servierplatten für Buffet-Aufbau'
-          : 'Large oval serving platters for buffet setup',
-        details: language === 'DE' ? 'Keramik, hitzebeständig' : 'Ceramic, heat-resistant',
+        name: L(language, 'Buffet-Servierplatten', 'Buffet Serving Platters'),
+        description: L(language, 'Große ovale Servierplatten für Buffet-Aufbau', 'Large oval serving platters for buffet setup'),
+        details: L(language, 'Keramik, hitzebeständig', 'Ceramic, heat-resistant'),
         price: 8.50,
-        unit: language === 'DE' ? 'pro Platte' : 'per platter',
+        unit: L(language, 'pro Platte', 'per platter'),
         quantityMode: 'GUEST_COUNT',
         fixedQuantity: null,
         image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop'
       },
       {
         id: 6,
-        name: language === 'DE' ? 'Tischdecken' : 'Table Cloths',
-        description: language === 'DE'
-          ? 'Elegante Tischwäsche für formelle Events'
-          : 'Elegant table linen for formal events',
-        details: language === 'DE' ? 'Verschiedene Größen verfügbar' : 'Various sizes available',
+        name: L(language, 'Tischdecken', 'Table Cloths'),
+        description: L(language, 'Elegante Tischwäsche für formelle Events', 'Elegant table linen for formal events'),
+        details: L(language, 'Verschiedene Größen verfügbar', 'Various sizes available'),
         price: 12.00,
-        unit: language === 'DE' ? 'pro Tischtuch' : 'per cloth',
+        unit: L(language, 'pro Tischtuch', 'per cloth'),
         quantityMode: 'GUEST_COUNT',
         fixedQuantity: null,
         image: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=400&h=300&fit=crop'
@@ -3394,7 +3370,7 @@ export default function OrderPage() {
                 {pricingGuestCount !== guestCount && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-semibold text-gray-800">
-                      {language === 'DE' ? 'Menu-Portionen (Minimum):' : 'Menu portions (minimum):'}
+                      {L(language, 'Menu-Portionen (Minimum):', 'Menu portions (minimum):')}
                     </span>
                     <span className="font-semibold text-gray-900">{pricingGuestCount}</span>
                   </div>
@@ -3439,7 +3415,7 @@ export default function OrderPage() {
               {getCategorySummaryRows().length > 0 && (
                 <div className="pt-4 border-t border-gray-200">
                   <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">
-                    {language === 'DE' ? 'Inklusive vs. Extras' : 'Included vs Extras'}
+                    {L(language, 'Inklusive vs. Extras', 'Included vs Extras')}
                   </h4>
                   <div className="space-y-3">
                     {getCategorySummaryRows().map((row) => (
@@ -3447,14 +3423,14 @@ export default function OrderPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-[#404040] dark:text-[#D1D1D1]">{row.label}</span>
                           <span className="text-xs text-[#404040]/70 dark:text-[#B0B0B0]">
-                            {(language === 'DE' ? 'Inklusive' : 'Included')} {row.included}
+                            {(L(language, 'Inklusive', 'Included'))} {row.included}
                           </span>
                         </div>
                         <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-[#404040]/80 dark:text-[#B0B0B0]">
-                          <span>{(language === 'DE' ? 'Ausgewählt' : 'Selected')}: {row.selected}</span>
-                          <span>{(language === 'DE' ? 'Extras' : 'Extras')}: {row.extra}</span>
+                          <span>{(L(language, 'Ausgewählt', 'Selected'))}: {row.selected}</span>
+                          <span>{(L(language, 'Extras', 'Extras'))}: {row.extra}</span>
                           <span className="text-right text-[#404040]/90 dark:text-[#D1D1D1]">
-                            {(language === 'DE' ? 'Extrakkosten' : 'Extras cost')}: €{row.extraCost.toFixed(2)}
+                            {(L(language, 'Extrakkosten', 'Extras cost'))}: €{row.extraCost.toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -3467,7 +3443,7 @@ export default function OrderPage() {
               {selectedAccessories.length > 0 && (
                 <div className="pt-4 border-t border-gray-200">
                   <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 mb-3">
-                    {language === 'DE' ? 'Zubehör' : 'Accessories'}
+                    {L(language, 'Zubehör', 'Accessories')}
                   </h4>
                   <div className="space-y-2">
                     {selectedAccessories.map((item: any, idx: number) => (
@@ -3488,28 +3464,28 @@ export default function OrderPage() {
                 <div className="rounded-lg border border-amber-100 bg-amber-50/70 p-4 space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-900 font-semibold">
-                      {language === 'DE' ? 'Menu + Extras Zwischensumme:' : 'Menu + Extras Subtotal:'}
+                      {L(language, 'Menu + Extras Zwischensumme:', 'Menu + Extras Subtotal:')}
                     </span>
                     <span className="font-bold text-amber-700">€{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-900 font-semibold">
-                      {language === 'DE' ? 'Extras (kostenpflichtig):' : 'Extras (paid):'}
+                      {L(language, 'Extras (kostenpflichtig):', 'Extras (paid):')}
                     </span>
                     <span className="font-bold text-amber-700">€{getFoodExtrasSubtotal().toFixed(2)}</span>
                   </div>
                   {selectedAccessories.length > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-900 font-semibold">{language === 'DE' ? 'Zubehör:' : 'Accessories:'}</span>
+                      <span className="text-gray-900 font-semibold">{L(language, 'Zubehör:', 'Accessories:')}</span>
                       <span className="font-bold text-amber-700">€{accessoriesSubtotal.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-900 font-semibold">{language === 'DE' ? 'Servicegebühr:' : 'Service Fee:'}</span>
+                    <span className="text-gray-900 font-semibold">{L(language, 'Servicegebühr:', 'Service Fee:')}</span>
                     <span className="font-bold text-amber-700">€{flatServiceFee.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t border-amber-200">
-                    <span>{language === 'DE' ? 'Gesamt:' : 'Total:'}</span>
+                    <span>{L(language, 'Gesamt:', 'Total:')}</span>
                     <span>€{currentSubtotal.toFixed(2)}</span>
                   </div>
                   {renderSummaryNav()}
@@ -3576,10 +3552,10 @@ export default function OrderPage() {
                   ? (quantityMode === 'CLIENT' ? draftQuantity : confirmedQuantity)
                   : baseQuantity;
                 const quantityLabel = quantityMode === 'FIXED'
-                  ? (language === 'DE' ? 'fest' : 'fixed')
+                  ? (L(language, 'fest', 'fixed'))
                   : quantityMode === 'CLIENT'
-                  ? (language === 'DE' ? 'vom Kunden' : 'client')
-                  : (language === 'DE' ? 'entspricht Gaesten' : 'matches guests');
+                  ? (L(language, 'vom Kunden', 'client'))
+                  : (L(language, 'entspricht Gaesten', 'matches guests'));
                 const unitPrice = Number(accessory?.price) || 0;
                 
                 return (
@@ -3613,7 +3589,7 @@ export default function OrderPage() {
                                   €{unitPrice.toFixed(2)} {accessory.unit}
                                 </div>
                                 <div className="text-xs font-semibold text-amber-700 mt-1">
-                                  {language === 'DE' ? 'Menge' : 'Quantity'}: {displayQuantity} ({quantityLabel}) | {language === 'DE' ? 'Gesamt' : 'Total'}: €{(unitPrice * displayQuantity).toFixed(2)}
+                                  {L(language, 'Menge', 'Quantity')}: {displayQuantity} ({quantityLabel}) | {L(language, 'Gesamt', 'Total')}: €{(unitPrice * displayQuantity).toFixed(2)}
                                 </div>
                               </div>
                             </div>
@@ -3622,7 +3598,7 @@ export default function OrderPage() {
                             <div className="w-full flex flex-col sm:flex-row sm:flex-wrap sm:justify-end items-center gap-2">
                               {isSelected && (
                                 <div className="px-4 py-2 text-sm font-semibold rounded-lg bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-auto">
-                                  {language === 'DE' ? 'Menge' : 'Qty'}: {displayQuantity}
+                                  {L(language, 'Menge', 'Qty')}: {displayQuantity}
                                 </div>
                               )}
                               {isSelected && quantityMode === 'CLIENT' ? (
@@ -3664,7 +3640,7 @@ export default function OrderPage() {
                                     }`}
                                   >
                                     <Check size={16} />
-                                    {language === 'DE' ? 'Bestätigen' : 'Confirm'}
+                                    {L(language, 'Bestätigen', 'Confirm')}
                                   </button>
                                 </div>
                               ) : null}
@@ -3686,20 +3662,18 @@ export default function OrderPage() {
                             <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                               <div className="flex items-center justify-between">
                                 <span className="text-green-800 font-semibold">
-                                  {language === 'DE' ? 'Hinzugefuegt' : 'Added'}:{' '}
+                                  {L(language, 'Hinzugefuegt', 'Added')}:{' '}
                                   <span className="text-lg">
-                                    {confirmedQuantity} {language === 'DE' ? 'Stk' : 'pcs'}
+                                    {confirmedQuantity} {L(language, 'Stk', 'pcs')}
                                   </span>
                                 </span>
                                 <span className="text-green-900 font-bold">
-                                  {language === 'DE' ? 'Gesamt' : 'Total'}: €{((Number(selectedItem?.price) || 0) * confirmedQuantity).toFixed(2)}
+                                  {L(language, 'Gesamt', 'Total')}: €{((Number(selectedItem?.price) || 0) * confirmedQuantity).toFixed(2)}
                                 </span>
                               </div>
                               {hasPendingDraft && (
                                 <div className="mt-2 text-xs text-amber-800 font-medium">
-                                  {language === 'DE'
-                                    ? `Neue Menge (${draftQuantity}) noch nicht bestätigt.`
-                                    : `New quantity (${draftQuantity}) not confirmed yet.`}
+                                  {L(language, `Neue Menge (${draftQuantity}) noch nicht bestätigt.`, `New quantity (${draftQuantity}) not confirmed yet.`)}
                                 </div>
                               )}
                             </div>
@@ -3774,14 +3748,14 @@ export default function OrderPage() {
                         <div className="flex items-center gap-2 text-sm text-black">
                           <Users size={16} className="text-gray-500" />
                           <span className="font-medium">
-                            {guestCount} {language === 'DE' ? 'Gäste' : 'guests'}
+                            {guestCount} {L(language, 'Gäste', 'guests')}
                           </span>
                         </div>
                         {pricingGuestCount !== guestCount && (
                           <div className="flex items-center gap-2 text-sm text-black">
                             <Users size={16} className="text-gray-500" />
                             <span className="font-medium">
-                              {pricingGuestCount} {language === 'DE' ? 'Menu-Portionen (Minimum)' : 'menu portions (minimum)'}
+                              {pricingGuestCount} {L(language, 'Menu-Portionen (Minimum)', 'menu portions (minimum)')}
                             </span>
                           </div>
                         )}
@@ -3797,7 +3771,7 @@ export default function OrderPage() {
                     {/* Contact Info */}
                     <div className="pt-4 border-t border-gray-200">
                       <h4 className="font-bold text-gray-900 mb-3">
-                        {language === 'DE' ? 'Kontaktinformationen' : 'Contact Information'}
+                        {L(language, 'Kontaktinformationen', 'Contact Information')}
                       </h4>
                       <div className="space-y-2">
                         <p className="text-sm text-gray-900 font-semibold">{orderData.contactInfo.firstName} {orderData.contactInfo.lastName}</p>
@@ -3820,12 +3794,12 @@ export default function OrderPage() {
                         </p>
                         {orderData.businessType === 'business' && orderData.contactInfo.company && (
                           <p className="text-sm text-gray-900 font-semibold">
-                            {language === 'DE' ? 'Firma:' : 'Company:'} {orderData.contactInfo.company}
+                            {L(language, 'Firma:', 'Company:')} {orderData.contactInfo.company}
                           </p>
                         )}
                         {orderData.businessType === 'business' && orderData.companyInfo && (
                           <p className="text-sm text-gray-900 font-semibold">
-                            {language === 'DE' ? 'Firmeninfo:' : 'Company Info:'} {orderData.companyInfo}
+                            {L(language, 'Firmeninfo:', 'Company Info:')} {orderData.companyInfo}
                           </p>
                         )}
                       </div>
@@ -3834,47 +3808,45 @@ export default function OrderPage() {
                     {/* Price Breakdown */}
                     <div className="pt-4 border-t border-gray-200">
                       <h4 className="font-bold text-gray-900 mb-3">
-                        {language === 'DE' ? 'Preisaufstellung' : 'Price Breakdown'}
+                        {L(language, 'Preisaufstellung', 'Price Breakdown')}
                       </h4>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-900 font-semibold">
-                            {language === 'DE' ? 'Menu + Extras Zwischensumme:' : 'Menu + Extras Subtotal:'}
+                            {L(language, 'Menu + Extras Zwischensumme:', 'Menu + Extras Subtotal:')}
                           </span>
                           <span className="font-bold text-amber-700">€{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-900 font-semibold">
-                            {language === 'DE' ? 'Extras (kostenpflichtig):' : 'Extras (paid):'}
+                            {L(language, 'Extras (kostenpflichtig):', 'Extras (paid):')}
                           </span>
                           <span className="font-bold text-amber-700">€{getFoodExtrasSubtotal().toFixed(2)}</span>
                         </div>
                         {selectedAccessories.length > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-900 font-semibold">{language === 'DE' ? 'Zubehör:' : 'Accessories:'}</span>
+                            <span className="text-gray-900 font-semibold">{L(language, 'Zubehör:', 'Accessories:')}</span>
                             <span className="font-bold text-amber-700">€{accessoriesSubtotal.toFixed(2)}</span>
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-900 font-semibold">{language === 'DE' ? 'Servicegebühr:' : 'Service Fee:'}</span>
+                          <span className="text-gray-900 font-semibold">{L(language, 'Servicegebühr:', 'Service Fee:')}</span>
                           <span className="font-bold text-amber-700">€{flatServiceFee.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-900 font-semibold">
-                            {language === 'DE'
-                              ? `MwSt (${(vatRate * 100).toFixed(2)}%):`
-                              : `VAT (${(vatRate * 100).toFixed(2)}%):`}
+                            {L(language, `MwSt (${(vatRate * 100).toFixed(2)}%):`, `VAT (${(vatRate * 100).toFixed(2)}%):`)}
                           </span>
                           <span className="font-bold text-amber-700">€{vatAmount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-300">
-                          <span>{language === 'DE' ? 'Gesamt:' : 'Total:'}</span>
+                          <span>{L(language, 'Gesamt:', 'Total:')}</span>
                           <span>€{grandTotal.toFixed(2)}</span>
                         </div>
                         <div className="pt-3">
                           <div className="flex items-center gap-2 text-sm text-gray-700">
                             <FileInvoice size={16} className="text-amber-600" />
-                            <span className="font-semibold">{language === 'DE' ? 'Zahlungsmethode:' : 'Payment Method:'} {language === 'DE' ? 'Rechnung' : 'Invoice'}</span>
+                            <span className="font-semibold">{L(language, 'Zahlungsmethode:', 'Payment Method:')} {L(language, 'Rechnung', 'Invoice')}</span>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">{ui.invoiceTerms}</p>
                         </div>
@@ -3888,12 +3860,10 @@ export default function OrderPage() {
                         <FileInvoice size={20} className="text-amber-600" />
                         <div>
                           <p className="text-sm font-medium text-amber-800">
-                            {language === 'DE' ? 'Rechnung wird per E-Mail versendet' : 'Invoice will be sent via email'}
+                            {L(language, 'Rechnung wird per E-Mail versendet', 'Invoice will be sent via email')}
                           </p>
                           <p className="text-xs text-amber-600">
-                            {language === 'DE'
-                              ? 'Innerhalb von 24 Stunden nach Bestellung'
-                              : 'Within 24 hours of order placement'}
+                            {L(language, 'Innerhalb von 24 Stunden nach Bestellung', 'Within 24 hours of order placement')}
                           </p>
                         </div>
                       </div>
@@ -3911,7 +3881,7 @@ export default function OrderPage() {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-900">{ui.invoiceTitle}</h3>
                         <span className="text-xs font-semibold text-amber-600 uppercase tracking-[0.2em]">
-                          {language === 'DE' ? 'Für Unternehmen' : 'For Businesses'}
+                          {L(language, 'Für Unternehmen', 'For Businesses')}
                         </span>
                       </div>
                       
@@ -3920,32 +3890,32 @@ export default function OrderPage() {
                           <FileInvoice size={24} className="text-amber-600 mt-1" />
                           <div>
                             <h4 className="text-lg font-bold text-gray-900 mb-2">
-                              {language === 'DE' ? 'Rechnungsprozess' : 'Invoice Process'}
+                              {L(language, 'Rechnungsprozess', 'Invoice Process')}
                             </h4>
                             <ul className="space-y-3 text-gray-700">
                               <li className="flex items-start gap-2">
                                 <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                                   <Check size={12} className="text-green-600" />
                                 </div>
-                                <span>{language === 'DE' ? 'Sie erhalten eine Rechnung per E-Mail innerhalb von 24 Stunden nach Ihrer Bestellung.' : 'You will receive an invoice via email within 24 hours of placing your order.'}</span>
+                                <span>{L(language, 'Sie erhalten eine Rechnung per E-Mail innerhalb von 24 Stunden nach Ihrer Bestellung.', 'You will receive an invoice via email within 24 hours of placing your order.')}</span>
                               </li>
                               <li className="flex items-start gap-2">
                                 <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                                   <Check size={12} className="text-green-600" />
                                 </div>
-                                <span>{language === 'DE' ? 'Die Rechnung enthält alle Bestelldetails und unsere Bankverbindung.' : 'The invoice includes all order details and our bank account information.'}</span>
+                                <span>{L(language, 'Die Rechnung enthält alle Bestelldetails und unsere Bankverbindung.', 'The invoice includes all order details and our bank account information.')}</span>
                               </li>
                               <li className="flex items-start gap-2">
                                 <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                                   <Check size={12} className="text-green-600" />
                                 </div>
-                                <span>{language === 'DE' ? 'Zahlbar innerhalb von 14 Tagen nach Rechnungserhalt.' : 'Payable within 14 days of receiving the invoice.'}</span>
+                                <span>{L(language, 'Zahlbar innerhalb von 14 Tagen nach Rechnungserhalt.', 'Payable within 14 days of receiving the invoice.')}</span>
                               </li>
                               <li className="flex items-start gap-2">
                                 <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                                   <Check size={12} className="text-green-600" />
                                 </div>
-                                <span>{language === 'DE' ? 'Alle Preise verstehen sich zzgl. der gesetzlichen MwSt.' : 'All prices are exclusive of applicable VAT.'}</span>
+                                <span>{L(language, 'Alle Preise verstehen sich zzgl. der gesetzlichen MwSt.', 'All prices are exclusive of applicable VAT.')}</span>
                               </li>
                             </ul>
                           </div>
@@ -3955,11 +3925,11 @@ export default function OrderPage() {
                       {/* Contact Verification */}
                       <div className="mb-6">
                         <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                          {language === 'DE' ? 'Rechnungsadresse prüfen' : 'Verify Billing Address'}
+                          {L(language, 'Rechnungsadresse prüfen', 'Verify Billing Address')}
                         </h4>
                         <div className="grid gap-3">
                           <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                            <span className="text-gray-600">{language === 'DE' ? 'Firmenname' : 'Company Name'}</span>
+                            <span className="text-gray-600">{L(language, 'Firmenname', 'Company Name')}</span>
                             <span className="font-semibold text-gray-900">{orderData.contactInfo.company || 'Nicht angegeben'}</span>
                           </div>
                           <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
@@ -3967,7 +3937,7 @@ export default function OrderPage() {
                             <span className="font-semibold text-gray-900">{orderData.contactInfo.email}</span>
                           </div>
                           <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                            <span className="text-gray-600">{language === 'DE' ? 'Telefon' : 'Phone'}</span>
+                            <span className="text-gray-600">{L(language, 'Telefon', 'Phone')}</span>
                             <span className="font-semibold text-gray-900 inline-flex items-center gap-2">
                               {phoneMeta.flagPng ? (
                                 <img
@@ -4006,16 +3976,14 @@ export default function OrderPage() {
                         />
                         <div>
                           <label htmlFor="terms" className="text-sm text-gray-900 leading-relaxed">
-                            {language === 'DE' 
-                              ? 'Ich stimme den AGB und der Datenschutzerklärung zu. Ich bestätige, dass ich die Rechnungsbedingungen verstanden habe (zahlbar innerhalb von 14 Tagen).'
-                              : 'I agree to the Terms & Conditions and Privacy Policy. I confirm that I understand the invoice terms (payable within 14 days).'}
+                            {L(language, 'Ich stimme den AGB und der Datenschutzerklärung zu. Ich bestätige, dass ich die Rechnungsbedingungen verstanden habe (zahlbar innerhalb von 14 Tagen).', 'I agree to the Terms & Conditions and Privacy Policy. I confirm that I understand the invoice terms (payable within 14 days).')}
                           </label>
                           <button
                             type="button"
                             onClick={() => setTermsModalOpen(true)}
                             className="mt-2 text-xs font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4"
                           >
-                          {language === 'DE' ? 'AGB & Bedingungen lesen' : 'Read full Terms and Conditions'}
+                          {L(language, 'AGB & Bedingungen lesen', 'Read full Terms and Conditions')}
                           </button>
                         </div>
                       </div>
@@ -4028,10 +3996,10 @@ export default function OrderPage() {
                       <div className="pt-6 border-t border-gray-200">
                         <div className="mb-3">
                           <h4 className="text-sm font-semibold text-gray-900">
-                            {language === 'DE' ? 'Sicherheitsprüfung' : 'Security check'}
+                            {L(language, 'Sicherheitsprüfung', 'Security check')}
                           </h4>
                           <p className="text-xs text-gray-600">
-                            {language === 'DE' ? 'Bitte bestätigen Sie, dass Sie kein Bot sind.' : 'Please confirm you are not a bot.'}
+                            {L(language, 'Bitte bestätigen Sie, dass Sie kein Bot sind.', 'Please confirm you are not a bot.')}
                           </p>
                         </div>
                         <TurnstileWidget
@@ -4044,12 +4012,12 @@ export default function OrderPage() {
                           onExpire={() => {
                             setCaptchaToken('');
                             setCaptchaResetKey((value) => value + 1);
-                            setCaptchaError(language === 'DE' ? 'Captcha ist abgelaufen. Bitte erneut bestätigen.' : 'Captcha expired. Please complete it again.');
+                            setCaptchaError(L(language, 'Captcha ist abgelaufen. Bitte erneut bestätigen.', 'Captcha expired. Please complete it again.'));
                           }}
                           onError={() => {
                             setCaptchaToken('');
                             setCaptchaResetKey((value) => value + 1);
-                            setCaptchaError(language === 'DE' ? 'Captcha konnte nicht geladen werden. Bitte Seite neu laden.' : 'Captcha failed to load. Please reload the page.');
+                            setCaptchaError(L(language, 'Captcha konnte nicht geladen werden. Bitte Seite neu laden.', 'Captcha failed to load. Please reload the page.'));
                           }}
                         />
                         {captchaError && (
@@ -4084,11 +4052,11 @@ export default function OrderPage() {
                       <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
                           <Building2 size={16} className="text-amber-600" />
-                          <span>{language === 'DE' ? 'Für Unternehmen' : 'For Businesses'}</span>
+                          <span>{L(language, 'Für Unternehmen', 'For Businesses')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <FileInvoice size={16} className="text-blue-600" />
-                          <span>{language === 'DE' ? 'Rechnung' : 'Invoice'}</span>
+                          <span>{L(language, 'Rechnung', 'Invoice')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle size={16} className="text-green-600" />
@@ -4138,14 +4106,14 @@ export default function OrderPage() {
                         <div className="flex items-center gap-2 text-sm text-black">
                           <Users size={16} className="text-gray-500" />
                           <span className="font-medium">
-                            {guestCount} {language === 'DE' ? 'Gäste' : 'guests'}
+                            {guestCount} {L(language, 'Gäste', 'guests')}
                           </span>
                         </div>
                         {pricingGuestCount !== guestCount && (
                           <div className="flex items-center gap-2 text-sm text-black">
                             <Users size={16} className="text-gray-500" />
                             <span className="font-medium">
-                              {pricingGuestCount} {language === 'DE' ? 'Menu-Portionen (Minimum)' : 'menu portions (minimum)'}
+                              {pricingGuestCount} {L(language, 'Menu-Portionen (Minimum)', 'menu portions (minimum)')}
                             </span>
                           </div>
                         )}
@@ -4161,7 +4129,7 @@ export default function OrderPage() {
                     {/* Contact Info */}
                     <div className="pt-4 border-t border-gray-200">
                       <h4 className="font-bold text-gray-900 mb-3">
-                        {language === 'DE' ? 'Kontaktinformationen' : 'Contact Information'}
+                        {L(language, 'Kontaktinformationen', 'Contact Information')}
                       </h4>
                       <div className="space-y-2">
                         <p className="text-sm text-gray-900 font-semibold">{orderData.contactInfo.firstName} {orderData.contactInfo.lastName}</p>
@@ -4188,41 +4156,39 @@ export default function OrderPage() {
                     {/* Price Breakdown */}
                     <div className="pt-4 border-t border-gray-200">
                       <h4 className="font-bold text-gray-900 mb-3">
-                        {language === 'DE' ? 'Preisaufstellung' : 'Price Breakdown'}
+                        {L(language, 'Preisaufstellung', 'Price Breakdown')}
                       </h4>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-900 font-semibold">
-                            {language === 'DE' ? 'Menu + Extras Zwischensumme:' : 'Menu + Extras Subtotal:'}
+                            {L(language, 'Menu + Extras Zwischensumme:', 'Menu + Extras Subtotal:')}
                           </span>
                           <span className="font-bold text-amber-700">€{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-900 font-semibold">
-                            {language === 'DE' ? 'Extras (kostenpflichtig):' : 'Extras (paid):'}
+                            {L(language, 'Extras (kostenpflichtig):', 'Extras (paid):')}
                           </span>
                           <span className="font-bold text-amber-700">€{getFoodExtrasSubtotal().toFixed(2)}</span>
                         </div>
                         {selectedAccessories.length > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-900 font-semibold">{language === 'DE' ? 'Zubehör:' : 'Accessories:'}</span>
+                            <span className="text-gray-900 font-semibold">{L(language, 'Zubehör:', 'Accessories:')}</span>
                             <span className="font-bold text-amber-700">€{accessoriesSubtotal.toFixed(2)}</span>
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-900 font-semibold">{language === 'DE' ? 'Servicegebühr:' : 'Service Fee:'}</span>
+                          <span className="text-gray-900 font-semibold">{L(language, 'Servicegebühr:', 'Service Fee:')}</span>
                           <span className="font-bold text-amber-700">€{flatServiceFee.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-900 font-semibold">
-                            {language === 'DE'
-                              ? `MwSt (${(vatRate * 100).toFixed(2)}%):`
-                              : `VAT (${(vatRate * 100).toFixed(2)}%):`}
+                            {L(language, `MwSt (${(vatRate * 100).toFixed(2)}%):`, `VAT (${(vatRate * 100).toFixed(2)}%):`)}
                           </span>
                           <span className="font-bold text-amber-700">€{vatAmount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-300">
-                          <span>{language === 'DE' ? 'Gesamt:' : 'Total:'}</span>
+                          <span>{L(language, 'Gesamt:', 'Total:')}</span>
                           <span>€{grandTotal.toFixed(2)}</span>
                         </div>
                         {renderSummaryNav()}
@@ -4235,12 +4201,10 @@ export default function OrderPage() {
                         <Shield size={20} className="text-green-600" />
                         <div>
                           <p className="text-sm font-medium text-green-800">
-                            {language === 'DE' ? 'Sichere Zahlung' : 'Secure Payment'}
+                            {L(language, 'Sichere Zahlung', 'Secure Payment')}
                           </p>
                           <p className="text-xs text-green-600">
-                            {language === 'DE'
-                              ? 'SSL-verschluesselt \u2022 DSGVO-konform'
-                              : 'SSL Encrypted \u2022 GDPR Compliant'}
+                            {L(language, 'SSL-verschluesselt \u2022 DSGVO-konform', 'SSL Encrypted \u2022 GDPR Compliant')}
                           </p>
                         </div>
                       </div>
@@ -4258,31 +4222,31 @@ export default function OrderPage() {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-900">{t.payment.method}</h3>
                         <span className="text-xs font-semibold text-amber-600 uppercase tracking-[0.2em]">
-                          {language === 'DE' ? 'Schritt 3' : 'Step 3'}
+                          {L(language, 'Schritt 3', 'Step 3')}
                         </span>
                       </div>
                       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {[
                           {
                             id: 'credit-card',
-                            label: language === 'DE' ? 'Kreditkarte' : 'Credit Card',
-                            description: language === 'DE' ? 'Sofortige Bestätigung und sicherer Checkout.' : 'Instant confirmation and secure checkout.',
+                            label: L(language, 'Kreditkarte', 'Credit Card'),
+                            description: L(language, 'Sofortige Bestätigung und sicherer Checkout.', 'Instant confirmation and secure checkout.'),
                             icon: CreditCard,
-                            badge: language === 'DE' ? 'Schnell' : 'Fast'
+                            badge: L(language, 'Schnell', 'Fast')
                           },
                           {
                             id: 'paypal',
                             label: 'PayPal',
-                            description: language === 'DE' ? 'Nutzen Sie PayPal-Guthaben oder die verknüpfte Karte.' : 'Use your PayPal balance or linked card.',
+                            description: L(language, 'Nutzen Sie PayPal-Guthaben oder die verknüpfte Karte.', 'Use your PayPal balance or linked card.'),
                             icon: null,
-                            badge: language === 'DE' ? 'Beliebt' : 'Popular'
+                            badge: L(language, 'Beliebt', 'Popular')
                           },
                           {
                             id: 'bank-transfer',
-                            label: language === 'DE' ? 'Banküberweisung' : 'Bank Transfer',
-                            description: language === 'DE' ? 'Wir zeigen Ihnen unsere Bankdaten an.' : 'We will display our bank details.',
+                            label: L(language, 'Banküberweisung', 'Bank Transfer'),
+                            description: L(language, 'Wir zeigen Ihnen unsere Bankdaten an.', 'We will display our bank details.'),
                             icon: Building2,
-                            badge: language === 'DE' ? 'Manuell' : 'Manual'
+                            badge: L(language, 'Manuell', 'Manual')
                           }
                         ].map((method) => {
                           const isSelected = orderData.paymentMethod === method.id;
@@ -4329,8 +4293,8 @@ export default function OrderPage() {
                               <div className="flex min-w-0 items-center justify-between gap-3 text-xs font-medium text-gray-500">
                                 <span className="min-w-0 break-words">
                                   {isSelected
-                                    ? (language === 'DE' ? 'Ausgewählt' : 'Selected')
-                                    : (language === 'DE' ? 'Antippen zum Auswählen' : 'Tap to select')}
+                                    ? (L(language, 'Ausgewählt', 'Selected'))
+                                    : (L(language, 'Antippen zum Auswählen', 'Tap to select'))}
                                 </span>
                                 <span className="shrink-0 text-amber-600 group-hover:text-amber-700">Details</span>
                               </div>
@@ -4441,7 +4405,7 @@ export default function OrderPage() {
                             onClick={() => setTermsModalOpen(true)}
                             className="mt-2 text-xs font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4"
                           >
-                          {language === 'DE' ? 'AGB & Bedingungen lesen' : 'Read full Terms and Conditions'}
+                          {L(language, 'AGB & Bedingungen lesen', 'Read full Terms and Conditions')}
                           </button>
                         </div>
                       </div>
@@ -4454,10 +4418,10 @@ export default function OrderPage() {
                       <div className="pt-6 border-t border-gray-200">
                         <div className="mb-3">
                           <h4 className="text-sm font-semibold text-gray-900">
-                            {language === 'DE' ? 'Sicherheitsprüfung' : 'Security check'}
+                            {L(language, 'Sicherheitsprüfung', 'Security check')}
                           </h4>
                           <p className="text-xs text-gray-600">
-                            {language === 'DE' ? 'Bitte bestätigen Sie, dass Sie kein Bot sind.' : 'Please confirm you are not a bot.'}
+                            {L(language, 'Bitte bestätigen Sie, dass Sie kein Bot sind.', 'Please confirm you are not a bot.')}
                           </p>
                         </div>
                         <TurnstileWidget
@@ -4470,12 +4434,12 @@ export default function OrderPage() {
                           onExpire={() => {
                             setCaptchaToken('');
                             setCaptchaResetKey((value) => value + 1);
-                            setCaptchaError(language === 'DE' ? 'Captcha ist abgelaufen. Bitte erneut bestätigen.' : 'Captcha expired. Please complete it again.');
+                            setCaptchaError(L(language, 'Captcha ist abgelaufen. Bitte erneut bestätigen.', 'Captcha expired. Please complete it again.'));
                           }}
                           onError={() => {
                             setCaptchaToken('');
                             setCaptchaResetKey((value) => value + 1);
-                            setCaptchaError(language === 'DE' ? 'Captcha konnte nicht geladen werden. Bitte Seite neu laden.' : 'Captcha failed to load. Please reload the page.');
+                            setCaptchaError(L(language, 'Captcha konnte nicht geladen werden. Bitte Seite neu laden.', 'Captcha failed to load. Please reload the page.'));
                           }}
                         />
                         {captchaError && (
@@ -4565,7 +4529,7 @@ export default function OrderPage() {
                         firstName: e.target.value
                       })}
                       className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder:text-gray-500"
-                      placeholder={language === 'DE' ? 'Max' : 'John'}
+                      placeholder={L(language, 'Max', 'John')}
                       required
                     />
                   </div>
@@ -4581,7 +4545,7 @@ export default function OrderPage() {
                         lastName: e.target.value
                       })}
                       className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder:text-gray-500"
-                      placeholder={language === 'DE' ? 'Mustermann' : 'Doe'}
+                      placeholder={L(language, 'Mustermann', 'Doe')}
                       required
                     />
                   </div>
@@ -4597,7 +4561,7 @@ export default function OrderPage() {
                       onChange={(e) => updateContactInfoField('email', e.target.value)}
                       onBlur={() => handleContactBlur('email')}
                       className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder:text-gray-500"
-                      placeholder={language === 'DE' ? 'max@example.com' : 'john@example.com'}
+                      placeholder={L(language, 'max@example.com', 'john@example.com')}
                       required
                     />
                     {contactErrors.email && (
@@ -4626,14 +4590,14 @@ export default function OrderPage() {
                   <>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">
-                        {language === 'DE' ? 'Firmenname *' : 'Company Name *'}
+                        {L(language, 'Firmenname *', 'Company Name *')}
                       </label>
                       <input
                         type="text"
                         value={orderData.contactInfo.company}
                         onChange={(e) => updateCompanyName(e.target.value)}
                         className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-gray-900 placeholder:text-gray-500"
-                        placeholder={language === 'DE' ? 'Firmenname' : 'Company name'}
+                        placeholder={L(language, 'Firmenname', 'Company name')}
                         required
                       />
                       {companyErrors.name && (
@@ -4642,14 +4606,14 @@ export default function OrderPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-900 mb-2">
-                        {language === 'DE' ? 'Firmeninformationen (optional)' : 'Company Information (optional)'}
+                        {L(language, 'Firmeninformationen (optional)', 'Company Information (optional)')}
                       </label>
                         <textarea
                         value={orderData.companyInfo}
                         onChange={(e) => updateCompanyInfo(e.target.value)}
                         rows={4}
                         className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none text-gray-900 placeholder:text-gray-500"
-                        placeholder={language === 'DE' ? 'z.B. Branche, Groesse, Standort' : 'e.g. industry, size, location'}
+                        placeholder={L(language, 'z.B. Branche, Groesse, Standort', 'e.g. industry, size, location')}
                       />
                     </div>
                   </>
@@ -4660,22 +4624,18 @@ export default function OrderPage() {
               <div className="flex items-center gap-3 mb-4">
                 <FileText size={18} className="text-gray-600" />
                 <h3 className="text-lg font-bold text-gray-900">
-                  {language === 'DE' ? 'Besondere Wuensche' : 'Special Requests'}
+                  {L(language, 'Besondere Wuensche', 'Special Requests')}
                 </h3>
               </div>
               <p className="text-sm text-gray-600 mb-4">
-                {language === 'DE'
-                    ? 'Teilen Sie Ernährungswünsche, Hinweise zum Aufbau oder Zeitdetails.'
-                    : 'Share dietary restrictions, setup notes, or timing details.'}
+                {L(language, 'Teilen Sie Ernährungswünsche, Hinweise zum Aufbau oder Zeitdetails.', 'Share dietary restrictions, setup notes, or timing details.')}
               </p>
               <textarea
                 value={orderData.specialRequests}
                 onChange={(e) => updateOrderData('specialRequests', e.target.value)}
                 rows={4}
                 className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none text-gray-900 placeholder:text-gray-500"
-                placeholder={language === 'DE'
-                  ? 'Ernährungswünsche oder besondere Anforderungen...'
-                  : 'Any dietary restrictions or special requirements...'}
+                placeholder={L(language, 'Ernährungswünsche oder besondere Anforderungen...', 'Any dietary restrictions or special requirements...')}
               />
             </div>
           </div>
@@ -4684,7 +4644,7 @@ export default function OrderPage() {
               <div className="flex items-center gap-3 mb-5">
                 <MapPinIcon size={18} className="text-amber-600" />
                 <h3 className="text-lg font-bold text-gray-900">
-                  {language === 'DE' ? 'Lieferübersicht' : 'Delivery Overview'}
+                  {L(language, 'Lieferübersicht', 'Delivery Overview')}
                 </h3>
               </div>
               <div className="space-y-3 text-sm text-gray-700">
@@ -4707,7 +4667,7 @@ export default function OrderPage() {
                   <div className="flex items-center gap-2">
                     <Users size={16} className="text-gray-500" />
                     <span className="font-semibold">
-                      {language === 'DE' ? 'Menu-Portionen (Minimum):' : 'Menu portions (minimum):'}
+                      {L(language, 'Menu-Portionen (Minimum):', 'Menu portions (minimum):')}
                     </span>
                     <span>{pricingGuestCount}</span>
                   </div>
@@ -4725,9 +4685,7 @@ export default function OrderPage() {
                 <div className="flex items-center gap-2">
                   <Info size={14} className="text-amber-600" />
                   <span>
-                    {language === 'DE'
-                      ? 'Lieferzeitfenster werden nach Zahlung bestätigt.'
-                      : 'Delivery windows are confirmed after payment.'}
+                    {L(language, 'Lieferzeitfenster werden nach Zahlung bestätigt.', 'Delivery windows are confirmed after payment.')}
                   </span>
                 </div>
               </div>
@@ -4832,7 +4790,7 @@ export default function OrderPage() {
         <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-gradient-to-b from-white/80 via-white/70 to-white/60 supports-[backdrop-filter]:bg-white/60 backdrop-blur-2xl shadow-[0_40px_120px_rgba(0,0,0,0.38)] border border-white/35 ring-1 ring-[#A69256]/15 flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-black/5">
             <h3 className="text-lg font-bold text-gray-900">
-              {language === 'DE' ? 'AGB & Bedingungen' : 'Terms and Conditions'}
+              {L(language, 'AGB & Bedingungen', 'Terms and Conditions')}
             </h3>
             <button
               type="button"
@@ -4844,17 +4802,15 @@ export default function OrderPage() {
           </div>
           <div className="px-6 py-5 flex-1 overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-4">
             <p>
-              {language === 'DE'
-                ? 'Diese Bedingungen gelten für Ihre Bestellung. Die vollständige Fassung finden Sie auch unter '
-                : 'These terms apply to your order. You can also read them in full at '}
+              {L(language, 'Diese Bedingungen gelten für Ihre Bestellung. Die vollständige Fassung finden Sie auch unter ', 'These terms apply to your order. You can also read them in full at ')}
               <a href="/agb" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">/agb</a>
-              {language === 'DE' ? '; unsere ' : '; our '}
+              {L(language, '; unsere ', '; our ')}
               <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
-                {language === 'DE' ? 'Datenschutzerklärung' : 'privacy policy'}
+                {L(language, 'Datenschutzerklärung', 'privacy policy')}
               </a>
-              {language === 'DE' ? ' erläutert die Verarbeitung Ihrer Daten.' : ' explains how we process your data.'}
+              {L(language, ' erläutert die Verarbeitung Ihrer Daten.', ' explains how we process your data.')}
             </p>
-            {TERMS[language === 'DE' ? 'DE' : 'EN'].map((section) => (
+            {TERMS[L(language, 'DE', 'EN')].map((section) => (
               <div key={section.title}>
                 <h4 className="text-sm font-semibold text-gray-900 mb-2">{section.title}</h4>
                 <p>{section.text}</p>
@@ -4979,7 +4935,7 @@ export default function OrderPage() {
                     <p className="text-base font-semibold text-[#A69256]">€{productDetailsItem.price}</p>
                   </div>
                   <div className="rounded-lg bg-white/60 backdrop-blur-sm border border-black/10 p-3">
-                    <p className="text-[#404040]/60">{language === 'DE' ? 'Anzahl der Gaeste' : 'Number of Guests'}</p>
+                    <p className="text-[#404040]/60">{L(language, 'Anzahl der Gaeste', 'Number of Guests')}</p>
                     <p className="text-base font-semibold text-[#404040]">{getMinOrderQuantity(productDetailsItem)}</p>
                   </div>
                   <div className="rounded-lg bg-white/60 backdrop-blur-sm border border-black/10 p-3">
@@ -5053,7 +5009,7 @@ export default function OrderPage() {
         <div className="w-full max-w-lg max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200 flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900">
-              {language === 'DE' ? 'Hinweis zu Extras' : 'Extras notice'}
+              {L(language, 'Hinweis zu Extras', 'Extras notice')}
             </h3>
             <button
               type="button"
@@ -5079,10 +5035,10 @@ export default function OrderPage() {
             </p>
             <div className="rounded-lg border border-amber-100 bg-amber-50/70 p-4">
               <p className="text-sm text-amber-800 font-semibold">
-                {language === 'DE' ? 'Extra Gerichte:' : 'Extra dishes:'} {extraNoticeData.extra}
+                {L(language, 'Extra Gerichte:', 'Extra dishes:')} {extraNoticeData.extra}
               </p>
               <p className="text-xs text-amber-700 mt-1">
-                {language === 'DE' ? 'Extras werden zu Ihrer Gesamtsumme hinzugefuegt.' : 'Extras will be added to your total.'}
+                {L(language, 'Extras werden zu Ihrer Gesamtsumme hinzugefuegt.', 'Extras will be added to your total.')}
               </p>
             </div>
           </div>
@@ -5092,7 +5048,7 @@ export default function OrderPage() {
               onClick={() => setExtraNoticeOpen(false)}
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700"
             >
-              {language === 'DE' ? 'Verstanden' : 'Ok, got it'}
+              {L(language, 'Verstanden', 'Ok, got it')}
             </button>
           </div>
         </div>
@@ -5179,7 +5135,7 @@ export default function OrderPage() {
 
             <div className="rounded-xl border border-black/10 bg-white/70 backdrop-blur-sm p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-black/50 mb-3">
-                {language === 'DE' ? 'Menu' : 'Menu'}
+                {L(language, 'Menu', 'Menu')}
               </div>
               {selectedMenuObj ? (
                 <div className="space-y-3">
@@ -5191,7 +5147,7 @@ export default function OrderPage() {
                       ) : null}
                     </div>
                     <div className="shrink-0 text-right">
-                      <div className="text-xs text-black/60">{language === 'DE' ? 'Basis' : 'Base'}</div>
+                      <div className="text-xs text-black/60">{L(language, 'Basis', 'Base')}</div>
                       <div className="font-semibold text-black">€{totals.menuSubtotal.toFixed(2)}</div>
                     </div>
                   </div>
@@ -5203,12 +5159,12 @@ export default function OrderPage() {
                           <div className="flex items-center justify-between gap-3">
                             <div className="font-semibold text-black truncate">{row.label}</div>
                             <div className="text-xs text-black/60 whitespace-nowrap">
-                              {language === 'DE' ? 'Inkl.' : 'Incl.'} {row.included} · {language === 'DE' ? 'Gewählt' : 'Selected'} {row.selected}
+                              {L(language, 'Inkl.', 'Incl.')} {row.included} · {L(language, 'Gewählt', 'Selected')} {row.selected}
                             </div>
                           </div>
                           <div className="mt-1 flex items-center justify-between gap-3 text-xs text-black/70">
                             <span>
-                              {language === 'DE' ? 'Extras' : 'Extras'}: {row.extra}
+                              {L(language, 'Extras', 'Extras')}: {row.extra}
                             </span>
                             <span className="font-semibold text-black">
                               €{row.extraCost.toFixed(2)}
@@ -5226,7 +5182,7 @@ export default function OrderPage() {
 
             <div className="rounded-xl border border-black/10 bg-white/70 backdrop-blur-sm p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-black/50 mb-3">
-                {language === 'DE' ? 'Auswahl' : 'Selections'}
+                {L(language, 'Auswahl', 'Selections')}
               </div>
               {activeCategoryKeys.every((k) => getItemsForStepCategory(k).length === 0) ? (
                 <div className="text-sm text-black/60">{ui.notSpecified}</div>
@@ -5250,12 +5206,12 @@ export default function OrderPage() {
                                   <div className="font-semibold text-black break-words">{item?.name}</div>
                                   <div className="mt-1 text-xs text-black/60">
                                     x{Number(item?.quantity) || 0} · €{toPriceNumber(item?.price).toFixed(2)}
-                                    {charge.isIncluded ? ` · ${language === 'DE' ? 'inkl.' : 'included'}` : ''}
+                                    {charge.isIncluded ? ` · ${L(language, 'inkl.', 'included')}` : ''}
                                   </div>
                                 </div>
                                 <div className="shrink-0 text-right">
                                   {isIncludedAndFree ? (
-                                    <div className="text-xs font-semibold text-emerald-700">{language === 'DE' ? 'inklusive' : 'included'}</div>
+                                    <div className="text-xs font-semibold text-emerald-700">{L(language, 'inklusive', 'included')}</div>
                                   ) : (
                                     <div className="font-semibold text-black">€{charge.chargedTotal.toFixed(2)}</div>
                                   )}
@@ -5273,7 +5229,7 @@ export default function OrderPage() {
 
             <div className="rounded-xl border border-black/10 bg-white/70 backdrop-blur-sm p-4">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-black/50 mb-3">
-                {language === 'DE' ? 'Zubehör' : 'Accessories'}
+                {L(language, 'Zubehör', 'Accessories')}
               </div>
               {selectedAccessories.length === 0 ? (
                 <div className="text-sm text-black/60">{ui.notSpecified}</div>
@@ -5300,25 +5256,25 @@ export default function OrderPage() {
           <div className="px-5 sm:px-6 py-4 border-t border-black/10 bg-white/40">
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-black/70">{language === 'DE' ? 'Menu + Extras' : 'Menu + extras'}</span>
+                <span className="text-black/70">{L(language, 'Menu + Extras', 'Menu + extras')}</span>
                 <span className="font-semibold text-black">€{totals.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-black/70">{language === 'DE' ? 'Zubehör' : 'Accessories'}</span>
+                <span className="text-black/70">{L(language, 'Zubehör', 'Accessories')}</span>
                 <span className="font-semibold text-black">€{totals.accessoriesSubtotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-black/70">{language === 'DE' ? 'Servicegebühr' : 'Service fee'}</span>
+                <span className="text-black/70">{L(language, 'Servicegebühr', 'Service fee')}</span>
                 <span className="font-semibold text-black">€{totals.serviceFee.toFixed(2)}</span>
               </div>
               {vatRate != null && vatAmount != null && grandTotal != null && (
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-black/70">{language === 'DE' ? `MwSt. (${Math.round(vatRate * 100)}%)` : `VAT (${Math.round(vatRate * 100)}%)`}</span>
+                  <span className="text-black/70">{L(language, `MwSt. (${Math.round(vatRate * 100)}%)`, `VAT (${Math.round(vatRate * 100)}%)`)}</span>
                   <span className="font-semibold text-black">€{vatAmount.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between gap-3 pt-2 border-t border-black/10 text-base">
-                <span className="font-semibold text-black">{language === 'DE' ? 'Gesamt' : 'Total'}</span>
+                <span className="font-semibold text-black">{L(language, 'Gesamt', 'Total')}</span>
                 <span className="font-bold text-black">€{(grandTotal ?? totals.total).toFixed(2)}</span>
               </div>
             </div>
@@ -5606,10 +5562,10 @@ export default function OrderPage() {
                     className="h-9 sm:h-11 w-auto object-contain"
                   />
                 </button>
-                <span className="hidden xl:block h-7 w-px bg-white/15" />
+                <span className="hidden 2xl:block h-7 w-px bg-white/15" />
                 <button
                   onClick={handleBackToHome}
-                  className="hidden xl:inline-flex whitespace-nowrap items-center gap-1.5 text-xs tracking-wide text-white/70 hover:text-[#d6c27d] transition-colors"
+                  className="hidden 2xl:inline-flex whitespace-nowrap items-center gap-1.5 text-xs tracking-wide text-white/70 hover:text-[#d6c27d] transition-colors"
                 >
                   <ArrowLeft size={14} />
                   {t.buttons.backToHome}
@@ -5668,17 +5624,7 @@ export default function OrderPage() {
                   {currentStep === stepsConfig.length ? ui.confirmOrder : t.buttons.next}
                   <ChevronRight size={14} className="ml-1" />
                 </button>
-                <button
-                  onClick={toggleLanguage}
-                  aria-label={language === 'EN' ? commonA11y.switchToGerman : commonA11y.switchToEnglish}
-                  className="h-9 w-11 border border-white/20 rounded-full hover:border-[#A69256] hover:bg-white/10 transition-colors inline-flex items-center justify-center"
-                >
-                  <img
-                    src={language === 'EN' ? '/images/language/Flag_of_United_Kingdom-4096x2048.png' : '/images/language/Flag_of_Germany-4096x2453.png'}
-                    alt={language === 'EN' ? commonA11y.englishFlagAlt : commonA11y.germanFlagAlt}
-                    className="h-3.5 w-auto"
-                  />
-                </button>
+                <LanguageSwitcher />
               </div>
             </div>
 
@@ -5767,14 +5713,12 @@ export default function OrderPage() {
                 <img src="/images/buffet-fingerfood.jpg" alt="" aria-hidden className="order-hero-img" loading="eager" />
                 <div className="order-hero-scrim" />
                 <div className="relative z-10 px-6 py-10 sm:px-12 sm:py-14 max-w-2xl">
-                  <p className="order-eyebrow">{language === 'DE' ? 'Ihre Anfrage' : 'Your request'}</p>
+                  <p className="order-eyebrow">{L(language, 'Ihre Anfrage', 'Your request')}</p>
                   <h1 className="order-hero-title">
-                    {language === 'DE' ? 'Gestalten Sie Ihr Catering' : 'Design your catering'}
+                    {L(language, 'Gestalten Sie Ihr Catering', 'Design your catering')}
                   </h1>
                   <p className="mt-3 text-sm sm:text-base text-white/80 leading-relaxed">
-                    {language === 'DE'
-                      ? 'In vier Schritten zu Ihrem Menü: Anlass, Auswahl, Zubehör und Lieferung. Unverbindlich und jederzeit anpassbar.'
-                      : 'Four simple steps to your menu: occasion, selection, accessories and delivery. Non-binding and adjustable at any time.'}
+                    {L(language, 'In vier Schritten zu Ihrem Menü: Anlass, Auswahl, Zubehör und Lieferung. Unverbindlich und jederzeit anpassbar.', 'Four simple steps to your menu: occasion, selection, accessories and delivery. Non-binding and adjustable at any time.')}
                   </p>
                 </div>
               </section>

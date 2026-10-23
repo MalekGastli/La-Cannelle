@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { L } from '@/lib/i18n/inline';
 import { createPortal } from 'react-dom';
 import { X, Phone, Mail, MapPin, Check, ChevronRight } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,7 +9,7 @@ import { menusApi, type Menu as ApiMenu } from '@/lib/api/menus';
 import { productsApi, type Product as ApiProduct } from '@/lib/api/products';
 import { commonTranslations } from '@/lib/translations/common';
 import { menusTranslations } from '@/lib/translations/menus';
-import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useTranslation, pick } from '@/lib/hooks/useTranslation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SiteHeader from '@/components/site/SiteHeader';
 import SiteFooter from '@/components/site/SiteFooter';
@@ -47,10 +48,10 @@ export default function MenusPage() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const commonNav = commonTranslations[language].nav;
-  const commonFooter = commonTranslations[language].footer;
-  const commonA11y = commonTranslations[language].accessibility;
-  const t = menusTranslations[language];
+  const commonNav = pick(commonTranslations, language).nav;
+  const commonFooter = pick(commonTranslations, language).footer;
+  const commonA11y = pick(commonTranslations, language).accessibility;
+  const t = pick(menusTranslations, language);
 
   useEffect(() => {
     setIsVisible(true);
@@ -427,7 +428,7 @@ export default function MenusPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10"></div>
           <div className="absolute inset-x-0 bottom-0 p-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/70">
-              {language === 'DE' ? 'MENÜ' : 'MENU'}
+              {L(language, 'MENÜ', 'MENU')}
             </p>
             <h3 className="mt-2 text-3xl font-semibold text-white font-display leading-tight">
               {menu.name}
@@ -676,7 +677,7 @@ export default function MenusPage() {
       </section>
 
       {/* Premium Footer */}
-      <SiteFooter footer={commonTranslations[language].footer} nav={commonNav} />
+      <SiteFooter footer={pick(commonTranslations, language).footer} nav={commonNav} />
     </div>
   );
 }

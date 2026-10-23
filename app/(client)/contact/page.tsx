@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { L, localeOf, weekdaysOf } from '@/lib/i18n/inline';
 import { ChevronRight, Phone, Mail, MapPin, Clock, Send, MessageCircle, Calendar, ArrowUpRight } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api';
-import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useTranslation, pick } from '@/lib/hooks/useTranslation';
 import { commonTranslations } from '@/lib/translations/common';
 import { contactTranslations } from '@/lib/translations/contact';
 import { LuxurySelect } from '@/components/site/LuxurySelect';
@@ -24,9 +25,9 @@ export default function ContactPage() {
   const { t: rawT, language, toggleLanguage } = useTranslation('contact');
 
   const t = rawT as typeof contactTranslations.EN;
-  const commonNav = commonTranslations[language].nav;
-  const commonFooter = commonTranslations[language].footer;
-  const commonA11y = commonTranslations[language].accessibility;
+  const commonNav = pick(commonTranslations, language).nav;
+  const commonFooter = pick(commonTranslations, language).footer;
+  const commonA11y = pick(commonTranslations, language).accessibility;
   const [isVisible, setIsVisible] = useState(false);
   const pathname = usePathname();
 
@@ -150,7 +151,7 @@ export default function ContactPage() {
       return;
     }
     if (!formData.eventType.trim()) {
-      alert(language === 'DE' ? 'Bitte Veranstaltungstyp wählen.' : 'Please select an event type.');
+      alert(L(language, 'Bitte Veranstaltungstyp wählen.', 'Please select an event type.'));
       return;
     }
     const phoneValue = formData.phone.trim();
@@ -195,7 +196,7 @@ export default function ContactPage() {
   };
 
   const getMonthLabel = (year: number, monthIndex: number) => {
-    const locale = language === 'DE' ? 'de-DE' : 'en-US';
+    const locale = localeOf(language);
     return new Date(year, monthIndex, 1).toLocaleString(locale, { month: 'long', year: 'numeric' });
   };
 
@@ -228,13 +229,11 @@ export default function ContactPage() {
 
   const monthLabel = getMonthLabel(calendarYear, calendarMonthIndex);
   const datePickerUi = {
-    prevMonth: language === 'DE' ? 'Vorheriger Monat' : 'Previous month',
-    nextMonth: language === 'DE' ? 'Naechster Monat' : 'Next month',
-    clear: language === 'DE' ? 'Loeschen' : 'Clear',
-    today: language === 'DE' ? 'Heute' : 'Today',
-    weekdayLabels: language === 'DE'
-      ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
-      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    prevMonth: L(language, 'Vorheriger Monat', 'Previous month'),
+    nextMonth: L(language, 'Naechster Monat', 'Next month'),
+    clear: L(language, 'Loeschen', 'Clear'),
+    today: L(language, 'Heute', 'Today'),
+    weekdayLabels: weekdaysOf(language),
   };
   const eventDateError = formData.eventDate && isDateInPast(formData.eventDate)
     ? t.contactForm.invalidEventDate
@@ -534,11 +533,9 @@ export default function ContactPage() {
                     {t.contactForm.button}
                   </button>
                   <p className="text-xs leading-relaxed text-gray-600">
-                    {language === 'DE'
-                      ? 'Wir verwenden Ihre Angaben ausschließlich, um Ihre Anfrage zu beantworten. Mehr dazu in unserer '
-                      : 'We only use your details to answer your enquiry. More in our '}
+                    {L(language, 'Wir verwenden Ihre Angaben ausschließlich, um Ihre Anfrage zu beantworten. Mehr dazu in unserer ', 'We only use your details to answer your enquiry. More in our ')}
                     <a href="/datenschutz" className="underline underline-offset-4 hover:text-[#7a6a32]">
-                      {language === 'DE' ? 'Datenschutzerklärung' : 'privacy policy'}
+                      {L(language, 'Datenschutzerklärung', 'privacy policy')}
                     </a>
                     .
                   </p>
@@ -717,7 +714,7 @@ export default function ContactPage() {
       </section>
 
       {/* Premium Footer */}
-      <SiteFooter footer={commonTranslations[language].footer} nav={commonNav} />
+      <SiteFooter footer={pick(commonTranslations, language).footer} nav={commonNav} />
     </div>
   );
 }

@@ -36,6 +36,20 @@ export const orderController = {
       throw new AppError('Contact email and phone are required', 400);
     }
 
+    // Counting rules shared with the order UI (minimum guests, minimum net order value)
+    const guestsNumber = parseInt(guests, 10);
+    if (!Number.isFinite(guestsNumber) || guestsNumber < 10) {
+      throw new AppError('A minimum of 10 guests is required', 400);
+    }
+    const subtotalNumber = parseFloat(subtotal);
+    const totalNumber = parseFloat(total);
+    if (!Number.isFinite(subtotalNumber) || subtotalNumber < 199) {
+      throw new AppError('The minimum order value is 199 EUR (excl. VAT)', 400);
+    }
+    if (!Number.isFinite(totalNumber) || totalNumber < subtotalNumber) {
+      throw new AppError('Order total is inconsistent', 400);
+    }
+
     const eventDateObj = eventDate ? new Date(eventDate) : new Date();
 
     const systemStatus = await systemService.getSystemStatus();

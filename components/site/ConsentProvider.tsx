@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { L, P } from '@/lib/i18n/inline';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "@/lib/hooks/useTranslation";
@@ -90,7 +91,6 @@ function ConsentBanner() {
   const { bannerOpen, external, allowExternal, rejectExternal } = useConsent();
   const { language } = useTranslation("home");
   if (!bannerOpen) return null;
-  const de = language === "DE";
 
   return (
     <div
@@ -100,20 +100,18 @@ function ConsentBanner() {
       className="fixed inset-x-3 bottom-3 z-[90] max-w-xl rounded-sm border border-black/15 bg-white p-5 text-[#1a1410] shadow-[0_24px_70px_rgba(0,0,0,0.25)] sm:inset-x-auto sm:left-6 sm:bottom-6"
     >
       <h2 id="consent-title" className="font-display text-xl">
-        {de ? "Ihre Privatsphäre" : "Your privacy"}
+        {L(language, "Ihre Privatsphäre", "Your privacy")}
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-black/75">
-        {de
-          ? "Wir setzen keine Tracking- oder Werbe-Cookies ein. Einige Inhalte stammen von Drittanbietern: die Karte (Google Maps), eingebettete Instagram-Beiträge und der Spam-Schutz im Bestellformular (Cloudflare Turnstile). Sie werden erst geladen, wenn Sie zustimmen; dabei werden Daten wie Ihre IP-Adresse an diese Anbieter übertragen, teils in die USA. Ihre Auswahl können Sie jederzeit im Footer ändern."
-          : "We use no tracking or advertising cookies. Some content comes from third parties: the map (Google Maps), embedded Instagram posts and the spam protection on the order form (Cloudflare Turnstile). They load only if you agree, and data such as your IP address is then sent to those providers, partly to the USA. You can change your choice at any time in the footer."}
+        {L(language, "Wir setzen keine Tracking- oder Werbe-Cookies ein. Einige Inhalte stammen von Drittanbietern: die Karte (Google Maps), eingebettete Instagram-Beiträge und der Spam-Schutz im Bestellformular (Cloudflare Turnstile). Sie werden erst geladen, wenn Sie zustimmen; dabei werden Daten wie Ihre IP-Adresse an diese Anbieter übertragen, teils in die USA. Ihre Auswahl können Sie jederzeit im Footer ändern.", "We use no tracking or advertising cookies. Some content comes from third parties: the map (Google Maps), embedded Instagram posts and the spam protection on the order form (Cloudflare Turnstile). They load only if you agree, and data such as your IP address is then sent to those providers, partly to the USA. You can change your choice at any time in the footer.")}
       </p>
       <p className="mt-2 text-sm">
         <Link href="/datenschutz" className="underline underline-offset-4 hover:text-[#7a6a32]">
-          {de ? "Datenschutzerklärung" : "Privacy policy"}
+          {L(language, "Datenschutzerklärung", "Privacy policy")}
         </Link>
         {" · "}
         <Link href="/impressum" className="underline underline-offset-4 hover:text-[#7a6a32]">
-          {de ? "Impressum" : "Legal notice"}
+          {L(language, "Impressum", "Legal notice")}
         </Link>
       </p>
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -122,21 +120,24 @@ function ConsentBanner() {
           onClick={rejectExternal}
           className="rounded-sm border border-black/30 px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-black/5"
         >
-          {de ? "Nur notwendige" : "Necessary only"}
+          {L(language, "Nur notwendige", "Necessary only")}
         </button>
         <button
           type="button"
           onClick={allowExternal}
           className="rounded-sm border border-black/30 px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-black/5"
         >
-          {de ? "Externe Inhalte erlauben" : "Allow external content"}
+          {L(language, "Externe Inhalte erlauben", "Allow external content")}
         </button>
       </div>
       {external !== null && (
         <p className="mt-3 text-xs text-black/55">
-          {de
-            ? `Aktuell: externe Inhalte ${external ? "erlaubt" : "nicht erlaubt"}.`
-            : `Currently: external content ${external ? "allowed" : "not allowed"}.`}
+          {P(language, {
+            DE: `Aktuell: externe Inhalte ${external ? "erlaubt" : "nicht erlaubt"}.`,
+            EN: `Currently: external content ${external ? "allowed" : "not allowed"}.`,
+            FR: `Actuellement : contenus externes ${external ? "autorisés" : "non autorisés"}.`,
+            TR: `Şu anda: harici içerikler ${external ? "izinli" : "izinli değil"}.`,
+          })}
         </p>
       )}
     </div>
@@ -157,21 +158,28 @@ export function ConsentGate({
 }) {
   const { external, allowExternal } = useConsent();
   const { language } = useTranslation("home");
-  const de = language === "DE";
 
   if (external) return <>{children}</>;
 
   return (
     <div className={`flex flex-col items-start justify-center gap-3 bg-[#e5dfd4] p-6 text-[#1a1410] ${className ?? ""}`}>
       <p className="font-display text-xl">
-        {de ? `${service} wird erst nach Ihrer Zustimmung geladen` : `${service} loads only after you agree`}
+        {P(language, {
+          DE: `${service} wird erst nach Ihrer Zustimmung geladen`,
+          EN: `${service} loads only after you agree`,
+          FR: `${service} ne se charge qu'après votre accord`,
+          TR: `${service} yalnızca onayınızdan sonra yüklenir`,
+        })}
       </p>
       <p className="max-w-md text-sm leading-relaxed text-black/70">
-        {de
-          ? `Beim Laden überträgt Ihr Browser Daten, etwa Ihre IP-Adresse, an ${provider}. Mehr dazu in der `
-          : `Loading it sends data such as your IP address from your browser to ${provider}. More in the `}
+        {P(language, {
+          DE: `Beim Laden überträgt Ihr Browser Daten, etwa Ihre IP-Adresse, an ${provider}. Mehr dazu in der `,
+          EN: `Loading it sends data such as your IP address from your browser to ${provider}. More in the `,
+          FR: `Son chargement transmet des données, comme votre adresse IP, de votre navigateur à ${provider}. Plus d'informations dans la `,
+          TR: `Yüklendiğinde tarayıcınız IP adresiniz gibi verileri ${provider} sağlayıcısına iletir. Daha fazlası için: `,
+        })}
         <Link href="/datenschutz" className="underline underline-offset-4">
-          {de ? "Datenschutzerklärung" : "privacy policy"}
+          {L(language, "Datenschutzerklärung", "privacy policy")}
         </Link>
         .
       </p>
@@ -180,7 +188,7 @@ export function ConsentGate({
         onClick={allowExternal}
         className="rounded-sm border border-black/40 px-4 py-2 text-sm font-semibold transition-colors hover:bg-black hover:text-white"
       >
-        {de ? "Externe Inhalte erlauben und laden" : "Allow external content and load"}
+        {L(language, "Externe Inhalte erlauben und laden", "Allow external content and load")}
       </button>
     </div>
   );

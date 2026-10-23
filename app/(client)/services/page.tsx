@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Phone, Mail, MapPin, Briefcase, Users, Heart, Building2 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useTranslation, pick } from '@/lib/hooks/useTranslation';
 import { servicesTranslations } from '@/lib/translations/services';
 import { commonTranslations } from '@/lib/translations/common';
 import SiteHeader from '@/components/site/SiteHeader';
@@ -14,8 +14,8 @@ export default function ServicesPage() {
   const translation = useTranslation('services');
   const t = translation.t as typeof servicesTranslations.EN;
   const { language, toggleLanguage } = translation;
-  const commonNav = commonTranslations[language].nav;
-  const commonA11y = commonTranslations[language].accessibility;
+  const commonNav = pick(commonTranslations, language).nav;
+  const commonA11y = pick(commonTranslations, language).accessibility;
   const [isVisible, setIsVisible] = useState(false);
 
   const router = useRouter();
@@ -255,7 +255,7 @@ export default function ServicesPage() {
       </section>
 
       {/* Premium Footer */}
-      <SiteFooter footer={commonTranslations[language].footer} nav={commonNav} />
+      <SiteFooter footer={pick(commonTranslations, language).footer} nav={commonNav} />
     </div>
   );
 }

@@ -1,12 +1,13 @@
 ﻿"use client";
 
 import React, { useState, useEffect } from 'react';
+import { L } from '@/lib/i18n/inline';
 import { ChevronRight, Phone, Mail, MapPin, Users, Award, Eye, Target, Building, Flag, Globe, Zap, ArrowUpRight, PlayCircle } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Star, Crown, Shield, Heart } from 'lucide-react';
 import { menusApi, type Menu as ApiMenu } from '@/lib/api/menus';
 import { productsApi, type Product } from '@/lib/api/products';
-import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useTranslation, pick } from '@/lib/hooks/useTranslation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useRef } from 'react';
 import { commonTranslations } from '@/lib/translations/common';
@@ -68,7 +69,7 @@ const BRAND_LOGOS = [
 export default function CateringHomepage() {
   const scrollContainer = useRef<HTMLDivElement>(null);
   const { language, toggleLanguage } = useTranslation('home');
-  const t = homeTranslations[language];
+  const t = pick(homeTranslations, language);
   
   const [isVisible, setIsVisible] = useState(false);
   const [menus, setMenus] = useState<ApiMenu[]>([]);
@@ -76,8 +77,8 @@ export default function CateringHomepage() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const commonNav = commonTranslations[language].nav;
-  const commonA11y = commonTranslations[language].accessibility;
+  const commonNav = pick(commonTranslations, language).nav;
+  const commonA11y = pick(commonTranslations, language).accessibility;
 
   useEffect(() => {
     setIsVisible(true);
@@ -245,7 +246,7 @@ export default function CateringHomepage() {
           <div className="grid lg:grid-cols-12 items-center gap-12">
             <div className="lg:col-span-8 text-left">
               <p className={`eyebrow eyebrow-light mb-6 ${isVisible ? 'animate-fade-in-down lux-type lux-type-run lux-type-caret' : 'opacity-0'}`}>
-                {language === 'DE' ? 'Mehr als Geschmack' : 'Beyond taste'}
+                {L(language, 'Mehr als Geschmack', 'Beyond taste')}
               </p>
 
               <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
@@ -288,15 +289,15 @@ export default function CateringHomepage() {
               <ul className="mt-14 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-white/15 pt-6 text-[11px] font-medium uppercase tracking-[0.22em] text-white/70">
                 <li className="inline-flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--accent)]"></span>
-                  {language === 'DE' ? 'Kuratierte Menus' : 'Crafted menus'}
+                  {L(language, 'Kuratierte Menus', 'Crafted menus')}
                 </li>
                 <li className="inline-flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--accent)]"></span>
-                  {language === 'DE' ? 'Nahtlose Lieferung' : 'Seamless delivery'}
+                  {L(language, 'Nahtlose Lieferung', 'Seamless delivery')}
                 </li>
                 <li className="inline-flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--accent)]"></span>
-                  {language === 'DE' ? 'Premium-Service' : 'Premium service'}
+                  {L(language, 'Premium-Service', 'Premium service')}
                 </li>
               </ul>
             </div>
@@ -366,7 +367,7 @@ export default function CateringHomepage() {
                 <div key={service.title} className="flex w-full max-w-[340px] flex-col items-center">
                   <GlassFolder
                     label={service.title}
-                    meta={language === 'DE' ? `${files.length} Fotos` : `${files.length} photos`}
+                    meta={L(language, `${files.length} Fotos`, `${files.length} photos`)}
                     tone="dark"
                     image={folder.cover}
                     action="none"
@@ -386,7 +387,7 @@ export default function CateringHomepage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <p className="eyebrow mb-4">
-              {language === 'DE' ? 'MENUS' : 'MENUS'}
+              {L(language, 'MENUS', 'MENUS')}
             </p>
             <SplitText as="h2" className="block text-4xl lg:text-5xl font-medium tracking-tight text-black mb-4 font-display" text={t.menus.title} />
             <p className="text-black/70 text-lg">{t.menus.description}</p>
@@ -433,15 +434,13 @@ export default function CateringHomepage() {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-12">
             <div className="max-w-2xl">
               <p className="eyebrow mb-4">
-                {language === 'DE' ? 'LOOKBOOK' : 'LOOKBOOK'}
+                {L(language, 'LOOKBOOK', 'LOOKBOOK')}
               </p>
               <h2 className="text-4xl lg:text-5xl font-medium tracking-tight text-black mb-4 font-display lux-reveal lux-type" data-lux-delay="60">
-                {language === 'DE' ? 'Signature Moments' : 'Signature moments'}
+                {L(language, 'Signature Moments', 'Signature moments')}
               </h2>
               <p className="text-black/70 text-lg lux-reveal lux-type" data-lux-delay="120">
-                {language === 'DE'
-                  ? 'Ein Einblick in Private Dining, Brand Launches und unvergessliche Feiern.'
-                  : 'A glimpse into private dining, brand launches, and unforgettable celebrations.'}
+                {L(language, 'Ein Einblick in Private Dining, Brand Launches und unvergessliche Feiern.', 'A glimpse into private dining, brand launches, and unforgettable celebrations.')}
               </p>
             </div>
 
@@ -451,7 +450,7 @@ export default function CateringHomepage() {
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white hover:bg-black/90 transition-colors"
             >
-              {language === 'DE' ? 'Reels ansehen' : 'Watch reels'}
+              {L(language, 'Reels ansehen', 'Watch reels')}
               <ArrowUpRight size={16} />
             </a>
           </div>
@@ -471,15 +470,15 @@ export default function CateringHomepage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
               <div className="absolute left-6 bottom-6 right-6">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/70">
-                  {language === 'DE' ? 'Fingerfood' : 'Finger food'}
+                  {L(language, 'Fingerfood', 'Finger food')}
                 </p>
                 <h3 className="mt-2 text-2xl font-semibold text-white font-display">
-                  {language === 'DE' ? 'Kleine Bissen, groß inszeniert.' : 'Small bites, staged with care.'}
+                  {L(language, 'Kleine Bissen, groß inszeniert.', 'Small bites, staged with care.')}
                 </h3>
               </div>
               <div className="absolute top-6 right-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
                 <PlayCircle size={16} />
-                {language === 'DE' ? 'Ansehen' : 'View'}
+                {L(language, 'Ansehen', 'View')}
               </div>
             </a>
             </ImageReveal>
@@ -488,13 +487,13 @@ export default function CateringHomepage() {
                 {[
                 {
                   image: '/images/restaurant-interior.jpg',
-                  label: language === 'DE' ? 'Grazing Tables' : 'Grazing tables',
-                  title: language === 'DE' ? 'Großzügig angerichtet, ohne Aufwand für Sie.' : 'Generously laid out, effortless for you.',
+                  label: L(language, 'Grazing Tables', 'Grazing tables'),
+                  title: L(language, 'Großzügig angerichtet, ohne Aufwand für Sie.', 'Generously laid out, effortless for you.'),
                 },
                 {
                   image: '/images/community-feast.jpg',
-                  label: language === 'DE' ? 'Desserts' : 'Desserts',
-                  title: language === 'DE' ? 'Süßer Abschluss für jedes Fest.' : 'A sweet finish for every celebration.',
+                  label: L(language, 'Desserts', 'Desserts'),
+                  title: L(language, 'Süßer Abschluss für jedes Fest.', 'A sweet finish for every celebration.'),
                 },
               ].map((card) => (
                 <ImageReveal key={card.image} from="right">
@@ -527,17 +526,15 @@ export default function CateringHomepage() {
         <div className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6">
             <p className="eyebrow mb-4">
-              {language === 'DE' ? 'CONCIERGE' : 'CONCIERGE'}
+              {L(language, 'CONCIERGE', 'CONCIERGE')}
             </p>
             <SplitText
               as="h2"
               className="block text-4xl lg:text-5xl font-medium tracking-tight text-white mb-5 font-display"
-              text={language === 'DE' ? 'Planung, perfekt umgesetzt.' : 'Planning, perfected.'}
+              text={L(language, 'Planung, perfekt umgesetzt.', 'Planning, perfected.')}
             />
             <p className="text-white/75 text-lg leading-relaxed lux-reveal lux-type" data-lux-delay="120">
-              {language === 'DE'
-                ? 'Von der Menukuration bis zum Service vor Ort: Wir führen Ihr Event mit ruhiger Präzision — elegant, zuverlässig, diskret.'
-                : 'From menu curation to on-site service, we guide your event with calm precision — elegant, reliable, discreet.'}
+              {L(language, 'Von der Menukuration bis zum Service vor Ort: Wir führen Ihr Event mit ruhiger Präzision — elegant, zuverlässig, diskret.', 'From menu curation to on-site service, we guide your event with calm precision — elegant, reliable, discreet.')}
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -547,7 +544,7 @@ export default function CateringHomepage() {
                   onClick={() => router.push('/order')}
                   className="group btn-accent btn-shimmer"
                 >
-                  {language === 'DE' ? 'Jetzt bestellen' : 'Order now'}
+                  {L(language, 'Jetzt bestellen', 'Order now')}
                   <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
                 </button>
               </Magnetic>
@@ -556,7 +553,7 @@ export default function CateringHomepage() {
                 onClick={() => router.push('/contact')}
                 className="btn-outline-light"
               >
-                {language === 'DE' ? 'Angebot anfragen' : 'Request a quote'}
+                {L(language, 'Angebot anfragen', 'Request a quote')}
                 <ArrowUpRight size={18} className="text-white/80" />
               </button>
             </div>
@@ -564,20 +561,20 @@ export default function CateringHomepage() {
             <div className="mt-10 grid sm:grid-cols-2 gap-4">
               {[
                 {
-                  title: language === 'DE' ? 'Antwort in 24h' : '24h response',
-                  desc: language === 'DE' ? 'schnell, verbindlich, persönlich.' : 'Fast, reliable, personal.',
+                  title: L(language, 'Antwort in 24h', '24h response'),
+                  desc: L(language, 'schnell, verbindlich, persönlich.', 'Fast, reliable, personal.'),
                 },
                 {
-                  title: language === 'DE' ? 'White Glove Service' : 'White Glove Service',
-                  desc: language === 'DE' ? 'Team, Setup, Ablauf — aus einer Hand.' : 'Team, setup, flow — end to end.',
+                  title: L(language, 'White Glove Service', 'White Glove Service'),
+                  desc: L(language, 'Team, Setup, Ablauf — aus einer Hand.', 'Team, setup, flow — end to end.'),
                 },
                 {
-                  title: language === 'DE' ? 'Saisonale Menus' : 'Seasonal menus',
-                  desc: language === 'DE' ? 'modern, fein, mit Handschrift.' : 'Modern, refined, signature-led.',
+                  title: L(language, 'Saisonale Menus', 'Seasonal menus'),
+                  desc: L(language, 'modern, fein, mit Handschrift.', 'Modern, refined, signature-led.'),
                 },
                 {
-                  title: language === 'DE' ? 'Transparente Angebote' : 'Clear proposals',
-                  desc: language === 'DE' ? 'Details, Kosten, Timing — sauber erklärt.' : 'Details, cost, timing — explained.',
+                  title: L(language, 'Transparente Angebote', 'Clear proposals'),
+                  desc: L(language, 'Details, Kosten, Timing — sauber erklärt.', 'Details, cost, timing — explained.'),
                 },
               ].map((item) => (
                 <div key={item.title} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
@@ -597,10 +594,10 @@ export default function CateringHomepage() {
               />
               <div className="absolute left-8 bottom-8 right-8">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/70">
-                  {language === 'DE' ? 'Haute Catering' : 'Haute catering'}
+                  {L(language, 'Haute Catering', 'Haute catering')}
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-white font-display">
-                  {language === 'DE' ? 'Moderne Technik, großzügige hospitality.' : 'Modern technique, generous hospitality.'}
+                  {L(language, 'Moderne Technik, großzügige hospitality.', 'Modern technique, generous hospitality.')}
                 </p>
               </div>
             </div>
@@ -608,7 +605,7 @@ export default function CateringHomepage() {
         </div>
       </section>
 
-      <SiteFooter footer={commonTranslations[language].footer} nav={commonNav} />
+      <SiteFooter footer={pick(commonTranslations, language).footer} nav={commonNav} />
     </div>
   );
 }

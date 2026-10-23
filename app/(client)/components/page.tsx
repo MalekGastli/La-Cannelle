@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
+import type { Language } from '@/lib/hooks/useTranslation';
+import { L } from '@/lib/i18n/inline';
 import { createPortal } from 'react-dom';
 import { ChevronRight, X } from 'lucide-react';
 import { menusApi, type Menu as ApiMenu } from '@/lib/api/menus';
 import { productsApi, type Product as ApiProduct } from '@/lib/api/products';
-import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useTranslation, pick } from '@/lib/hooks/useTranslation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { menusTranslations } from '@/lib/translations/menus';
 import { homeTranslations } from '@/lib/translations/home';
@@ -42,7 +44,7 @@ interface MenuShowcaseHorizontalProps {
   showViewAll?: boolean;
   title?: string;
   description?: string;
-  language?: 'EN' | 'DE';
+  language?: Language;
 }
 
 export default function MenuShowcaseHorizontal({
@@ -62,8 +64,8 @@ export default function MenuShowcaseHorizontal({
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   
-  const menuT = menusTranslations[language];
-  const homeT = homeTranslations[language];
+  const menuT = pick(menusTranslations, language);
+  const homeT = pick(homeTranslations, language);
 
   useEffect(() => {
     const loadData = async () => {
@@ -334,7 +336,7 @@ export default function MenuShowcaseHorizontal({
             category: categoryMap[rawCategory] || 'general',
           };
         })
-      : fallbackMenuItems[language] || fallbackMenuItems.EN;
+      : fallbackMenuItems[language === 'DE' ? 'DE' : 'EN'];
 
     const groupedItems = sourceItems.reduce((acc, item) => {
       const category = item.category || 'general';
@@ -421,7 +423,7 @@ export default function MenuShowcaseHorizontal({
                 closeMenuDetails();
               }}
               className="absolute top-4 right-4 z-10 bg-white/60 backdrop-blur-sm text-[#404040]/70 border border-black/10 hover:bg-white/80 hover:text-[#404040] hover:border-[#A69256]/25 rounded-full p-2 shadow-md transition-all duration-200 pointer-events-auto"
-              aria-label={language === 'DE' ? 'Menudetails schließen' : 'Close menu details'}
+              aria-label={L(language, 'Menudetails schließen', 'Close menu details')}
             >
               <X size={18} />
             </button>
@@ -431,7 +433,7 @@ export default function MenuShowcaseHorizontal({
               </h3>
               {priceLabel && (
                 <p className="text-sm font-semibold text-[#A69256]">
-                  {menuT.menuHighlights?.priceLabel || homeT.menus?.priceLabel || (language === 'DE' ? 'Ab' : 'Starting at')} €{priceLabel}
+                  {menuT.menuHighlights?.priceLabel || homeT.menus?.priceLabel || (L(language, 'Ab', 'Starting at'))} €{priceLabel}
                 </p>
               )}
             </div>
@@ -444,7 +446,7 @@ export default function MenuShowcaseHorizontal({
             )}
             <div>
               <h4 className="text-lg font-semibold text-[#404040] mb-3">
-                {menuT.menuHighlights?.includes || homeT.menus?.includes || (language === 'DE' ? 'Enthält' : 'Includes')}
+                {menuT.menuHighlights?.includes || homeT.menus?.includes || (L(language, 'Enthält', 'Includes'))}
               </h4>
               {items.length > 0 ?(
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -466,7 +468,7 @@ export default function MenuShowcaseHorizontal({
                 </div>
               ) : (
                 <p className="text-sm text-[#404040]/70">
-                  {menuT.menuHighlights?.noItems || homeT.menus?.noItems || (language === 'DE' ? 'Menudetails auf Anfrage erhältlich.' : 'Menu details available upon request.')}
+                  {menuT.menuHighlights?.noItems || homeT.menus?.noItems || (L(language, 'Menudetails auf Anfrage erhältlich.', 'Menu details available upon request.'))}
                 </p>
               )}
             </div>
@@ -481,15 +483,15 @@ export default function MenuShowcaseHorizontal({
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-black/60 mb-4">
-            {language === 'DE' ? 'AUSWAHL' : 'CURATED'}
+            {L(language, 'AUSWAHL', 'CURATED')}
           </p>
           <SplitText
             as="h2"
             className="block text-3xl lg:text-4xl font-semibold text-black mb-4 font-elegant"
-            text={title || menuT.menuHighlights?.title || homeT.menus?.title || (language === 'DE' ? 'Unsere Menus' : 'Our Menus')}
+            text={title || menuT.menuHighlights?.title || homeT.menus?.title || (L(language, 'Unsere Menus', 'Our Menus'))}
           />
           <p className="text-black/70 max-w-2xl mx-auto">
-            {description || menuT.menuHighlights?.subtitle || homeT.menus?.description || (language === 'DE' ? 'Entdecken Sie unsere ausgewählten Menus und sehen Sie die Details' : 'Explore our signature menus and view the details')}
+            {description || menuT.menuHighlights?.subtitle || homeT.menus?.description || (L(language, 'Entdecken Sie unsere ausgewählten Menus und sehen Sie die Details', 'Explore our signature menus and view the details'))}
           </p>
         </div>
 
@@ -500,7 +502,7 @@ export default function MenuShowcaseHorizontal({
         {isLoadingData && menuHighlights.length === 0 && (
           <LoadingSpinner 
             className="mb-4" 
-            label={menuT.labels?.loadingMenus || homeT.menus?.loading || (language === 'DE' ? 'Menus werden geladen...' : 'Loading menus...')} 
+            label={menuT.labels?.loadingMenus || homeT.menus?.loading || (L(language, 'Menus werden geladen...', 'Loading menus...'))} 
           />
         )}
 
@@ -509,7 +511,7 @@ export default function MenuShowcaseHorizontal({
             {menuHighlights.map((menu, index) => {
               const firstImage = menu.coverImage || '/images/home_image.jpeg';
               const viewDetailsLabel =
-                menuT.menuShowcase?.viewDetails || homeT.menus?.viewDetails || (language === 'DE' ? 'Details ansehen' : 'View details');
+                menuT.menuShowcase?.viewDetails || homeT.menus?.viewDetails || (L(language, 'Details ansehen', 'View details'));
               
               const displayPrice = menu.price 
                 ? `€${menu.price.toFixed(2)}`
@@ -546,12 +548,12 @@ export default function MenuShowcaseHorizontal({
 
                     {menu.isPopular && (
                       <div className="absolute top-4 left-4 bg-white text-black px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.18em]">
-                        {menuT.menuShowcase?.badges?.popular || homeT.menuShowcase?.badges?.popular || (language === 'DE' ? 'Beliebt' : 'Popular')}
+                        {menuT.menuShowcase?.badges?.popular || homeT.menuShowcase?.badges?.popular || (L(language, 'Beliebt', 'Popular'))}
                       </div>
                     )}
                     {menu.isFeatured && (
                       <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm border border-white/15 text-white px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.18em]">
-                        {menuT.menuShowcase?.badges?.featured || homeT.menuShowcase?.badges?.featured || (language === 'DE' ? 'Empfohlen' : 'Featured')}
+                        {menuT.menuShowcase?.badges?.featured || homeT.menuShowcase?.badges?.featured || (L(language, 'Empfohlen', 'Featured'))}
                       </div>
                     )}
 
@@ -563,7 +565,7 @@ export default function MenuShowcaseHorizontal({
                     
                     <div className="absolute inset-x-0 bottom-0 p-6">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/70">
-                        {menu.category || menu.type || menuT.categories?.all || homeT.menus?.categoryAll || (language === 'DE' ? 'Menü' : 'Menu')}
+                        {menu.category || menu.type || menuT.categories?.all || homeT.menus?.categoryAll || (L(language, 'Menü', 'Menu'))}
                       </p>
                       <h3 className="mt-2 text-2xl font-semibold text-white font-elegant leading-tight">
                         {menu.name}
@@ -587,7 +589,7 @@ export default function MenuShowcaseHorizontal({
                       </h3>
                     </div>
                     <p className="text-[#A69256] text-xs font-semibold mb-2">
-                      {menu.category || menu.type || menuT.categories?.all || homeT.menus?.categoryAll || (language === 'DE' ? 'Menu' : 'Menu')}
+                      {menu.category || menu.type || menuT.categories?.all || homeT.menus?.categoryAll || (L(language, 'Menu', 'Menu'))}
                     </p>
                     <p className="text-[#404040]/75 text-xs mb-3 line-clamp-2">
                       {menu.description}
@@ -597,7 +599,7 @@ export default function MenuShowcaseHorizontal({
                       className="w-full bg-[#A69256] text-[#120d0a] py-2 rounded-lg font-semibold hover:bg-[#0D0D0D] transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center gap-2 text-sm"
                       onClick={() => openMenuDetails(menu)}
                     >
-                      {menuT.menuShowcase?.viewDetails || homeT.menus?.viewDetails || (language === 'DE' ? 'Details anzeigen' : 'View Details')}
+                      {menuT.menuShowcase?.viewDetails || homeT.menus?.viewDetails || (L(language, 'Details anzeigen', 'View Details'))}
                       <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
@@ -615,7 +617,7 @@ export default function MenuShowcaseHorizontal({
               className="px-7 py-3 bg-black text-white rounded-full font-semibold hover:bg-black/90 transition-all duration-300 inline-flex items-center gap-2 shadow-lg text-xs uppercase tracking-[0.18em]"
               onClick={() => window.location.href = '/menus'}
             >
-              {menuT.menuShowcase?.exploreFull || homeT.menus?.exploreFull || (language === 'DE' ? 'Vollständige Menusammlung erkunden' : 'Explore Full Menu Collection')}
+              {menuT.menuShowcase?.exploreFull || homeT.menus?.exploreFull || (L(language, 'Vollständige Menusammlung erkunden', 'Explore Full Menu Collection'))}
               <ChevronRight size={16} />
             </button>
           </div>
