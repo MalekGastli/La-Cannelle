@@ -45,7 +45,7 @@ const SERVICE_FOLDERS: { cover: string; files: { image: string; de: string; en: 
     cover: '/images/restaurant-interior.jpg',
     files: [
       { image: '/images/accessories/table-setting.jpg', de: 'Gläser und Tafel', en: 'Glassware and table' },
-      { image: '/images/restaurant-interior.jpg', de: 'Terrasse', en: 'Terrace' },
+      { image: '/images/restaurant-interior.jpg', de: 'Grazing-Tisch', en: 'Grazing table' },
       { image: '/images/exclusive-service.jpg', de: 'Empfang', en: 'Reception' },
     ],
   },
@@ -432,10 +432,10 @@ export default function CateringHomepage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
               <div className="absolute left-6 bottom-6 right-6">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/70">
-                  {language === 'DE' ? 'Private Dining' : 'Private dining'}
+                  {language === 'DE' ? 'Fingerfood' : 'Finger food'}
                 </p>
                 <h3 className="mt-2 text-2xl font-semibold text-white font-display">
-                  {language === 'DE' ? 'Cinematic service, bis ins Detail.' : 'Cinematic service, down to the detail.'}
+                  {language === 'DE' ? 'Kleine Bissen, groß inszeniert.' : 'Small bites, staged with care.'}
                 </h3>
               </div>
               <div className="absolute top-6 right-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white">
@@ -449,13 +449,13 @@ export default function CateringHomepage() {
                 {[
                 {
                   image: '/images/restaurant-interior.jpg',
-                  label: language === 'DE' ? 'Brand Events' : 'Brand events',
-                  title: language === 'DE' ? 'Premium Settings. Klare Ästhetik.' : 'Premium settings. Clean aesthetic.',
+                  label: language === 'DE' ? 'Grazing Tables' : 'Grazing tables',
+                  title: language === 'DE' ? 'Großzügig angerichtet, ohne Aufwand für Sie.' : 'Generously laid out, effortless for you.',
                 },
                 {
                   image: '/images/community-feast.jpg',
-                  label: language === 'DE' ? 'Celebrations' : 'Celebrations',
-                  title: language === 'DE' ? 'Warm, großzügig, unvergesslich.' : 'Warm, generous, unforgettable.',
+                  label: language === 'DE' ? 'Desserts' : 'Desserts',
+                  title: language === 'DE' ? 'Süßer Abschluss für jedes Fest.' : 'A sweet finish for every celebration.',
                 },
               ].map((card) => (
                 <ImageReveal key={card.image} from="right">
