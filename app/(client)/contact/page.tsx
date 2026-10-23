@@ -231,7 +231,7 @@ export default function ContactPage() {
   const datePickerUi = {
     prevMonth: L(language, 'Vorheriger Monat', 'Previous month'),
     nextMonth: L(language, 'Naechster Monat', 'Next month'),
-    clear: L(language, 'Loeschen', 'Clear'),
+    clear: L(language, 'Löschen', 'Clear'),
     today: L(language, 'Heute', 'Today'),
     weekdayLabels: weekdaysOf(language),
   };

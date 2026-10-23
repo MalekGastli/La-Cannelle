@@ -228,7 +228,7 @@ export function PhoneNumberInput({
   const selectedLabel = selectedMeta
     ? `${selectedMeta.countryName} (+${selectedMeta.callingCode})`
     : language === "DE"
-      ? "Land waehlen"
+      ? "Land wählen"
       : "Select country";
 
   return (
@@ -250,7 +250,7 @@ export function PhoneNumberInput({
           aria-expanded={isOpen}
           title={selectedLabel}
         >
-          {selectedMeta && !brokenFlags[selectedMeta.country] ? (
+          {selectedMeta?.flagPng && !brokenFlags[selectedMeta.country] ? (
             <img
               src={selectedMeta.flagPng}
               alt=""
@@ -338,7 +338,7 @@ export function PhoneNumberInput({
                   aria-selected={isSelected}
                 >
                   <span className="flex min-w-0 items-center gap-3">
-                    {!brokenFlags[item.country] ? (
+                    {item.flagPng && !brokenFlags[item.country] ? (
                       <img
                         src={item.flagPng}
                         alt=""

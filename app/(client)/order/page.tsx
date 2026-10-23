@@ -2850,7 +2850,7 @@ export default function OrderPage() {
     };
     
         return (
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 [&>*]:min-w-0">
         {/* Order Overview - Right Side */}
         <div className="hidden lg:block lg:col-span-1 lg:order-2">
           <div
@@ -3358,7 +3358,7 @@ export default function OrderPage() {
     const realisticAccessories = dbAccessories.length ? dbAccessories : legacyAccessories;
     
     return (
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 [&>*]:min-w-0">
         {/* Order Overview - Right Side */}
         <div className="hidden lg:block lg:col-span-1 lg:order-2">
           <div
@@ -3727,14 +3727,7 @@ export default function OrderPage() {
         // Business orders - Invoice only
         return (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-amber-100 bg-white shadow-sm p-6 md:p-8">
-              <div className="flex items-center gap-3 mb-2">
-                <FileInvoice size={20} className="text-amber-600" />
-                <h2 className="text-2xl font-bold text-gray-900">{ui.invoiceTitle}</h2>
-              </div>
-              <p className="text-gray-600">{ui.invoiceDescription}</p>
-            </div>
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-3 gap-8 [&>*]:min-w-0">
               {/* Order Summary - Right Side */}
               <div className="hidden lg:block lg:col-span-1 lg:order-2">
                 <div
@@ -3992,7 +3985,7 @@ export default function OrderPage() {
                           <button
                             type="button"
                             onClick={() => setTermsModalOpen(true)}
-                            className="mt-2 text-xs font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4"
+                            className="mt-2 block text-xs font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4"
                           >
                           {L(language, 'AGB & Bedingungen lesen', 'Read full Terms and Conditions')}
                           </button>
@@ -4071,7 +4064,7 @@ export default function OrderPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle size={16} className="text-green-600" />
-                          <span>VAT {vatRate * 100}%</span>
+                          <span>{L(language, 'MwSt.', 'VAT')} {vatRate * 100}%</span>
                         </div>
                       </div>
                     </div>
@@ -4092,7 +4085,7 @@ export default function OrderPage() {
               </div>
               <p className="text-gray-600">{t.payment.subtitle}</p>
             </div>
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-3 gap-8 [&>*]:min-w-0">
               {/* Order Summary - Right Side */}
               <div className="hidden lg:block lg:col-span-1 lg:order-2">
                 <div
@@ -4414,7 +4407,7 @@ export default function OrderPage() {
                           <button
                             type="button"
                             onClick={() => setTermsModalOpen(true)}
-                            className="mt-2 text-xs font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4"
+                            className="mt-2 block text-xs font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4"
                           >
                           {L(language, 'AGB & Bedingungen lesen', 'Read full Terms and Conditions')}
                           </button>
@@ -4624,7 +4617,7 @@ export default function OrderPage() {
                         onChange={(e) => updateCompanyInfo(e.target.value)}
                         rows={4}
                         className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none text-gray-900 placeholder:text-gray-500"
-                        placeholder={L(language, 'z.B. Branche, Groesse, Standort', 'e.g. industry, size, location')}
+                        placeholder={L(language, 'z.B. Branche, Größe, Standort', 'e.g. industry, size, location')}
                       />
                     </div>
                   </>
@@ -4635,7 +4628,7 @@ export default function OrderPage() {
               <div className="flex items-center gap-3 mb-4">
                 <FileText size={18} className="text-gray-600" />
                 <h3 className="text-lg font-bold text-gray-900">
-                  {L(language, 'Besondere Wuensche', 'Special Requests')}
+                  {L(language, 'Besondere Wünsche', 'Special Requests')}
                 </h3>
               </div>
               <p className="text-sm text-gray-600 mb-4">
@@ -5828,7 +5821,7 @@ export default function OrderPage() {
       
       <footer className="bg-[#120d0a] text-white/60 pt-12 pb-[calc(3rem+var(--order-dock,0px)+env(safe-area-inset-bottom))] px-4 sm:px-6 lg:px-8 border-t border-white/10">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-sm tracking-wide">&copy; {new Date().getFullYear()} La Cannelle Catering. All rights reserved.</p>
+          <p className="text-sm tracking-wide">&copy; {new Date().getFullYear()} La Cannelle Catering. {L(language, 'Alle Rechte vorbehalten.', 'All rights reserved.')}</p>
         </div>
       </footer>
     </div>
