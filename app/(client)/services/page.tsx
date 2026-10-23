@@ -72,10 +72,10 @@ export default function ServicesPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-left' : 'opacity-0'}`}>
               <div className="w-16 h-16 bg-[#A69256]/15 rounded-2xl flex items-center justify-center mb-6">
-                <Briefcase className="text-[#A69256]" size={28} strokeWidth={1.5} />
+                <Briefcase className="text-[#7a6a32]" size={28} strokeWidth={1.5} />
               </div>
               <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mb-4 font-display">{t.officeCatering.title}</h2>
-              <p className="text-lg text-[#A69256] font-medium mb-6">{t.officeCatering.subtitle}</p>
+              <p className="text-lg text-[#7a6a32] font-medium mb-6">{t.officeCatering.subtitle}</p>
               <p className="text-gray-600 leading-relaxed mb-8 text-lg">{t.officeCatering.description}</p>
               
               {/* Image */}
@@ -130,10 +130,10 @@ export default function ServicesPage() {
             
             <div className={`order-1 lg:order-2 transition-all duration-1000 delay-200 ${isVisible ? 'animate-fade-in-right' : 'opacity-0'}`}>
               <div className="w-16 h-16 bg-[#A69256]/15 rounded-2xl flex items-center justify-center mb-6">
-                <Users className="text-[#A69256]" size={28} strokeWidth={1.5} />
+                <Users className="text-[#7a6a32]" size={28} strokeWidth={1.5} />
               </div>
               <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mb-4 font-display">{t.eventCatering.title}</h2>
-              <p className="text-lg text-[#A69256] font-medium mb-6">{t.eventCatering.subtitle}</p>
+              <p className="text-lg text-[#7a6a32] font-medium mb-6">{t.eventCatering.subtitle}</p>
               <p className="text-gray-600 leading-relaxed mb-8 text-lg">{t.eventCatering.description}</p>
               
               {/* Image */}
@@ -156,10 +156,10 @@ export default function ServicesPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-left' : 'opacity-0'}`}>
               <div className="w-16 h-16 bg-[#A69256]/15 rounded-2xl flex items-center justify-center mb-6">
-                <Heart className="text-[#A69256]" size={28} strokeWidth={1.5} />
+                <Heart className="text-[#7a6a32]" size={28} strokeWidth={1.5} />
               </div>
               <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mb-4 font-display">{t.weddings.title}</h2>
-              <p className="text-lg text-[#A69256] font-medium mb-6">{t.weddings.subtitle}</p>
+              <p className="text-lg text-[#7a6a32] font-medium mb-6">{t.weddings.subtitle}</p>
               <p className="text-gray-600 leading-relaxed mb-8 text-lg">{t.weddings.description}</p>
               
               {/* Image */}
@@ -214,10 +214,10 @@ export default function ServicesPage() {
             
             <div className={`order-1 lg:order-2 transition-all duration-1000 delay-200 ${isVisible ? 'animate-fade-in-right' : 'opacity-0'}`}>
               <div className="w-16 h-16 bg-[#A69256]/15 rounded-2xl flex items-center justify-center mb-6">
-                <Building2 className="text-[#A69256]" size={28} strokeWidth={1.5} />
+                <Building2 className="text-[#7a6a32]" size={28} strokeWidth={1.5} />
               </div>
               <h2 className="text-4xl lg:text-5xl font-light text-gray-900 mb-4 font-display">{t.corporateEvents.title}</h2>
-              <p className="text-lg text-[#A69256] font-medium mb-6">{t.corporateEvents.subtitle}</p>
+              <p className="text-lg text-[#7a6a32] font-medium mb-6">{t.corporateEvents.subtitle}</p>
               <p className="text-gray-600 leading-relaxed mb-8 text-lg">{t.corporateEvents.description}</p>
               
               {/* Image */}

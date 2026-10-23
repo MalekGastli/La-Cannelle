@@ -380,6 +380,7 @@ export default function ContactPage() {
                           onFocus={() => setIsDatePickerOpen(true)}
                           className="w-full cursor-pointer px-4 pr-14 py-3 border border-[#A6A6A6] rounded-xl focus:ring-2 focus:ring-[color:#A69256] focus:border-[color:#A69256] transition-all duration-300 text-[#404040] bg-[#F9F9F9] contact-date-input placeholder:text-[#A6A6A6]"
                           placeholder="YYYY-MM-DD"
+                          role="combobox"
                           aria-haspopup="dialog"
                           aria-expanded={isDatePickerOpen}
                         />
@@ -449,7 +450,7 @@ export default function ContactPage() {
                                         disabled
                                           ? 'text-[#A6A6A6] cursor-not-allowed'
                                           : selected
-                                            ? 'bg-[#A69256] text-white shadow-sm'
+                                            ? 'bg-[#7a6a32] text-white shadow-sm'
                                             : 'text-[#404040] hover:bg-[#A69256]/12 hover:text-[#A69256]'
                                       }`}
                                       aria-label={value}
@@ -637,7 +638,7 @@ export default function ContactPage() {
                   <div className="p-5 bg-gradient-to-br from-[#F2F2F2] to-[#A69256]/10 rounded-2xl border border-[#A6A6A6]/40">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="h-12 w-12 rounded-2xl bg-[#A69256] flex items-center justify-center">
-                        <span className="text-white font-semibold text-base">LC</span>
+                        <span className="text-[#120d0a] font-semibold text-base">LC</span>
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900">{INSTAGRAM_HANDLE_DISPLAY}</h4>

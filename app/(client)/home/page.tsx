@@ -213,7 +213,7 @@ export default function CateringHomepage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 lg:pt-40 pb-20 sm:pb-28 w-full">
           <div className="grid lg:grid-cols-12 items-center gap-12">
             <div className="lg:col-span-8 text-left">
-              <p className={`eyebrow mb-6 ${isVisible ? 'animate-fade-in-down lux-type lux-type-run lux-type-caret' : 'opacity-0'}`}>
+              <p className={`eyebrow eyebrow-light mb-6 ${isVisible ? 'animate-fade-in-down lux-type lux-type-run lux-type-caret' : 'opacity-0'}`}>
                 {language === 'DE' ? 'Mehr als Geschmack' : 'Beyond taste'}
               </p>
 
@@ -345,7 +345,7 @@ export default function CateringHomepage() {
           </div>
 
           {fetchError && !menus.length && (
-            <p className="text-center text-red-600 mb-8">{fetchError}</p>
+            <p className="text-center text-red-700 mb-8">{fetchError}</p>
           )}
           {isLoadingData && !menus.length && (
             <LoadingSpinner className="mb-8" label="Loading menus..." />

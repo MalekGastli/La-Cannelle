@@ -44,12 +44,12 @@
   --color-gray-800: #2d251f;
   --color-gray-900: #1a1410;
   --color-gray-950: #120d0a;
-  --color-amber-500: #b8a266;
-  --color-amber-600: #8f7b3f;
-  --color-amber-700: #7a6835;
-  --color-orange-500: #b8a266;
-  --color-orange-600: #8f7b3f;
-  --color-orange-700: #6f5f2f;
+  --color-amber-500: #86733a;
+  --color-amber-600: #7a6a32;
+  --color-amber-700: #665828;
+  --color-orange-500: #86733a;
+  --color-orange-600: #7a6a32;
+  --color-orange-700: #665828;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -647,7 +647,12 @@ html {
   font-weight: 600;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--lux-gold);
+  color: #7a6a32; /* AA on cream/sand */
+}
+
+.section-surface-espresso .eyebrow,
+.eyebrow-light {
+  color: #c9b46e;
 }
 
 .eyebrow::before {

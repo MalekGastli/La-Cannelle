@@ -5491,7 +5491,7 @@ export default function OrderPage() {
         .order-theme [class~="text-gray-800"] { color: rgba(13, 13, 13, 0.88) !important; }
         .order-theme [class~="text-gray-700"] { color: rgba(13, 13, 13, 0.78) !important; }
         .order-theme [class~="text-gray-600"] { color: rgba(13, 13, 13, 0.66) !important; }
-        .order-theme [class~="text-gray-500"] { color: rgba(13, 13, 13, 0.55) !important; }
+        .order-theme [class~="text-gray-500"] { color: rgba(13, 13, 13, 0.68) !important; }
         .order-theme [class~="text-gray-400"] { color: rgba(13, 13, 13, 0.44) !important; }
 
         /* Unify hardcoded legacy hex utilities (keep black/white crisp) */
@@ -5543,7 +5543,7 @@ export default function OrderPage() {
         .text-amber-700,
         .text-amber-800,
         .text-amber-900 {
-          color: #A69256 !important;
+          color: #7a6a32 !important;
         }
 
         .bg-amber-600 {
@@ -5685,7 +5685,7 @@ export default function OrderPage() {
                           </div>
                           <span
                             className={`hidden sm:block text-[10px] font-semibold text-center whitespace-nowrap ${
-                              isCurrent ? 'text-[#A69256]' : isCompleted ? 'text-[#A69256]' : 'text-[#F2F2F2]/60'
+                              isCurrent ? 'text-[#d6c27d]' : isCompleted ? 'text-[#d6c27d]' : 'text-[#F2F2F2]/60'
                             }`}
                           >
                             {step.label}
@@ -5833,7 +5833,7 @@ export default function OrderPage() {
             className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 sm:px-5 sm:py-3 text-sm font-semibold shadow-lg transition-all ${
               isOrderingPaused || (isClosedDate && currentStep >= 1)
                 ? 'bg-black/10 text-black/30 cursor-not-allowed shadow-none'
-                : 'bg-[#A69256] text-white hover:bg-black hover:shadow-[0_16px_34px_rgba(0,0,0,0.22)] active:scale-[0.98]'
+                : 'bg-[#7a6a32] text-white hover:bg-black hover:shadow-[0_16px_34px_rgba(0,0,0,0.22)] active:scale-[0.98]'
             }`}
             aria-label={currentStep === stepsConfig.length ? ui.confirmOrder : t.buttons.next}
           >

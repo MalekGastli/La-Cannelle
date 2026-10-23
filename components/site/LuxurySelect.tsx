@@ -52,7 +52,7 @@ export function LuxurySelect({ value, placeholder, options, onChange, className 
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span className={selected ? "text-[#404040] dark:text-[#EDEDED]" : "text-[#A6A6A6] dark:text-[#B0B0B0]"}>
+        <span className={selected ? "text-[#404040] dark:text-[#EDEDED]" : "text-[#6f6f6f] dark:text-[#B0B0B0]"}>
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown

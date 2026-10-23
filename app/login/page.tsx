@@ -70,9 +70,10 @@ function LoginInner() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">{t.auth.loginLabel}</label>
+            <label htmlFor="login" className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">{t.auth.loginLabel}</label>
             <input
               name="login"
+              id="login"
               type="text"
               placeholder="lacannelle"
               autoComplete="username"
@@ -82,9 +83,10 @@ function LoginInner() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">{t.auth.passwordLabel}</label>
+            <label htmlFor="password" className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 mb-2">{t.auth.passwordLabel}</label>
             <input
               name="password"
+              id="password"
               type="password"
               autoComplete="current-password"
               required
