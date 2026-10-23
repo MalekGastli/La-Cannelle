@@ -1395,6 +1395,13 @@ export default function OrderPage() {
     }
   };
   
+  // A resolved postal code must never keep showing an old "enter a valid code" message
+  useEffect(() => {
+    if (postalLookupError && /^\d{5}$/.test(orderData.postalCode || '') && orderData.city) {
+      setPostalLookupError('');
+    }
+  }, [orderData.postalCode, orderData.city, postalLookupError]);
+
   const getGuestCountError = () => (
     L(language, 'Anzahl der Gäste muss mindestens 10 sein.', 'Guest count must be 10 or more.')
   );
@@ -5744,7 +5751,7 @@ export default function OrderPage() {
       {currentStep < stepsConfig.length && (
         <div
           data-order-next-fab
-          className={`fixed right-4 sm:right-6 z-[60] ${
+          className={`fixed right-4 sm:right-6 z-[60] ${currentStep > 1 ? 'max-lg:hidden' : ''} ${
             currentStep === 1
               ? 'bottom-[calc(1.5rem+env(safe-area-inset-bottom))] lg:bottom-6'
               : 'bottom-[calc(var(--order-dock,0px)+1.5rem+0.75rem+env(safe-area-inset-bottom))] lg:bottom-6'
@@ -5770,7 +5777,7 @@ export default function OrderPage() {
       {currentStep > 1 && (
         <div
           data-order-back-fab
-          className="fixed left-4 sm:left-6 bottom-[calc(var(--order-dock,0px)+1.5rem+0.75rem+env(safe-area-inset-bottom))] lg:bottom-6 z-[60]"
+          className="max-lg:hidden fixed left-4 sm:left-6 bottom-[calc(var(--order-dock,0px)+1.5rem+0.75rem+env(safe-area-inset-bottom))] lg:bottom-6 z-[60]"
         >
           <button
             type="button"
@@ -5816,6 +5823,27 @@ export default function OrderPage() {
               <ChevronUp size={16} className="shrink-0 text-white/60" />
             </div>
           </button>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={prevStepFloating}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-[#17120e]/95 px-4 py-3 text-sm font-semibold text-white"
+            >
+              <ChevronLeft size={16} />
+              {t.buttons.back}
+            </button>
+            {currentStep < stepsConfig.length && (
+              <button
+                type="button"
+                onClick={nextStep}
+                disabled={isOrderingPaused || (isClosedDate && currentStep >= 1)}
+                className="flex-[1.4] inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-[#c9b574] to-[#A69256] px-4 py-3 text-sm font-semibold text-[#120d0a] disabled:opacity-50"
+              >
+                {t.buttons.next}
+                <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
         </div>
       )}
       
