@@ -71,7 +71,7 @@ async function main() {
       price: 2,
       quantityMode: 'GUEST_COUNT',
       fixedQuantity: null,
-      image: 'https://www.schoenerdaheim.de/media/46/4a/b1/1709296112/catering-08-hotel-amb-01.jpg?1712150457',
+      image: '/images/accessories/table-setting.jpg',
       isActive: true
     },
     {
@@ -88,7 +88,7 @@ async function main() {
       quantityMode: 'GUEST_COUNT',
       fixedQuantity: null,
       image:
-        'https://www.gastronomie-kaufhaus.de/out/pictures/master/product/1/zieher-vision-weinglas-balanced-gastronomie-kaufhaus-1-2535.jpg',
+        '/images/accessories/table-setting.jpg',
       isActive: true
     },
     {
@@ -104,7 +104,7 @@ async function main() {
       price: 8.5,
       quantityMode: 'CLIENT',
       fixedQuantity: null,
-      image: 'https://media.xxxlutz.com/i/xxxlutz/NCYF89xExQUHUFb5RKpHL2EA/?fmt=auto&%24hq%24=&w=1200',
+      image: '/images/home_image.jpeg',
       isActive: true
     },
     {
@@ -120,7 +120,7 @@ async function main() {
       price: 12,
       quantityMode: 'CLIENT',
       fixedQuantity: null,
-      image: 'https://de.euroelectronics.eu/cdn/shop/products/77746.jpg?v=1660303869&width=1800',
+      image: '/images/accessories/table-setting.jpg',
       isActive: true
     },
     {
@@ -136,7 +136,7 @@ async function main() {
       price: 2.1,
       quantityMode: 'GUEST_COUNT',
       fixedQuantity: null,
-      image: 'https://m.media-amazon.com/images/I/51GC4TPowZL.jpg',
+      image: '/images/accessories/table-setting.jpg',
       isActive: true
     }
   ] as const;
@@ -156,28 +156,28 @@ async function main() {
       name: 'Office Catering',
       occasion: 'BUSINESS',
       description: 'Breakfast meetings, lunch delivery, and ongoing office catering.',
-      image: 'https://images.unsplash.com/photo-1555992336-03a23c7b20a6?w=800&fit=crop',
+      image: '/images/services/office.jpg',
       isActive: true
     },
     {
       name: 'Corporate Events',
       occasion: 'BUSINESS',
       description: 'Professional catering for meetings, conferences, and launches.',
-      image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&fit=crop',
+      image: '/images/services/corporate.jpg',
       isActive: true
     },
     {
       name: 'Event Catering',
       occasion: 'PRIVATE',
       description: 'Birthdays, anniversaries, and private celebrations.',
-      image: 'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=800&fit=crop',
+      image: '/images/services/event.jpg',
       isActive: true
     },
     {
       name: 'Weddings',
       occasion: 'PRIVATE',
       description: 'Bespoke wedding menus, service, and coordination.',
-      image: 'https://images.unsplash.com/photo-1523438097201-fb5f1f6b227b?w=800&fit=crop',
+      image: '/images/services/weddings.jpg',
       isActive: true
     }
   ] as const;

@@ -102,7 +102,8 @@ export function PhoneNumberInput({
         callingCode,
         countryName: (countryDisplayNames?.of(country) || country).toString(),
         flagEmoji: toFlagEmoji(country),
-        flagPng: `https://flagcdn.com/w40/${country.toLowerCase()}.png`,
+        // No third-party flag images: requesting them would disclose visitors' IP addresses to an external CDN.
+        flagPng: '',
         placeholder: buildPlaceholder(country, callingCode),
       } satisfies PhoneCountryMeta;
     });

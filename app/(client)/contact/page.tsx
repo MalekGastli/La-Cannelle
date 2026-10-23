@@ -10,6 +10,7 @@ import { contactTranslations } from '@/lib/translations/contact';
 import { LuxurySelect } from '@/components/site/LuxurySelect';
 import SiteHeader from '@/components/site/SiteHeader';
 import SiteFooter from '@/components/site/SiteFooter';
+import { ConsentGate } from '@/components/site/ConsentProvider';
 import { SplitText } from '@/components/site/Motion';
 import { INSTAGRAM_HANDLE_DISPLAY, INSTAGRAM_PROFILE_URL } from '@/lib/config/social';
 
@@ -532,6 +533,15 @@ export default function ContactPage() {
                     <Send size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                     {t.contactForm.button}
                   </button>
+                  <p className="text-xs leading-relaxed text-gray-600">
+                    {language === 'DE'
+                      ? 'Wir verwenden Ihre Angaben ausschließlich, um Ihre Anfrage zu beantworten. Mehr dazu in unserer '
+                      : 'We only use your details to answer your enquiry. More in our '}
+                    <a href="/datenschutz" className="underline underline-offset-4 hover:text-[#7a6a32]">
+                      {language === 'DE' ? 'Datenschutzerklärung' : 'privacy policy'}
+                    </a>
+                    .
+                  </p>
                 </form>
               </div>
             </div>
@@ -622,14 +632,14 @@ export default function ContactPage() {
 
                 {hasInstagramPosts && firstInstagramPost ? (
                   <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-[#f3ece1]">
-                    <iframe
+                    <ConsentGate service="Instagram" provider="Meta"><iframe
                       title={`Instagram post ${firstInstagramPost.permalink}`}
                       src={`${firstInstagramPost.permalink}embed`}
                       className="w-full"
                       style={{ height: 540 }}
                       loading="lazy"
                       allow="encrypted-media; picture-in-picture"
-                    />
+                    /></ConsentGate>
                   </div>
                 ) : (
                   <div className="mt-6 grid grid-cols-3 gap-2">
@@ -689,6 +699,7 @@ export default function ContactPage() {
               </div>
             </div>
             <div className="h-96 bg-gradient-to-br from-[#F2F2F2] to-[#A6A6A6]/25 relative">
+              <ConsentGate service="Google Maps" provider="Google" className="absolute inset-0">
               <iframe 
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2498.8334217314505!2d6.776975276284795!3d51.22214423150265!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b8cb10fedecbc9%3A0xa3a5e988315ddb33!2sLa%20Cannelle!5e0!3m2!1sfr!2stn!4v1763137870611!5m2!1sfr!2stn" 
                 width="100%" 
@@ -699,7 +710,7 @@ export default function ContactPage() {
                 referrerPolicy="no-referrer-when-downgrade"
                 className="absolute inset-0"
                 title="Google Maps location"
-              ></iframe>
+              ></iframe></ConsentGate>
             </div>
           </div>
         </div>

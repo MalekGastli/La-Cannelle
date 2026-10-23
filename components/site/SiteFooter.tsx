@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Instagram, Music2, MapPin, Mail, Phone } from "lucide-react";
 import Container from "./Container";
+import { useConsent } from "./ConsentProvider";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/config/social";
 
 type FooterLabels = {
@@ -32,6 +35,8 @@ type SiteFooterProps = {
 };
 
 export default function SiteFooter({ footer, nav }: SiteFooterProps) {
+  const { openSettings } = useConsent();
+  const year = String(new Date().getFullYear());
   return (
     <footer className="bg-[#120d0a] text-white border-t border-white/10">
       <Container className="py-16 sm:py-20">
@@ -103,8 +108,16 @@ export default function SiteFooter({ footer, nav }: SiteFooterProps) {
           </div>
         </div>
 
-        <div className="mt-14 border-t border-white/10 pt-7 text-center text-xs tracking-wide text-white/45">
-          {footer.copyright}
+        <div className="mt-14 flex flex-col items-center gap-4 border-t border-white/10 pt-7 text-xs text-white/55">
+          <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <Link href="/impressum" className="hover:text-white transition-colors">Impressum</Link>
+            <Link href="/datenschutz" className="hover:text-white transition-colors">Datenschutz</Link>
+            <Link href="/agb" className="hover:text-white transition-colors">AGB</Link>
+            <button type="button" onClick={openSettings} className="hover:text-white transition-colors">
+              Cookie-Einstellungen
+            </button>
+          </nav>
+          <p>{footer.copyright.replace(/20\d\d/, year)}</p>
         </div>
       </Container>
     </footer>

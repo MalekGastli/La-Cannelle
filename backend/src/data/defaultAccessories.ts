@@ -25,7 +25,7 @@ export const DEFAULT_ACCESSORIES: DefaultAccessory[] = [
     unitEn: null,
     unitDe: null,
     price: 2,
-    image: 'https://www.schoenerdaheim.de/media/46/4a/b1/1709296112/catering-08-hotel-amb-01.jpg?1712150457',
+    image: '/images/accessories/table-setting.jpg',
     isActive: true
   },
   {
@@ -39,7 +39,7 @@ export const DEFAULT_ACCESSORIES: DefaultAccessory[] = [
     unitDe: null,
     price: 2.25,
     image:
-      'https://www.gastronomie-kaufhaus.de/out/pictures/master/product/1/zieher-vision-weinglas-balanced-gastronomie-kaufhaus-1-2535.jpg',
+      '/images/accessories/table-setting.jpg',
     isActive: true
   },
   {
@@ -52,7 +52,7 @@ export const DEFAULT_ACCESSORIES: DefaultAccessory[] = [
     unitEn: null,
     unitDe: null,
     price: 8.5,
-    image: 'https://media.xxxlutz.com/i/xxxlutz/NCYF89xExQUHUFb5RKpHL2EA/?fmt=auto&%24hq%24=&w=1200',
+    image: '/images/home_image.jpeg',
     isActive: true
   },
   {
@@ -65,7 +65,7 @@ export const DEFAULT_ACCESSORIES: DefaultAccessory[] = [
     unitEn: null,
     unitDe: null,
     price: 12,
-    image: 'https://de.euroelectronics.eu/cdn/shop/products/77746.jpg?v=1660303869&width=1800',
+    image: '/images/accessories/table-setting.jpg',
     isActive: true
   },
   {
@@ -78,7 +78,7 @@ export const DEFAULT_ACCESSORIES: DefaultAccessory[] = [
     unitEn: null,
     unitDe: null,
     price: 2.1,
-    image: 'https://m.media-amazon.com/images/I/51GC4TPowZL.jpg',
+    image: '/images/accessories/table-setting.jpg',
     isActive: true
   }
 ];

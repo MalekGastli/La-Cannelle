@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
+import { useConsent, ConsentGate } from '@/components/site/ConsentProvider';
+import { TERMS } from '@/lib/legal/terms';
 import { ordersApi } from '@/lib/api/orders';
 import { menusApi } from '@/lib/api/menus';
 import { productsApi } from '@/lib/api/products';
@@ -211,6 +213,7 @@ const TurnstileWidget = ({
   onError: () => void;
   resetKey?: number;
 }) => {
+  const consent = useConsent();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<any>(null);
   const [scriptReady, setScriptReady] = useState(() => typeof window !== 'undefined' && Boolean(window.turnstile));
@@ -302,6 +305,10 @@ const TurnstileWidget = ({
       // ignore
     }
   }, [resetKey, scriptReady]);
+
+  if (!consent.external) {
+    return <ConsentGate service="Cloudflare Turnstile (Spam-Schutz)" provider="Cloudflare"><span /></ConsentGate>;
+  }
 
   return (
     <div className="space-y-2">
@@ -662,7 +669,7 @@ export default function OrderPage() {
     countryName: 'Germany',
     callingCode: '49',
     flagEmoji: '🇩🇪',
-    flagPng: 'https://flagcdn.com/w40/de.png',
+    flagPng: '',
   });
   const [companyErrors, setCompanyErrors] = useState({ name: '', info: '' });
   const [guestCountError, setGuestCountError] = useState('');
@@ -4832,49 +4839,21 @@ export default function OrderPage() {
           <div className="px-6 py-5 flex-1 overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-4">
             <p>
               {language === 'DE'
-                ? 'Bitte lesen Sie die folgenden Bedingungen. Dieser Text dient als Beispiel und sollte an Ihre offiziellen Richtlinien angepasst werden.'
-                : 'Please review the full terms below. These terms are provided for convenience and should be updated to match your official policy.'}
+                ? 'Diese Bedingungen gelten für Ihre Bestellung. Die vollständige Fassung finden Sie auch unter '
+                : 'These terms apply to your order. You can also read them in full at '}
+              <a href="/agb" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">/agb</a>
+              {language === 'DE' ? '; unsere ' : '; our '}
+              <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+                {language === 'DE' ? 'Datenschutzerklärung' : 'privacy policy'}
+              </a>
+              {language === 'DE' ? ' erläutert die Verarbeitung Ihrer Daten.' : ' explains how we process your data.'}
             </p>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                {language === 'DE' ? 'Buchung und Zahlung' : 'Booking and Payment'}
-              </h4>
-              <p>
-                {language === 'DE'
-                  ? 'Bestellungen werden bestätigt, sobald die Zahlung eingegangen ist. Preise beinhalten die ausgewählten Speisen und Leistungen in Ihrer Bestellübersicht.'
-                  : 'Orders are confirmed once payment is received. Prices include the selected items and services listed in your order summary.'}
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                {language === 'DE' ? 'Stornierungen' : 'Cancellations'}
-              </h4>
-              <p>
-                {language === 'DE'
-                  ? 'Stornierungen mindestens 48 Stunden vor dem Termin können voll erstattet werden. Spätere Stornierungen können mit Gebühren verbunden sein.'
-                  : 'Cancellations made at least 48 hours before the scheduled event are eligible for a full refund. Late cancellations may be subject to fees.'}
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                {language === 'DE' ? 'Lieferung' : 'Delivery'}
-              </h4>
-              <p>
-                {language === 'DE'
-                  ? 'Lieferzeitfenster werden nach Zahlung bestätigt und können je nach Verfügbarkeit und Standort variieren.'
-                  : 'Delivery windows are confirmed after payment and may vary based on scheduling availability and location.'}
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                {language === 'DE' ? 'Datenschutz' : 'Privacy'}
-              </h4>
-              <p>
-                {language === 'DE'
-                  ? 'Wir verwenden Ihre Angaben ausschließlich zur Abwicklung Ihrer Bestellung und zur Kommunikation rund um Ihr Event. Kontaktieren Sie uns für Datenanfragen.'
-                  : 'We only use your information to fulfill your order and communicate about your event. Please contact us for data requests.'}
-              </p>
-            </div>
+            {TERMS[language === 'DE' ? 'DE' : 'EN'].map((section) => (
+              <div key={section.title}>
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">{section.title}</h4>
+                <p>{section.text}</p>
+              </div>
+            ))}
           </div>
           <div className="px-6 py-4 border-t border-black/5 flex justify-end">
             <button

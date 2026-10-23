@@ -18,8 +18,38 @@ import MenuShowcaseHorizontal from '../components/page';
 import { homeTranslations } from '@/lib/translations/home';
 import SiteHeader from '@/components/site/SiteHeader';
 import { SplitText, Spotlight, ImageReveal, Magnetic, Aurora } from '@/components/site/Motion';
+import GlassFolder, { type FolderFile } from '@/components/ui/glass-folder-cards';
 import SiteFooter from '@/components/site/SiteFooter';
 import { INSTAGRAM_PROFILE_URL } from '@/lib/config/social';
+
+
+// Each service is a folder: its photographs sit inside and fan out when the folder is opened.
+const SERVICE_FOLDERS: { cover: string; files: { image: string; de: string; en: string }[] }[] = [
+  {
+    cover: '/images/home_image.jpeg',
+    files: [
+      { image: '/images/chef-passion.jpg', de: 'Aus der Küche', en: 'From the kitchen' },
+      { image: '/images/mediterranean-buffet.jpg', de: 'Fingerfood-Buffet', en: 'Finger food buffet' },
+      { image: '/images/home_image.jpeg', de: 'Abendbuffet', en: 'Evening buffet' },
+    ],
+  },
+  {
+    cover: '/images/services/office.jpg',
+    files: [
+      { image: '/images/services/office.jpg', de: 'Kaffeepause im Büro', en: 'Office coffee break' },
+      { image: '/images/salad.jpg', de: 'Frisch geliefert', en: 'Delivered fresh' },
+      { image: '/images/services/corporate.jpg', de: 'Frühstücksbuffet', en: 'Breakfast buffet' },
+    ],
+  },
+  {
+    cover: '/images/restaurant-interior.jpg',
+    files: [
+      { image: '/images/accessories/table-setting.jpg', de: 'Gläser und Tafel', en: 'Glassware and table' },
+      { image: '/images/restaurant-interior.jpg', de: 'Terrasse', en: 'Terrace' },
+      { image: '/images/exclusive-service.jpg', de: 'Empfang', en: 'Reception' },
+    ],
+  },
+];
 
 export default function CateringHomepage() {
   const scrollContainer = useRef<HTMLDivElement>(null);
@@ -97,21 +127,7 @@ export default function CateringHomepage() {
     loadMenuData();
   }, []);
 
-  const brandLogos = [
-    { name: 'Montblanc', src: '/images/logos/banner/montblanc.png' },
-    { name: 'Omnicom Media Group', src: '/images/logos/banner/omnicom-media-group.png' },
-    { name: 'OMG', src: '/images/logos/banner/omg.png' },
-    { name: 'DoiT International', src: '/images/logos/banner/doit.png' },
-    { name: 'BBDO', src: '/images/logos/banner/bbdo.png' },
-    { name: 'IWC Schaffhausen', src: '/images/logos/banner/iwc.png' },
-    { name: 'Ruby Hotels', src: '/images/logos/ruby-hotels.svg' },
-    { name: 'RIMOWA', src: '/images/logos/banner/rimowa.png' },
-    { name: 'Ralph Lauren', src: '/images/logos/banner/ralph-lauren.png' },
-    { name: 'Samsonite', src: '/images/logos/banner/samsonite.png' },
-    { name: 'SABIC', src: '/images/logos/banner/sabic.png' },
-  ];
-
-  const quickMenuIcons = [Star, Heart, Shield, Crown];
+    const quickMenuIcons = [Star, Heart, Shield, Crown];
   const quickMenuCategoryMeta = [
     { gradient: 'from-[#A69256]/25 via-white to-[#F2F2F2]', countEn: '12 dishes', countDe: '12 Gerichte' },
     { gradient: 'from-[#404040]/15 via-white to-[#F2F2F2]', countEn: '8 menus', countDe: '8 Menus' },
@@ -275,32 +291,7 @@ export default function CateringHomepage() {
 
       </section>
 
-      {/* Brand Banner (FoodExplorer-inspired marquee) */}
-      <section className="bg-[#faf6ef] py-10 sm:py-14 border-b border-black/10 lux-reveal" data-lux-delay="60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-10">
-            <p className="eyebrow mb-4 lux-reveal lux-type" data-lux-delay="40">
-              {t.brandBanner.title}
-            </p>
-            <div className="w-12 h-px bg-black/20 mx-auto"></div>
-          </div>
-
-          <div className="lux-marquee" style={{ ['--lux-marquee-duration' as any]: '30s' }} aria-label={t.brandBanner.title}>
-            <div className="lux-marquee-track">
-              {brandLogos.map((logo) => (
-                <div key={logo.name} className="lux-marquee-item">
-                  <img src={logo.src} alt={`${logo.name} logo`} loading="lazy" decoding="async" />
-                </div>
-              ))}
-              {brandLogos.map((logo) => (
-                <div key={`${logo.name}-dup`} className="lux-marquee-item" aria-hidden="true">
-                  <img src={logo.src} alt="" loading="lazy" decoding="async" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
 
       <MenuShowcaseHorizontal 
@@ -325,18 +316,28 @@ export default function CateringHomepage() {
             <p className="text-white/70 max-w-2xl mx-auto text-lg">{t.services.subtitle}</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {t.services.items.map((service, index) => (
-              <Spotlight key={index} tone="dark" className="rounded-3xl">
-              <div
-                className="group bg-white/[0.04] p-8 sm:p-10 rounded-3xl border border-white/10 hover:bg-white/[0.07] hover:border-[color:var(--accent)]/50 hover:-translate-y-1 transition-all duration-500"
-              >
-                <span className="block h-px w-8 bg-[color:var(--accent)] mb-6 transition-all duration-500 group-hover:w-14"></span>
-                <h3 className="text-2xl font-medium text-white font-display mb-3">{service.title}</h3>
-                <p className="text-white/70 leading-relaxed">{service.description}</p>
-              </div>
-              </Spotlight>
-            ))}
+          <div className="grid grid-cols-1 items-start justify-items-center gap-x-10 gap-y-16 md:grid-cols-2 xl:grid-cols-3">
+            {t.services.items.map((service, index) => {
+              const folder = SERVICE_FOLDERS[index % SERVICE_FOLDERS.length];
+              const files: FolderFile[] = folder.files.map((file) => ({
+                name: language === 'DE' ? file.de : file.en,
+                image: file.image,
+              }));
+              return (
+                <div key={service.title} className="flex w-full max-w-[340px] flex-col items-center">
+                  <GlassFolder
+                    label={service.title}
+                    meta={language === 'DE' ? `${files.length} Fotos` : `${files.length} photos`}
+                    tone="dark"
+                    image={folder.cover}
+                    action="none"
+                    files={files}
+                    appearDelay={index * 140}
+                  />
+                  <p className="mt-8 text-center leading-relaxed text-white/70">{service.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
