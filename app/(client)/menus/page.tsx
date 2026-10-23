@@ -11,6 +11,7 @@ import { menusTranslations } from '@/lib/translations/menus';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SiteHeader from '@/components/site/SiteHeader';
+import SiteFooter from '@/components/site/SiteFooter';
 import { INSTAGRAM_PROFILE_URL } from '@/lib/config/social';
 
 function BodyPortal({ children }: { children: React.ReactNode }) {
@@ -599,62 +600,7 @@ export default function MenusPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F2] overflow-x-hidden">
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Open+Sans:wght@300;400;500;600;700&display=swap');
-        
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        
-        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out; }
-        .animate-fade-in-down { animation: fadeInDown 0.8s ease-out; }
-        .animate-scale-in { animation: scaleIn 0.6s ease-out; }
-        
-        body {
-          font-family: 'Open Sans', Lora, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          letter-spacing: 0.01em;
-          line-height: 1.75;
-        }
-        
-        .font-display {
-          font-family: 'Playfair Display', Georgia, serif;
-          letter-spacing: 0.03em;
-        }
-        
-        .font-elegant {
-          font-family: 'Playfair Display', Georgia, serif;
-        }
-        
-        * {
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          text-rendering: optimizeLegibility;
-        }
-        
-        html {
-          scroll-behavior: smooth;
-        }
-
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
-
+    <div className="min-h-screen bg-[#faf6ef] overflow-x-hidden">
       <BodyPortal>
         <MenuDetailsModal />
       </BodyPortal>
@@ -675,14 +621,14 @@ export default function MenusPage() {
       />
 
       {/* Hero Section - Premium */}
-      <section className="pt-40 pb-24 px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
+      <section className="pt-40 pb-24 px-6 lg:px-8 bg-gradient-to-br from-[#f3ece1] to-[#faf6ef] relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#A69256]/12 via-transparent to-transparent"></div>
         </div>
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-            <p className="text-xs uppercase tracking-[0.3em] text-[#A69256] font-semibold mb-4">Curated Selections</p>
+            <p className="eyebrow mb-4">Curated Selections</p>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 mb-6 font-display leading-tight">
               {t.hero.title}
             </h1>
@@ -731,56 +677,7 @@ export default function MenusPage() {
       </section>
 
       {/* Premium Footer */}
-      <footer className="bg-black text-[#F2F2F2] py-20 px-6 lg:px-8 lux-reveal" data-lux-delay="80">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-16">
-            <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-left' : 'opacity-0'}`}>
-              <h3 className="text-2xl font-light mb-4 font-display">La Cannelle</h3>
-              <p className="text-[#F2F2F2]/70 text-sm">{commonFooter.brandTagline}</p>
-            </div>
-            
-            <div className={`transition-all duration-1000 delay-100 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-              <h4 className="font-medium mb-4 text-sm uppercase tracking-wider">{commonFooter.quickLinks}</h4>
-              <div className="flex flex-col gap-3">
-                <a href="/home" className="text-white hover:text-[#A69256] transition-colors">{t.nav.home}</a>
-                <a href="/services" className="text-white hover:text-[#A69256] transition-colors">{t.nav.services}</a>
-                <a href="/menus" className="text-white font-semibold">{t.nav.menus}</a>
-                <a href="/contact" className="text-white hover:text-[#A69256] transition-colors">{t.nav.contact}</a>
-              </div>
-            </div>
-            
-            <div className={`transition-all duration-1000 delay-200 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-              <h4 className="font-medium mb-4 text-sm uppercase tracking-wider">{commonFooter.contact}</h4>
-              <div className="flex flex-col gap-3 text-[#F2F2F2]/70">
-                <div className="flex items-center gap-3">
-                  <Phone size={16} />
-                  <span className="text-sm">{commonFooter.contactPhone}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail size={16} />
-                  <span className="text-sm">{commonFooter.contactEmail}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <MapPin size={16} />
-                  <span className="text-sm">{commonFooter.contactAddress}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className={`transition-all duration-1000 delay-300 ${isVisible ? 'animate-fade-in-right' : 'opacity-0'}`}>
-              <h4 className="font-medium mb-4 text-sm uppercase tracking-wider">{commonFooter.followUs}</h4>
-              <div className="flex flex-col gap-2 text-[#F2F2F2]/70">
-                <a href={INSTAGRAM_PROFILE_URL} className="hover:text-[#A69256] transition-colors text-sm">{commonFooter.social.instagram}</a>
-                <a href="https://www.tiktok.com/@lacannellecatering" className="hover:text-[#A69256] transition-colors text-sm">{commonFooter.social.tiktok}</a>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-white/10 pt-8 text-center text-[#F2F2F2]/60 text-sm">
-            <p>{commonFooter.copyright}</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter footer={commonTranslations[language].footer} nav={commonNav} />
     </div>
   );
 }

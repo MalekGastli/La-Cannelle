@@ -33,6 +33,23 @@
   --font-sans: var(--font-body), "Open Sans", Lora, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
     "Apple Color Emoji", "Segoe UI Emoji";
   --font-serif: var(--font-display), "Playfair Display", Georgia, "Times New Roman", serif;
+  --color-gray-50: #faf6ef;
+  --color-gray-100: #f3ece1;
+  --color-gray-200: #e6dccd;
+  --color-gray-300: #d3c6b3;
+  --color-gray-400: #a89b88;
+  --color-gray-500: #7d7062;
+  --color-gray-600: #5f5347;
+  --color-gray-700: #463c33;
+  --color-gray-800: #2d251f;
+  --color-gray-900: #1a1410;
+  --color-gray-950: #120d0a;
+  --color-amber-500: #b8a266;
+  --color-amber-600: #8f7b3f;
+  --color-amber-700: #7a6835;
+  --color-orange-500: #b8a266;
+  --color-orange-600: #8f7b3f;
+  --color-orange-700: #6f5f2f;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -334,13 +351,6 @@ html[data-theme="dark"] .bg-black\/60 {
   .lux-modal {
     animation: modalEnter 520ms var(--lux-ease) both;
   }
-  .lux-type {
-    clip-path: inset(0 100% 0 0);
-  }
-  .lux-reveal.lux-in.lux-type {
-    animation: typeReveal 1.05s var(--lux-ease) both;
-    animation-delay: var(--lux-delay, 0ms);
-  }
   .lux-type-run {
     animation: typeReveal 1.05s var(--lux-ease) both;
     animation-delay: var(--lux-delay, 0ms);
@@ -629,7 +639,8 @@ html {
 }
 
 .eyebrow {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
   align-items: center;
   gap: 0.75rem;
   font-size: 0.6875rem;
@@ -674,5 +685,14 @@ html {
 
 :focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 3px; }
 
-.text-center > .eyebrow { justify-content: center; }
+.text-center > .eyebrow { justify-content: center; margin-inline: auto; }
 .text-center > .eyebrow::after { content: ""; width: 2rem; height: 1px; background: currentColor; }
+
+.contact-date-input { color-scheme: light; accent-color: var(--lux-gold); appearance: none; }
+.contact-date-input::-webkit-calendar-picker-indicator { opacity: 0; cursor: pointer; }
+.contact-date-input::-webkit-datetime-edit { color: #404040; }
+.animate-delay-100 { --lux-delay: 100ms; }
+.animate-delay-200 { --lux-delay: 200ms; }
+.animate-delay-300 { --lux-delay: 300ms; }
+
+section[id] { scroll-margin-top: 124px; }

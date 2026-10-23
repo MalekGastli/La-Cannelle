@@ -2853,7 +2853,7 @@ export default function OrderPage() {
             
             <div className={`${orderSummaryVisible ? 'block' : 'hidden lg:block'} space-y-6`}>
               {/* Event Info Summary */}
-              <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/70 p-4">
+              <div className="space-y-3 rounded-lg border border-gray-100 bg-[#f3ece1]/70 p-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-semibold text-gray-800">{t.eventInfo.date}:</span>
                   <span className="font-semibold text-gray-900">{orderData.eventDate || 'Not set'}</span>
@@ -2918,7 +2918,7 @@ export default function OrderPage() {
                             ? 'bg-amber-100 border border-amber-300'
                             : isCompleted
                             ? 'bg-green-50 border border-green-200'
-                            : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                            : 'bg-[#f3ece1] border border-gray-200 hover:bg-gray-100'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -3008,7 +3008,7 @@ export default function OrderPage() {
                 <div className="flex justify-between gap-3">
                   <button
                     onClick={prevSubStep}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-[#f3ece1] transition-colors"
                   >
                     {language === 'DE' ? 'Zurück' : 'Back'}
                   </button>
@@ -3222,7 +3222,7 @@ export default function OrderPage() {
             })}
             
             {products.length === 0 && (
-              <div className="text-center py-12 border border-gray-200 rounded-xl bg-gray-50">
+              <div className="text-center py-12 border border-gray-200 rounded-xl bg-[#f3ece1]">
                 <p className="text-gray-600">
                   {language === 'DE' 
                     ? `Keine ${categoryTitle.toLowerCase()} verfügbar für dieses Menu.`
@@ -3369,7 +3369,7 @@ export default function OrderPage() {
             
             <div className="space-y-6">
               {/* Event Info Summary */}
-              <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/70 p-4">
+              <div className="space-y-3 rounded-lg border border-gray-100 bg-[#f3ece1]/70 p-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-semibold text-gray-800">{t.eventInfo.date}:</span>
                   <span className="font-semibold text-gray-900">{orderData.eventDate || 'Not set'}</span>
@@ -4784,7 +4784,7 @@ export default function OrderPage() {
                 }
                 finalizeMenuSelection(minPeoplePromptMenu, { ignoreMenuMinPeople: false });
               }}
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#F2F2F2] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.18)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.24)] transition-all duration-200 hover:scale-[1.02]"
+              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#120d0a] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.18)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.24)] transition-all duration-200 hover:scale-[1.02]"
             >
               {t.menuMinPeoplePrompt.useMenuMin(Number(minPeoplePromptMenu.minPeople) || 0)}
             </button>
@@ -5050,7 +5050,7 @@ export default function OrderPage() {
                 setProductDetailsOpen(false);
                 setProductDetailsItem(null);
               }}
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#F2F2F2] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.22)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.28)] transition-all duration-200 hover:scale-[1.02]"
+              className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#A69256] text-[#120d0a] hover:bg-[#0D0D0D] shadow-[0_10px_20px_rgba(166,146,86,0.22)] hover:shadow-[0_12px_24px_rgba(166,146,86,0.28)] transition-all duration-200 hover:scale-[1.02]"
             >
               {ui.close}
             </button>
@@ -5400,7 +5400,7 @@ export default function OrderPage() {
   
   return (
     <div
-      className="order-theme min-h-screen bg-[#F2F2F2] flex flex-col overflow-x-hidden"
+      className="order-theme min-h-screen bg-[#faf6ef] flex flex-col overflow-x-hidden"
       style={{ ['--order-dock' as any]: `${currentStep === 1 ? 0 : orderSummaryDockHeight}px` }}
     >
       {notification && (
@@ -5419,7 +5419,6 @@ export default function OrderPage() {
       {renderOrderSummaryModal()}
       
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
          
         @keyframes fadeInUp {
           from {
@@ -5440,10 +5439,6 @@ export default function OrderPage() {
           font-family: 'Open Sans', Lora, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           letter-spacing: 0.01em;
           line-height: 1.75;
-        }
-
-        .font-elegant {
-          font-family: 'Playfair Display', Georgia, serif;
         }
 
         ::selection {
@@ -5513,9 +5508,9 @@ export default function OrderPage() {
           border-color: rgba(13, 13, 13, 0.10) !important;
         }
 
-        .order-theme [class~="bg-gray-50"],
-        .order-theme [class~="bg-gray-50/70"],
-        .order-theme [class~="bg-gray-50/60"],
+        .order-theme [class~="bg-[#f3ece1]"],
+        .order-theme [class~="bg-[#f3ece1]/70"],
+        .order-theme [class~="bg-[#f3ece1]/60"],
         .order-theme [class~="bg-gray-100"],
         .order-theme [class~="bg-gray-100/70"],
         .order-theme [class~="bg-gray-100/60"] {
@@ -5635,7 +5630,7 @@ export default function OrderPage() {
                   className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors inline-flex items-center shadow-sm ${
                     isOrderingPaused || (isClosedDate && currentStep >= 1)
                       ? 'bg-white/10 text-[#F2F2F2]/40 cursor-not-allowed'
-                      : 'bg-[#A69256] text-[#F2F2F2] hover:bg-[#0D0D0D]'
+                      : 'bg-[#A69256] text-[#120d0a] hover:bg-[#0D0D0D]'
                   }`}
                   aria-label={currentStep === stepsConfig.length ? ui.confirmOrder : t.buttons.next}
                 >
@@ -5911,13 +5906,9 @@ export default function OrderPage() {
         </div>
       )}
       
-      {/* Footer */}
-      <footer
-        className="bg-black text-[#F2F2F2] pt-12 pb-[calc(3rem+var(--order-dock,0px)+env(safe-area-inset-bottom))] px-4 sm:px-6 lg:px-8 lux-reveal"
-        data-lux-delay="80"
-      >
+      <footer className="bg-[#120d0a] text-white/60 pt-12 pb-[calc(3rem+var(--order-dock,0px)+env(safe-area-inset-bottom))] px-4 sm:px-6 lg:px-8 border-t border-white/10">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-[#F2F2F2]/70 text-lg">&copy; 2025 La Cannelle Catering. All rights reserved.</p>
+          <p className="text-sm tracking-wide">&copy; {new Date().getFullYear()} La Cannelle Catering. All rights reserved.</p>
         </div>
       </footer>
     </div>

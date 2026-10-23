@@ -73,28 +73,16 @@ export default function AdminLayout({
   const sidebarTransformClass = mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-stone-100 overflow-x-hidden text-gray-900">
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap');
-
-        body {
-          font-family: 'Inter', sans-serif;
-        }
-
-        .font-elegant {
-          font-family: 'Playfair Display', serif;
-        }
-      `}</style>
-
+    <div className="min-h-screen bg-[#f6f0e6] overflow-x-hidden text-gray-900">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white/95 backdrop-blur-lg border-r border-gray-100 transition-transform duration-300 ${sidebarTransformClass}`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-[#17120e] text-white border-r border-white/10 transition-transform duration-300 ${sidebarTransformClass}`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <div className="text-2xl font-bold text-gray-900 font-elegant italic">
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <div className="text-2xl">
               <Image
-                src="/images/logo-header.png"
+                src="/images/logo-header-dark.png"
                 alt="La Cannelle"
                 width={1438}
                 height={439}
@@ -105,7 +93,7 @@ export default function AdminLayout({
             </div>
             <button
               onClick={() => setMobileSidebarOpen(false)}
-              className="p-2 rounded-lg hover:bg-gray-100 lg:hidden"
+              className="p-2 rounded-lg text-white hover:bg-white/10 lg:hidden"
               type="button"
               aria-label={closeMenuLabel}
             >
@@ -124,8 +112,8 @@ export default function AdminLayout({
                     onClick={() => navigateTo(item.path)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                       isActive
-                        ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-[color:var(--accent)]/15 text-[color:var(--accent)] border border-[color:var(--accent)]/40'
+                        : 'text-white/65 border border-transparent hover:bg-white/5 hover:text-white'
                     }`}
                     type="button"
                   >
@@ -137,14 +125,14 @@ export default function AdminLayout({
             </div>
           </nav>
 
-          <div className="p-4 border-t border-gray-100">
-            <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
-              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                <Users className="text-amber-700" size={20} />
+          <div className="p-4 border-t border-white/10">
+            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+              <div className="w-10 h-10 bg-[color:var(--accent)]/20 rounded-full flex items-center justify-center">
+                <Users className="text-[color:var(--accent)]" size={20} />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-gray-900">{adminUserLabel}</p>
-                <p className="text-sm text-gray-600">{adminRoleLabel}</p>
+                <p className="font-semibold text-white">{adminUserLabel}</p>
+                <p className="text-sm text-white/60">{adminRoleLabel}</p>
               </div>
             </div>
           </div>
@@ -160,7 +148,7 @@ export default function AdminLayout({
 
       {/* Main content */}
       <div className="min-w-0 transition-all duration-300 ml-0 lg:ml-72">
-        <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-30">
+        <header className="bg-[#faf6ef]/85 backdrop-blur-lg border-b border-black/10 sticky top-0 z-30">
           <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <button

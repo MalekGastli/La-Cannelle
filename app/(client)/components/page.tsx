@@ -591,7 +591,7 @@ export default function MenuShowcaseHorizontal({
                     </p>
 
                     <button
-                      className="w-full bg-[#A69256] text-[#F2F2F2] py-2 rounded-lg font-semibold hover:bg-[#0D0D0D] transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center gap-2 text-sm"
+                      className="w-full bg-[#A69256] text-[#120d0a] py-2 rounded-lg font-semibold hover:bg-[#0D0D0D] transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center gap-2 text-sm"
                       onClick={() => openMenuDetails(menu)}
                     >
                       {menuT.menuShowcase?.viewDetails || homeT.menus?.viewDetails || (language === 'DE' ? 'Details anzeigen' : 'View Details')}

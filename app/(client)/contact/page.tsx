@@ -9,6 +9,7 @@ import { commonTranslations } from '@/lib/translations/common';
 import { contactTranslations } from '@/lib/translations/contact';
 import { LuxurySelect } from '@/components/site/LuxurySelect';
 import SiteHeader from '@/components/site/SiteHeader';
+import SiteFooter from '@/components/site/SiteFooter';
 import { INSTAGRAM_HANDLE_DISPLAY, INSTAGRAM_PROFILE_URL } from '@/lib/config/social';
 
 const normalizeInstagramPermalink = (url: string) => {
@@ -244,86 +245,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F2] overflow-x-hidden">
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Open+Sans:wght@300;400;500;600;700&display=swap');
-        
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeInLeft {
-          from { opacity: 0; transform: translateX(-30px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes fadeInRight {
-          from { opacity: 0; transform: translateX(30px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        
-        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out; }
-        .animate-fade-in-down { animation: fadeInDown 0.8s ease-out; }
-        .animate-fade-in-left { animation: fadeInLeft 0.8s ease-out; }
-        .animate-fade-in-right { animation: fadeInRight 0.8s ease-out; }
-        .animate-scale-in { animation: scaleIn 0.6s ease-out; }
-        
-        .animate-delay-100 { animation-delay: 0.1s; }
-        .animate-delay-200 { animation-delay: 0.2s; }
-        .animate-delay-300 { animation-delay: 0.3s; }
-        
-        body {
-          font-family: 'Open Sans', Lora, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          letter-spacing: 0.01em;
-          line-height: 1.75;
-        }
-        
-        .font-display {
-          font-family: 'Playfair Display', Georgia, serif;
-          letter-spacing: 0.03em;
-        }
-        
-        .font-elegant {
-          font-family: 'Playfair Display', Georgia, serif;
-        }
-
-        * {
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          text-rendering: optimizeLegibility;
-        }
-
-        .contact-date-input {
-          color-scheme: light;
-          accent-color: #A69256;
-          appearance: none;
-        }
-
-        .contact-date-input::-webkit-calendar-picker-indicator {
-          opacity: 0;
-          cursor: pointer;
-        }
-
-        .contact-date-input::-webkit-datetime-edit {
-          color: #404040;
-        }
-        
-        html {
-          scroll-behavior: smooth;
-        }
-      `}</style>
-
+    <div className="min-h-screen bg-[#faf6ef] overflow-x-hidden">
       <SiteHeader
         language={language}
         toggleLanguage={toggleLanguage}
@@ -340,14 +262,14 @@ export default function ContactPage() {
       />
 
       {/* Hero Section - Premium */}
-      <section className="pt-40 pb-24 px-6 lg:px-8 bg-[#F2F2F2] relative overflow-hidden">
+      <section className="pt-40 pb-24 px-6 lg:px-8 bg-[#faf6ef] relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#A69256]/12 via-transparent to-transparent"></div>
         </div>
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-            <p className="text-xs uppercase tracking-[0.3em] text-[#A69256] font-semibold mb-4">Get In Touch</p>
+            <p className="eyebrow mb-4">Get In Touch</p>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light text-gray-900 mb-6 font-display leading-tight">
               {t.hero.title}
             </h1>
@@ -605,7 +527,7 @@ export default function ContactPage() {
 
                   <button
                     type="submit"
-                    className="w-full bg-[#A69256] text-[#F2F2F2] py-4 px-8 rounded-xl font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
+                    className="w-full bg-[#A69256] text-[#120d0a] py-4 px-8 rounded-xl font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
                   >
                     <Send size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                     {t.contactForm.button}
@@ -617,7 +539,7 @@ export default function ContactPage() {
             {/* Sidebar - Premium Cards */}
             <div className="space-y-6">
               {/* Contact Information */}
-              <div className={`bg-gray-50 rounded-3xl p-8 border border-gray-200 ${
+              <div className={`bg-[#f3ece1] rounded-3xl p-8 border border-gray-200 ${
                 isVisible ? 'animate-fade-in-right' : 'opacity-0'
               }`}>
                 <h3 className="text-2xl font-light text-gray-900 mb-6 font-display">
@@ -668,7 +590,7 @@ export default function ContactPage() {
               </div>
 
               {/* Quick Order CTA */}
-              <div className={`bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-white relative overflow-hidden ${
+              <div className={`bg-gradient-to-br from-[#17120e] to-[#241a13] rounded-3xl p-8 text-white relative overflow-hidden ${
                 isVisible ? 'animate-scale-in' : 'opacity-0'
               }`} style={{ animationDelay: '200ms' }}>
                 <div className="absolute inset-0 opacity-10">
@@ -685,7 +607,7 @@ export default function ContactPage() {
                   <button
                     type="button"
                     onClick={() => router.push('/order')}
-                    className="w-full bg-[#A69256] text-[#F2F2F2] py-3 px-6 rounded-xl font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
+                    className="w-full bg-[#A69256] text-[#120d0a] py-3 px-6 rounded-xl font-semibold hover:bg-[#0D0D0D] transition-all duration-300 hover:shadow-lg inline-flex items-center justify-center gap-2 group"
                   >
                     {t.quickOrder.button}
                     <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
@@ -740,7 +662,7 @@ export default function ContactPage() {
 
                   {/* Recent Posts */}
                   {hasInstagramPosts && instagramPosts.length > 0 && firstInstagramPost && (
-                    <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-200">
+                    <div className="bg-[#f3ece1] rounded-2xl overflow-hidden border border-gray-200">
                       <iframe
                         title={`Instagram post ${firstInstagramPost.permalink}`}
                         src={`${firstInstagramPost.permalink}embed`}
@@ -773,7 +695,7 @@ export default function ContactPage() {
       </section>
 
       {/* Google Map Section - Premium */}
-      <section className="py-24 px-6 lg:px-8 bg-gray-50 lux-reveal" data-lux-delay="40">
+      <section className="py-24 px-6 lg:px-8 bg-[#f3ece1] lux-reveal" data-lux-delay="40">
         <div className="max-w-7xl mx-auto">
           <div className={`bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-200 ${
             isVisible ? 'animate-fade-in-up' : 'opacity-0'
@@ -806,60 +728,7 @@ export default function ContactPage() {
       </section>
 
       {/* Premium Footer */}
-      <footer className="bg-black text-[#F2F2F2] py-20 px-6 lg:px-8 lux-reveal" data-lux-delay="80">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-16">
-            <div className={`transition-all duration-1000 ${isVisible ? 'animate-fade-in-left' : 'opacity-0'}`}>
-              <h3 className="text-2xl font-light mb-4 font-display">La Cannelle</h3>
-              <p className="text-[#F2F2F2]/70 text-sm">{commonFooter.brandTagline}</p>
-            </div>
-            
-            <div className={`transition-all duration-1000 delay-100 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-              <h4 className="font-medium mb-4 text-sm uppercase tracking-wider">{commonFooter.quickLinks}</h4>
-              <div className="flex flex-col gap-3">
-                <a href="/home" className="text-white hover:text-[#A69256] transition-colors">{commonNav.home}</a>
-                <a href="/services" className="text-white hover:text-[#A69256] transition-colors">{commonNav.services}</a>
-                <a href="/menus" className="text-white hover:text-[#A69256] transition-colors">{commonNav.menus}</a>
-                <a href="/contact" className="text-white font-semibold">{commonNav.contact}</a>
-              </div>
-            </div>
-            
-            <div className={`transition-all duration-1000 delay-200 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
-              <h4 className="font-medium mb-4 text-sm uppercase tracking-wider">{commonFooter.contact}</h4>
-              <div className="flex flex-col gap-3 text-[#F2F2F2]/70">
-                <div className="flex items-center gap-3">
-                  <Phone size={16} />
-                  <span className="text-sm">{t.contactInfo.phone}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail size={16} />
-                  <span className="text-sm">{t.contactInfo.email}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <MapPin size={16} />
-                  <span className="text-sm">{t.contactInfo.address}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className={`transition-all duration-1000 delay-300 ${isVisible ? 'animate-fade-in-right' : 'opacity-0'}`}>
-              <h4 className="font-medium mb-4 text-sm uppercase tracking-wider">{commonFooter.followUs}</h4>
-              <div className="flex flex-col gap-2 text-[#F2F2F2]/70">
-                <a href={INSTAGRAM_PROFILE_URL} className="hover:text-[#A69256] transition-colors inline-flex items-center gap-2 text-sm">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-current">
-                    <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm-5 3.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5zm0 2A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5zM17.75 6a1.25 1.25 0 1 1-1.25 1.25A1.25 1.25 0 0 1 17.75 6z" />
-                  </svg>
-                  {commonFooter.social.instagram}
-                </a>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-white/10 pt-8 text-center text-[#F2F2F2]/60 text-sm">
-            <p>{commonFooter.copyright}</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter footer={commonTranslations[language].footer} nav={commonNav} />
     </div>
   );
 }
