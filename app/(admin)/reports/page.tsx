@@ -126,11 +126,6 @@ export default function AdminReports() {
     >
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 font-elegant">{t.subtitle}</h2>
-        <p className="text-gray-600 text-sm">
-          {isDE
-            ? 'Diese Seite nutzt die Backend-Endpoints /api/reports/*.'
-            : 'This page uses the backend endpoints /api/reports/*.'}
-        </p>
       </div>
 
       {error && (

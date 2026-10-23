@@ -53,7 +53,7 @@ export default function AdminLanguageToggle({ language, onToggle }: AdminLanguag
             window.location.href = '/login';
           }
         }}
-        className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+        className="hidden sm:inline-flex px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
       >
         {loggingOut ? (language === 'DE' ? 'Abmelden...' : 'Logging out...') : (language === 'DE' ? 'Abmelden' : 'Logout')}
       </button>

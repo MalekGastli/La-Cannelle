@@ -395,12 +395,12 @@ export default function AdminDashboard() {
                 <ListChecks className="text-gray-400" size={20} />
               </div>
                
-              <div className="flex gap-3 mb-4">
+              <div className="flex gap-2 sm:gap-3 mb-4">
                 <input
                   value={newTodoText}
                   onChange={(e) => setNewTodoText(e.target.value)}
                   placeholder={t.labels.addTodoPlaceholder}
-                  className="flex-1 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/60 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
+                  className="min-w-0 flex-1 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/60 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') addTodo();
                   }}
@@ -409,7 +409,7 @@ export default function AdminDashboard() {
                   type="button"
                   onClick={addTodo}
                   disabled={!newTodoText.trim()}
-                  className="px-5 py-3 rounded-xl bg-gray-900 text-white hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="shrink-0 px-4 sm:px-5 py-3 rounded-xl bg-gray-900 text-white hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t.labels.addTodo}
                 </button>

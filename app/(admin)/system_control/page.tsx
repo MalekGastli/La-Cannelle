@@ -500,8 +500,8 @@ export default function SystemControl() {
               {/* Ordering Control Tab */}
               {activeTab === 'ordering' && (
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between p-6 bg-gray-50 rounded-xl">
-                    <div>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 bg-gray-50 rounded-xl">
+                    <div className="min-w-0">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         {t.ordering.statusTitle}
                       </h3>
@@ -516,7 +516,7 @@ export default function SystemControl() {
                     </div>
                     <button
                       onClick={toggleOrdering}
-                      className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
+                      className={`w-full sm:w-auto justify-center px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${
                         status.orderingPaused
                           ? 'bg-green-600 text-white hover:bg-green-700'
                           : 'bg-red-600 text-white hover:bg-red-700'

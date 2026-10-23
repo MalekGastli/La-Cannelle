@@ -2411,7 +2411,7 @@ const ProductCard = ({ item }: { item: MenuItem }) => (
   );
 
   const ViewModeToggle = () => (
-    <div className="bg-white rounded-lg border border-gray-200 p-1 flex flex-wrap items-center gap-1">
+    <div className="bg-white rounded-lg border border-gray-200 p-1 flex items-center gap-1">
       <button
         onClick={() => setViewMode('split')}
         className={`px-2 py-2 rounded-md flex items-center gap-2 text-xs sm:text-sm font-medium ${
@@ -2419,7 +2419,7 @@ const ProductCard = ({ item }: { item: MenuItem }) => (
         }`}
       >
         <LayoutGrid size={16} />
-        {t.menu.splitView}
+        <span className="hidden sm:inline">{t.menu.splitView}</span>
       </button>
       <button
         onClick={() => setViewMode('menus')}
@@ -2428,7 +2428,7 @@ const ProductCard = ({ item }: { item: MenuItem }) => (
         }`}
       >
         <List size={16} />
-        {t.menu.menusTitle} {t.menu.only}
+        <span className="hidden sm:inline">{t.menu.menusTitle} {t.menu.only}</span>
       </button>
       <button
         onClick={() => setViewMode('products')}
@@ -2437,7 +2437,7 @@ const ProductCard = ({ item }: { item: MenuItem }) => (
         }`}
       >
         <Grid size={16} />
-        {t.menu.productsOnly}
+        <span className="hidden sm:inline">{t.menu.productsOnly}</span>
       </button>
     </div>
   );
@@ -2457,7 +2457,7 @@ const ProductCard = ({ item }: { item: MenuItem }) => (
       openMenuLabel={language === 'DE' ? 'Menü öffnen' : 'Open menu'}
       closeMenuLabel={language === 'DE' ? 'Menü schließen' : 'Close menu'}
       headerMeta={
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             type="button"
             onClick={loadMenusAndProducts}

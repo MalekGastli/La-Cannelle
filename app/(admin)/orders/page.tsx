@@ -112,6 +112,11 @@ export default function AdminOrders() {
   const [dateFilter, setDateFilter] = useState('all');
   const { language, toggleLanguage } = useTranslation('admin');
   const session = useAdminSession();
+  // Time is rendered after mount only, so server and browser markup match
+  const [clock, setClock] = useState('');
+  useEffect(() => {
+    setClock(new Date().toLocaleTimeString(language === 'DE' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' }));
+  }, [language]);
   const canEditOrders = session.can('orders.edit');
   const canDeleteOrders = session.can('orders.delete');
 
@@ -925,15 +930,67 @@ export default function AdminOrders() {
         isVisible ? 'animate-fade-in-up' : 'opacity-0'
       }`} style={{ animationDelay: '200ms' }}>
         <div className="p-6 border-b border-gray-300 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xl font-bold text-gray-900 font-elegant">{t.table.title} ({filteredOrders.length})</h2>
             <div className="text-sm text-gray-600">
-              {language === 'DE' ? 'Letzte Aktualisierung' : 'Last updated'}: {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              {language === 'DE' ? 'Letzte Aktualisierung' : 'Last updated'}: {clock}
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Phones: one card per order instead of a table that does not fit */}
+        <div className="md:hidden divide-y divide-gray-200">
+          {filteredOrders.map((order) => {
+            const statusConfig = statusOptions.find((s) => s.value === order.status);
+            return (
+              <div key={order.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded-md inline-block">{formatOrderId(order.id)}</div>
+                    <div className="text-xs text-gray-500 mt-1">{order.createdAt}</div>
+                  </div>
+                  <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium border inline-flex items-center gap-1 ${statusConfig?.color} border-gray-300`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                    {statusConfig?.label}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">{order.client}</div>
+                  <div className="text-xs text-gray-700 break-all">{order.contact}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-gray-500">{t.table.dateTime}</div>
+                    <div className="font-medium text-gray-900">{order.eventDate}</div>
+                    <div className="text-gray-700">{order.eventTime}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-gray-500">{t.table.guests}</div>
+                    <div className="font-medium text-gray-900 inline-flex items-center gap-1"><Users size={14} className="text-gray-500" />{order.guests}</div>
+                    <div className="text-gray-700 truncate">{order.eventType}</div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-base font-semibold text-gray-900">€{formatPrice(order.total)}</div>
+                    <div className={`text-xs inline-flex items-center gap-1 px-2 py-1 rounded-full mt-1 ${
+                      order.payment === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                    }`}>
+                      {order.payment === 'paid' ? t.table.paymentPaid : t.table.paymentPending}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setSelectedOrder(order)} className="p-2.5 text-blue-700 rounded-lg border border-blue-200" title={t.labels.viewDetails}><Eye size={18} /></button>
+                    {canEditOrders && <button onClick={() => updateOrderStatus(order.id, 'completed')} className="p-2.5 text-green-700 rounded-lg border border-green-200" title={t.labels.markComplete}><CheckCircle size={18} /></button>}
+                    {canDeleteOrders && <button onClick={() => openDeleteConfirmation({ id: order.id, client: order.client })} className="p-2.5 text-red-800 rounded-lg border border-red-200" title={t.labels.deleteOrder}><Trash2 size={18} /></button>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
