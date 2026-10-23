@@ -4,17 +4,17 @@
 
 :root {
   /* Luxury palette */
-  --background: #ffffff;
-  --foreground: #0d0d0d;
+  --background: #faf6ef;
+  --foreground: #1a1410;
   --accent: #a69256;
-  --lux-bg: #ffffff;
-  --lux-dark: #0d0d0d;
+  --lux-bg: #faf6ef;
+  --lux-dark: #1a1410;
   --lux-muted: #a6a6a6;
   --lux-gold: #a69256;
   --lux-black: #0d0d0d;
   --lux-divider: #a6a6a6;
   --lux-surface: #ffffff;
-  --lux-surface-2: #f9f9f9;
+  --lux-surface-2: #f3ece1;
   --lux-text-primary: #0d0d0d;
   --lux-text-secondary: #6b7280;
   --lux-text-heading: #0d0d0d;
@@ -30,9 +30,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Open Sans", Lora, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+  --font-sans: var(--font-body), "Open Sans", Lora, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
     "Apple Color Emoji", "Segoe UI Emoji";
-  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-display), "Playfair Display", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -613,3 +613,66 @@ html[data-theme="dark"] :where(a, button, input, select, textarea):focus-visible
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+
+/* ==========================================================================
+   Redesign primitives (shared by the client pages)
+   ========================================================================== */
+
+.font-display,
+.font-elegant {
+  font-family: var(--font-serif);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--lux-gold);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 2rem;
+  height: 1px;
+  background: currentColor;
+}
+
+.section-surface-cream { background: #faf6ef; color: #1a1410; }
+.section-surface-sand { background: #f3ece1; color: #1a1410; }
+.section-surface-espresso { background: #17120e; color: #f5efe6; }
+
+.btn-accent,
+.btn-outline-light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border-radius: 9999px;
+  padding: 0.95rem 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: transform var(--lux-med) var(--lux-ease), background-color var(--lux-med) var(--lux-ease),
+    border-color var(--lux-med) var(--lux-ease), filter var(--lux-med) var(--lux-ease);
+}
+
+.btn-accent { background: var(--lux-gold); color: #120d0a; }
+.btn-accent:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+.btn-outline-light { border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; }
+.btn-outline-light:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.55); }
+
+:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 3px; }
+
+.text-center > .eyebrow { justify-content: center; }
+.text-center > .eyebrow::after { content: ""; width: 2rem; height: 1px; background: currentColor; }

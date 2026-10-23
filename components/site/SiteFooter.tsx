@@ -33,16 +33,17 @@ type SiteFooterProps = {
 
 export default function SiteFooter({ footer, nav }: SiteFooterProps) {
   return (
-    <footer className="mt-24 bg-black text-white border-t border-white/10">
-      <Container className="py-14">
+    <footer className="bg-[#120d0a] text-white border-t border-white/10">
+      <Container className="py-16 sm:py-20">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
-            <p className="font-elegant text-2xl italic">{footer.brandTitle}</p>
-            <p className="mt-3 text-sm text-white/70">{footer.brandTagline}</p>
+            <p className="font-display text-3xl">{footer.brandTitle}</p>
+            <span className="mt-4 block h-px w-10 bg-[color:var(--accent)]" />
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/65">{footer.brandTagline}</p>
           </div>
 
           <div>
-            <p className="text-sm font-semibold tracking-wide text-white/90">{footer.quickLinks}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">{footer.quickLinks}</p>
             <div className="mt-4 flex flex-col gap-2 text-sm">
               <Link href="/home" className="text-white/70 hover:text-white transition-colors">
                 {nav.home}
@@ -60,7 +61,7 @@ export default function SiteFooter({ footer, nav }: SiteFooterProps) {
           </div>
 
           <div>
-            <p className="text-sm font-semibold tracking-wide text-white/90">{footer.contact}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">{footer.contact}</p>
             <div className="mt-4 space-y-3 text-sm text-white/70">
               <div className="flex items-start gap-2">
                 <Phone size={16} className="mt-0.5 text-white/60" />
@@ -78,7 +79,7 @@ export default function SiteFooter({ footer, nav }: SiteFooterProps) {
           </div>
 
           <div>
-            <p className="text-sm font-semibold tracking-wide text-white/90">{footer.followUs}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent)]">{footer.followUs}</p>
             <div className="mt-4 flex flex-col gap-3 text-sm">
               <a
                 href={INSTAGRAM_PROFILE_URL}
@@ -102,7 +103,7 @@ export default function SiteFooter({ footer, nav }: SiteFooterProps) {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-white/10 pt-7 text-center text-xs text-white/55">
+        <div className="mt-14 border-t border-white/10 pt-7 text-center text-xs tracking-wide text-white/45">
           {footer.copyright}
         </div>
       </Container>
