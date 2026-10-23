@@ -34,6 +34,18 @@ async function main() {
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
+
+  // One-time reset: set ADMIN_FORCE_PASSWORD for a single deploy, then clear it again
+  const forced = process.env.ADMIN_FORCE_PASSWORD;
+  if (existing && forced) {
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: { password: await bcrypt.hash(forced, 10), role: UserRole.ADMIN, isActive: true },
+    });
+    console.log('ensure-admin: owner password was reset from ADMIN_FORCE_PASSWORD');
+    return;
+  }
+
   if (existing) {
     console.log('ensure-admin: admin already exists, leaving it unchanged');
     return;
