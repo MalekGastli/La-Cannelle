@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { serviceService } from '../services/serviceService';
+import { sendCachedJson } from '../utils/httpCache';
+import { isStaffRequest } from '../utils/requestContext';
 
 export const serviceController = {
   async getServices(req: AuthRequest, res: Response) {
@@ -11,14 +13,14 @@ export const serviceController = {
     if (isActive !== undefined) filters.isActive = String(isActive) === 'true';
     if (search) filters.search = String(search);
 
-    const services = await serviceService.getServices(filters);
-    res.json(services);
+    const services = await serviceService.getServices(filters, { bypassCache: isStaffRequest(req) });
+    sendCachedJson(req, res, services);
   },
 
   async getServiceById(req: AuthRequest, res: Response) {
     const { id } = req.params;
-    const service = await serviceService.getServiceById(parseInt(id, 10));
-    res.json(service);
+    const service = await serviceService.getServiceById(parseInt(id, 10), { bypassCache: isStaffRequest(req) });
+    sendCachedJson(req, res, service);
   },
 
   async createService(req: AuthRequest, res: Response) {

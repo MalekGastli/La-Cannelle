@@ -77,6 +77,7 @@ export const teamService = {
       where: { role: { in: ['ADMIN', 'STAFF'] } },
       select: memberSelect,
       orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+      take: 500,
     });
   },
 
@@ -131,6 +132,7 @@ export const teamService = {
     const roles = await prisma.role.findMany({
       include: { permissions: { select: { resource: true, action: true } }, _count: { select: { users: true } } },
       orderBy: { id: 'asc' },
+      take: 200,
     });
     return roles.map((r) => ({
       id: r.id,
@@ -194,6 +196,7 @@ export const teamService = {
       where: { acceptedAt: null },
       select: { id: true, email: true, expiresAt: true, createdAt: true, role: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
+      take: 500,
     });
   },
 

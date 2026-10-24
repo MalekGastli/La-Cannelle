@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { invalidateCatalog } from '../utils/cache';
 import path from 'path';
 import { prisma } from '../prisma';
 import { AppError } from '../middleware/errorHandler';
@@ -262,11 +263,28 @@ export const legacyBackupRestoreService = {
     const menusRestored = new Map<number, number>(); // legacyMenuId -> currentMenuId
     const accessoriesRestored = new Map<number, number>(); // legacyAccessoryId -> currentAccessoryId
 
+    // Preload current rows once instead of one lookup per legacy row (first row wins, like findFirst)
+    const existingServices = new Map<string, { id: number }>();
+    for (const row of await prisma.service.findMany({ select: { id: true, name: true, occasion: true }, orderBy: { id: 'asc' } })) {
+      const key = `${row.name}|${row.occasion}`;
+      if (!existingServices.has(key)) existingServices.set(key, row);
+    }
+    const existingProducts = new Map<string, { id: number }>();
+    for (const row of await prisma.product.findMany({ select: { id: true, name: true }, orderBy: { id: 'asc' } })) {
+      if (!existingProducts.has(row.name)) existingProducts.set(row.name, row);
+    }
+    const existingMenus = new Map<string, { id: number }>();
+    for (const row of await prisma.menu.findMany({ select: { id: true, name: true }, orderBy: { id: 'asc' } })) {
+      if (!existingMenus.has(row.name)) existingMenus.set(row.name, row);
+    }
+    const existingAccessories = new Map<string, { id: number }>();
+    for (const row of await prisma.accessory.findMany({ select: { id: true, nameEn: true }, orderBy: { id: 'asc' } })) {
+      if (!existingAccessories.has(row.nameEn)) existingAccessories.set(row.nameEn, row);
+    }
+
     // Upsert services (by name + occasion)
     for (const legacy of legacyServicesById.values()) {
-      const existing = await prisma.service.findFirst({
-        where: { name: legacy.name, occasion: legacy.occasion as any }
-      });
+      const existing = existingServices.get(`${legacy.name}|${legacy.occasion}`);
       const saved = existing
         ? await prisma.service.update({
             where: { id: existing.id },
@@ -287,12 +305,13 @@ export const legacyBackupRestoreService = {
               isActive: legacy.isActive
             }
           });
+      existingServices.set(`${legacy.name}|${legacy.occasion}`, saved);
       servicesRestored.set(legacy.legacyId, saved.id);
     }
 
     // Upsert products (by name; best-effort exact match)
     for (const legacy of legacyProductsById.values()) {
-      const existing = await prisma.product.findFirst({ where: { name: legacy.name } });
+      const existing = existingProducts.get(legacy.name);
       const saved = existing
         ? await prisma.product.update({
             where: { id: existing.id },
@@ -326,12 +345,13 @@ export const legacyBackupRestoreService = {
               popularity: legacy.popularity
             }
           });
+      existingProducts.set(legacy.name, saved);
       productsRestored.set(legacy.legacyId, saved.id);
     }
 
     // Upsert menus (by name)
     for (const legacy of legacyMenus) {
-      const existing = await prisma.menu.findFirst({ where: { name: legacy.name } });
+      const existing = existingMenus.get(legacy.name);
       const saved = existing
         ? await prisma.menu.update({
             where: { id: existing.id },
@@ -356,12 +376,13 @@ export const legacyBackupRestoreService = {
             }
           });
 
+      existingMenus.set(legacy.name, saved);
       menusRestored.set(legacy.legacyId, saved.id);
     }
 
     // Upsert accessories (by nameEn)
     for (const legacy of legacyAccessoriesById.values()) {
-      const existing = await prisma.accessory.findFirst({ where: { nameEn: legacy.nameEn } });
+      const existing = existingAccessories.get(legacy.nameEn);
       const saved = existing
         ? await prisma.accessory.update({
             where: { id: existing.id },
@@ -395,6 +416,7 @@ export const legacyBackupRestoreService = {
               isActive: legacy.isActive
             }
           });
+      existingAccessories.set(legacy.nameEn, saved);
       accessoriesRestored.set(legacy.legacyId, saved.id);
     }
 
@@ -424,6 +446,8 @@ export const legacyBackupRestoreService = {
           : prisma.menuService.deleteMany({ where: { menuId } })
       ]);
     }
+
+    invalidateCatalog('products', 'menus', 'services', 'accessories');
 
     return {
       restoredMenus: menusRestored.size,

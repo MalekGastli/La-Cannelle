@@ -5,13 +5,25 @@ import { normalizeImageValue } from '../utils/uploads';
 import { translationService } from './translationService';
 import { translationBackfillService } from './translationBackfillService';
 import { DEFAULT_SERVICES } from '../data/defaultServices';
+import { cache, invalidateCatalog } from '../utils/cache';
+import { isOwnImageUrl, withImageUrls } from '../utils/catalogImages';
+import { parseOrThrow, serviceSchemas } from '../utils/catalogSchemas';
 
-const isDeeplAutoTranslateOnReadEnabled = () => {
-  const raw = process.env.DEEPL_AUTO_TRANSLATE_ON_READ;
-  if (raw === undefined) return true;
-  const normalized = String(raw).trim().toLowerCase();
-  return normalized === 'true' || normalized === '1' || normalized === 'yes';
-};
+const CACHE_TTL_MS = 30_000;
+const LIST_HARD_CAP = 1000;
+
+/** Everything the public site reads; `image` is added separately so base64 blobs never leave the database. */
+const serviceSelect = {
+  id: true,
+  name: true,
+  nameDe: true,
+  occasion: true,
+  description: true,
+  descriptionDe: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
 
 function normalizeOccasion(value: unknown): ServiceOccasion | undefined {
   if (!value) return undefined;
@@ -25,7 +37,10 @@ function normalizeOccasion(value: unknown): ServiceOccasion | undefined {
 export const serviceService = {
   normalizeOccasion,
 
-  async getServices(filters?: { occasion?: string; isActive?: boolean; search?: string }) {
+  async getServices(
+    filters?: { occasion?: string; isActive?: boolean; search?: string },
+    options: { bypassCache?: boolean } = {}
+  ) {
     const where: any = {};
 
     if (filters?.isActive !== undefined) {
@@ -37,41 +52,48 @@ export const serviceService = {
       where.OR = [{ occasion }, { occasion: 'BOTH' }];
     }
 
-    if (filters?.search) {
+    const search = filters?.search?.trim().slice(0, 100);
+    if (search) {
       where.AND = [
         ...(where.AND || []),
         {
           OR: [
-            { name: { contains: filters.search, mode: 'insensitive' } },
-            { nameDe: { contains: filters.search, mode: 'insensitive' } },
-            { description: { contains: filters.search, mode: 'insensitive' } },
-            { descriptionDe: { contains: filters.search, mode: 'insensitive' } }
+            { name: { contains: search, mode: 'insensitive' } },
+            { nameDe: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+            { descriptionDe: { contains: search, mode: 'insensitive' } }
           ]
         }
       ];
     }
 
-    const services = await prisma.service.findMany({
-      where,
-      orderBy: { name: 'asc' }
-    });
+    const load = async () => {
+      const rows = await prisma.service.findMany({
+        where,
+        select: serviceSelect,
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+        take: LIST_HARD_CAP
+      });
+      const services = await withImageUrls('services', rows);
+      // Optional, off by default, fire-and-forget: never awaited, never able to fail this request.
+      translationBackfillService.scheduleOnRead('services', services, () => invalidateCatalog('services'));
+      return services;
+    };
 
-    if (isDeeplAutoTranslateOnReadEnabled()) {
-      await translationBackfillService.backfillServicesDe(services);
-    }
-
-    return services;
+    if (options.bypassCache || search) return load();
+    return cache.wrap(`services:list:${JSON.stringify([occasion ?? null, filters?.isActive ?? null])}`, load, { ttlMs: CACHE_TTL_MS });
   },
 
-  async getServiceById(id: number) {
-    const service = await prisma.service.findUnique({ where: { id } });
-    if (!service) throw new AppError('Service not found', 404);
-
-    if (isDeeplAutoTranslateOnReadEnabled()) {
-      await translationBackfillService.backfillServicesDe([service]);
-    }
-
-    return service;
+  async getServiceById(id: number, options: { bypassCache?: boolean } = {}) {
+    if (!Number.isInteger(id)) throw new AppError('Service not found', 404);
+    const load = async () => {
+      const row = await prisma.service.findUnique({ where: { id }, select: serviceSelect });
+      if (!row) throw new AppError('Service not found', 404);
+      const [service] = await withImageUrls('services', [row]);
+      return service;
+    };
+    if (options.bypassCache) return load();
+    return cache.wrap(`services:byId:${id}`, load, { ttlMs: CACHE_TTL_MS });
   },
 
   async createService(data: {
@@ -83,6 +105,7 @@ export const serviceService = {
     image?: string;
     isActive?: boolean;
   }) {
+    parseOrThrow(serviceSchemas.create, data);
     const name = String(data.name || '').trim();
     if (!name) throw new AppError('Name is required', 400);
     const occasion = normalizeOccasion(data.occasion);
@@ -110,7 +133,7 @@ export const serviceService = {
     const nameDe = providedNameDe || (translatedMap.get('nameDe') || null);
     const descriptionDe = providedDescriptionDe || (translatedMap.get('descriptionDe') || null);
 
-    return await prisma.service.create({
+    const created = await prisma.service.create({
       data: {
         name,
         nameDe,
@@ -121,6 +144,8 @@ export const serviceService = {
         isActive: data.isActive ?? true
       }
     });
+    invalidateCatalog('services', 'menus');
+    return created;
   },
 
   async updateService(id: number, data: Partial<{
@@ -130,7 +155,14 @@ export const serviceService = {
     image: string | null;
     isActive: boolean;
   }>) {
+    parseOrThrow(serviceSchemas.update, data);
     const updateData: any = { ...data };
+    delete updateData.id;
+    delete updateData.createdAt;
+    delete updateData.updatedAt;
+    delete updateData.menuServices;
+    delete updateData.orders;
+    if (isOwnImageUrl(updateData.image)) delete updateData.image;
     if (updateData.name !== undefined) updateData.name = String(updateData.name).trim();
     if (updateData.occasion !== undefined) {
       const occasion = normalizeOccasion(updateData.occasion);
@@ -168,27 +200,44 @@ export const serviceService = {
       }
     }
 
-    return await prisma.service.update({
-      where: { id },
-      data: updateData
-    });
+    try {
+      return await prisma.service.update({
+        where: { id },
+        data: updateData
+      });
+    } catch (error) {
+      if ((error as any)?.code === 'P2025') throw new AppError('Service not found', 404);
+      throw error;
+    } finally {
+      invalidateCatalog('services', 'menus');
+    }
   },
 
   async deleteService(id: number) {
-    await prisma.service.delete({ where: { id } });
+    try {
+      await prisma.service.delete({ where: { id } });
+    } catch (error) {
+      if ((error as any)?.code === 'P2025') throw new AppError('Service not found', 404);
+      throw error;
+    } finally {
+      invalidateCatalog('services', 'menus');
+    }
   },
 
   async restoreDefaultServices() {
-    let created = 0;
+    // one lookup + one insert instead of a find/create pair per default
+    const existing = await prisma.service.findMany({ select: { name: true, occasion: true } });
+    const known = new Set(existing.map((row) => `${row.name}|${row.occasion}`));
+    const missing = DEFAULT_SERVICES.filter((item) => {
+      const key = `${item.name}|${item.occasion}`;
+      if (known.has(key)) return false;
+      known.add(key);
+      return true;
+    });
 
-    for (const item of DEFAULT_SERVICES) {
-      const existing = await prisma.service.findFirst({
-        where: { name: item.name, occasion: item.occasion }
-      });
-      if (existing) continue;
-
-      await prisma.service.create({
-        data: {
+    if (missing.length) {
+      await prisma.service.createMany({
+        data: missing.map((item) => ({
           name: item.name,
           nameDe: null,
           occasion: item.occasion,
@@ -196,12 +245,11 @@ export const serviceService = {
           descriptionDe: null,
           image: item.image,
           isActive: item.isActive
-        }
+        }))
       });
-
-      created += 1;
+      invalidateCatalog('services', 'menus');
     }
 
-    return { created, totalDefaults: DEFAULT_SERVICES.length };
+    return { created: missing.length, totalDefaults: DEFAULT_SERVICES.length };
   }
 };

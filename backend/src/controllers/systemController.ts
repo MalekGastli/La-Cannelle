@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
 import { systemService } from '../services/systemService';
 
 export const systemController = {
@@ -27,7 +28,7 @@ export const systemController = {
     const { date, reason, recurring } = req.body;
 
     if (!date || !reason) {
-      throw new Error('Date and reason are required');
+      throw new AppError('Date and reason are required', 400);
     }
 
     const closedDate = await systemService.createClosedDate({

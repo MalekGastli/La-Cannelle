@@ -8,6 +8,7 @@ export async function POST() {
     path: '/',
     maxAge: 0,
   })
+  res.cookies.set('admin_hint', '', { sameSite: 'lax', path: '/', maxAge: 0 })
   return res
 }
 

@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { customerService } from '../services/customerService';
+import { parsePagination, setTotalCount } from '../utils/pagination';
 
 export const customerController = {
   async getCustomers(req: AuthRequest, res: Response) {
@@ -9,9 +10,17 @@ export const customerController = {
     const filters: any = {};
     if (status) filters.status = status;
     if (tier) filters.tier = tier;
-    if (search) filters.search = search as string;
 
-    const customers = await customerService.getCustomers(filters);
+    if (search) filters.search = String(search).slice(0, 100);
+
+    const page = parsePagination(req.query as Record<string, unknown>);
+    const { customers, total } = await customerService.getCustomers({
+      ...filters,
+      take: page.take,
+      skip: page.skip,
+      withTotal: page.paginated
+    });
+    if (total !== undefined) setTotalCount(res, total);
     res.json(customers);
   },
 

@@ -4,12 +4,48 @@ import { AppError } from '../middleware/errorHandler';
 import { normalizeImageValue } from '../utils/uploads';
 import { translationService } from './translationService';
 import { translationBackfillService } from './translationBackfillService';
+import { cache, invalidateCatalog } from '../utils/cache';
+import { isOwnImageUrl, withImageUrls } from '../utils/catalogImages';
+import { bulkSchema, parseOrThrow, productSchemas } from '../utils/catalogSchemas';
 
-const isDeeplAutoTranslateOnReadEnabled = () => {
-  const raw = process.env.DEEPL_AUTO_TRANSLATE_ON_READ;
-  if (raw === undefined) return true;
-  const normalized = String(raw).trim().toLowerCase();
-  return normalized === 'true' || normalized === '1' || normalized === 'yes';
+export const LIST_DEFAULT_LIMIT = 500;
+export const LIST_MAX_LIMIT = 1000;
+const CACHE_TTL_MS = 30_000;
+
+const schemas = productSchemas(Object.keys(ProductCategory));
+
+/** Fields the public site reads (image is added separately so base64 blobs never leave the database). */
+const publicSelect = (includeCost: boolean) => ({
+  id: true,
+  name: true,
+  description: true,
+  category: true,
+  customCategory: true,
+  price: true,
+  ...(includeCost && { cost: true }),
+  available: true,
+  minOrderQuantity: true,
+  ingredients: true,
+  ingredientsDe: true,
+  allergens: true,
+  allergensDe: true,
+  translations: true,
+  popularity: true,
+  createdAt: true,
+  updatedAt: true,
+  menuProducts: { select: { menuId: true, productId: true } }
+});
+
+const clampPaging = (limit?: number, offset?: number) => ({
+  take: Number.isInteger(limit) && (limit as number) > 0 ? Math.min(limit as number, LIST_MAX_LIMIT) : LIST_DEFAULT_LIMIT,
+  skip: Number.isInteger(offset) && (offset as number) > 0 ? (offset as number) : 0
+});
+
+const assertMenusExist = async (menuIds: number[]) => {
+  const unique = Array.from(new Set(menuIds));
+  if (!unique.length) return;
+  const found = await prisma.menu.findMany({ where: { id: { in: unique } }, select: { id: true } });
+  if (found.length !== unique.length) throw new AppError('Unknown menu id', 400);
 };
 
 const normalizeCategory = (category?: string | ProductCategory): ProductCategory | undefined => {
@@ -61,73 +97,74 @@ const sanitizeTranslations = (value: unknown) => {
   return Object.keys(out).length ? out : null;
 };
 
+type ListOptions = { includeCost?: boolean; bypassCache?: boolean };
+
+const loadProductList = async (where: any, paging: { take: number; skip: number }, includeCost: boolean) => {
+  const rows = await prisma.product.findMany({
+    where,
+    orderBy: [{ popularity: 'desc' }, { id: 'asc' }],
+    select: publicSelect(includeCost) as any,
+    ...paging
+  });
+  const products = await withImageUrls('products', rows as any as Array<{ id: number }>);
+  // Optional, off by default, fire-and-forget: never awaited, never able to fail this request.
+  translationBackfillService.scheduleOnRead('products', products, () => invalidateCatalog('products'));
+  return products;
+};
+
+const loadProduct = async (id: number, includeCost: boolean) => {
+  const row = await prisma.product.findUnique({ where: { id }, select: publicSelect(includeCost) as any });
+  if (!row) throw new AppError('Product not found', 404);
+  const [product] = await withImageUrls('products', [row as any as { id: number }]);
+  return product;
+};
+
 export const productService = {
-  async getProducts(filters?: {
-    category?: ProductCategory;
-    available?: boolean;
-    search?: string;
-    menuId?: number;
-  }) {
+  async getProducts(
+    filters?: {
+      category?: ProductCategory;
+      available?: boolean;
+      search?: string;
+      menuId?: number;
+      limit?: number;
+      offset?: number;
+    },
+    options: ListOptions = {}
+  ) {
     const where: any = {};
+    const category = filters?.category ? normalizeCategory(filters.category) : undefined;
+    if (category) where.category = category;
+    if (filters?.available !== undefined) where.available = filters.available;
 
-    if (filters?.category) {
-      where.category = normalizeCategory(filters.category);
-    }
-
-    if (filters?.available !== undefined) {
-      where.available = filters.available;
-    }
-
-    if (filters?.search) {
+    const search = filters?.search?.trim().slice(0, 100);
+    if (search) {
       where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
-        { customCategory: { contains: filters.search, mode: 'insensitive' } }
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { customCategory: { contains: search, mode: 'insensitive' } }
       ];
     }
 
     if (filters?.menuId) {
-      where.menuProducts = {
-        some: {
-          menuId: filters.menuId
-        }
-      };
+      where.menuProducts = { some: { menuId: filters.menuId } };
     }
 
-    const products = await prisma.product.findMany({
-      where,
-      orderBy: {
-        popularity: 'desc'
-      },
-      include: {
-        menuProducts: true
-      }
-    });
+    const paging = clampPaging(filters?.limit, filters?.offset);
+    const includeCost = Boolean(options.includeCost);
+    const load = () => loadProductList(where, paging, includeCost);
 
-    if (isDeeplAutoTranslateOnReadEnabled()) {
-      await translationBackfillService.backfillProductsDe(products);
-    }
+    // Free-text searches have unbounded key space: never cache them.
+    if (options.bypassCache || search) return load();
 
-    return products;
+    const key = `products:list:${includeCost ? 1 : 0}:${JSON.stringify([category ?? null, filters?.available ?? null, filters?.menuId ?? null, paging.take, paging.skip])}`;
+    return cache.wrap(key, load, { ttlMs: CACHE_TTL_MS });
   },
 
-  async getProductById(id: number) {
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        menuProducts: true
-      }
-    });
-
-    if (!product) {
-      throw new AppError('Product not found', 404);
-    }
-
-    if (isDeeplAutoTranslateOnReadEnabled()) {
-      await translationBackfillService.backfillProductsDe([product]);
-    }
-
-    return product;
+  async getProductById(id: number, options: ListOptions = {}) {
+    if (!Number.isInteger(id)) throw new AppError('Product not found', 404);
+    const includeCost = Boolean(options.includeCost);
+    if (options.bypassCache) return loadProduct(id, includeCost);
+    return cache.wrap(`products:byId:${includeCost ? 1 : 0}:${id}`, () => loadProduct(id, includeCost), { ttlMs: CACHE_TTL_MS });
   },
 
   async createProduct(data: {
@@ -146,8 +183,10 @@ export const productService = {
     image?: string;
     menuIds?: number[];
   }) {
+    parseOrThrow(schemas.create, data);
     const normalizedData = normalizeProductInput(data);
-    const image = await normalizeImageValue(normalizedData.image, { prefix: 'product' });
+    if (normalizedData.menuIds) await assertMenusExist(normalizedData.menuIds);
+    const image = await normalizeImageValue(isOwnImageUrl(normalizedData.image) ? undefined : normalizedData.image, { prefix: 'product' });
     const customCategory = toOptionalString((normalizedData as any).customCategory) ?? null;
 
     const ingredients = normalizeStringArray(normalizedData.ingredients);
@@ -170,6 +209,7 @@ export const productService = {
       texts.push(...target.texts);
     });
 
+    // Explicit admin save: translating here is intended (and awaited), unlike on public reads.
     const translated = texts.length ? await translationService.translateTexts(texts, { targetLang: 'DE' }) : null;
     const translatedMap: Record<string, any> = {};
 
@@ -201,7 +241,7 @@ export const productService = {
         translations: sanitizeTranslations((data as any).translations) ?? undefined,
         image,
         menuProducts: normalizedData.menuIds ? {
-          create: normalizedData.menuIds.map(menuId => ({ menuId }))
+          create: Array.from(new Set(normalizedData.menuIds)).map(menuId => ({ menuId }))
         } : undefined
       },
       include: {
@@ -209,6 +249,7 @@ export const productService = {
       }
     });
 
+    invalidateCatalog('products', 'menus');
     return product;
   },
 
@@ -227,6 +268,7 @@ export const productService = {
     menuIds: number[];
     menus: number[];
   }>) {
+    parseOrThrow(schemas.update, data);
     const normalized = normalizeProductInput(data);
     const updateData: any = { ...normalized };
     const menuIds = normalized.menuIds;
@@ -253,9 +295,13 @@ export const productService = {
       updateData.customCategory = toOptionalString(updateData.customCategory) ?? null;
     }
 
+    // Echoed back by the admin UI for legacy base64 rows: keep the stored image untouched.
+    if (isOwnImageUrl(updateData.image)) delete updateData.image;
     if (updateData.image !== undefined) {
       updateData.image = await normalizeImageValue(updateData.image, { prefix: 'product' });
     }
+
+    if (menuIds !== undefined) await assertMenusExist(menuIds);
 
     const translationTargets: Array<
       { kind: 'array'; key: 'ingredientsDe' | 'allergensDe'; texts: string[] }
@@ -287,6 +333,7 @@ export const productService = {
         texts.push(...target.texts);
       });
 
+      // Explicit admin save: translating here is intended (and awaited), unlike on public reads.
       const translated = await translationService.translateTexts(texts, { targetLang: 'DE' });
       if (translated) {
         let cursor = 0;
@@ -298,65 +345,74 @@ export const productService = {
       }
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: updateData,
-      include: {
-        menuProducts: true
+    try {
+      if (menuIds !== undefined) {
+        const unique = Array.from(new Set(menuIds));
+        // product update + association replacement succeed or fail together
+        await prisma.$transaction([
+          prisma.product.update({ where: { id }, data: updateData }),
+          prisma.menuProduct.deleteMany({ where: { productId: id } }),
+          ...(unique.length
+            ? [prisma.menuProduct.createMany({ data: unique.map((menuId) => ({ menuId, productId: id })) })]
+            : [])
+        ]);
+        invalidateCatalog('products', 'menus');
+        return loadProduct(id, true);
       }
-    });
 
-    // Update menu associations if provided
-    if (menuIds !== undefined) {
-      // Delete existing associations
-      await prisma.menuProduct.deleteMany({
-        where: { productId: id }
+      return await prisma.product.update({
+        where: { id },
+        data: updateData,
+        include: { menuProducts: true }
       });
-
-      // Create new associations
-      if (menuIds.length > 0) {
-        await prisma.menuProduct.createMany({
-          data: menuIds.map(menuId => ({ menuId, productId: id }))
-        });
-      }
-
-      // Fetch updated product
-      return this.getProductById(id);
+    } catch (error) {
+      if ((error as any)?.code === 'P2025') throw new AppError('Product not found', 404);
+      throw error;
+    } finally {
+      invalidateCatalog('products', 'menus');
     }
-
-    return product;
   },
 
   async deleteProduct(id: number) {
-    const existing = await prisma.product.findUnique({
-      where: { id }
-    });
-    if (!existing) {
-      throw new AppError('Product not found', 404);
+    const result = await this.deleteProducts([id]);
+    if (!result.found) throw new AppError('Product not found', 404);
+    return result.archived ? { archived: true } : { deleted: true };
+  },
+
+  /** Deletes (or archives, when ordered before) many products with a constant number of queries. */
+  async deleteProducts(ids: number[]) {
+    const unique = Array.from(new Set(ids.filter((n) => Number.isInteger(n))));
+    if (!unique.length) return { found: 0, deleted: 0, archived: 0 };
+
+    try {
+      const existing = await prisma.product.findMany({ where: { id: { in: unique } }, select: { id: true } });
+      const existingIds = existing.map((row) => row.id);
+      if (!existingIds.length) return { found: 0, deleted: 0, archived: 0 };
+
+      const ordered = await prisma.orderItem.findMany({
+        where: { productId: { in: existingIds } },
+        select: { productId: true },
+        distinct: ['productId']
+      });
+      const archivedIds = ordered.map((row) => row.productId);
+      const archivedSet = new Set(archivedIds);
+      const deletableIds = existingIds.filter((id) => !archivedSet.has(id));
+
+      await prisma.$transaction([
+        ...(archivedIds.length
+          ? [
+              prisma.menuProduct.deleteMany({ where: { productId: { in: archivedIds } } }),
+              prisma.favorite.deleteMany({ where: { productId: { in: archivedIds } } }),
+              prisma.product.updateMany({ where: { id: { in: archivedIds } }, data: { available: false } })
+            ]
+          : []),
+        ...(deletableIds.length ? [prisma.product.deleteMany({ where: { id: { in: deletableIds } } })] : [])
+      ]);
+
+      return { found: existingIds.length, deleted: deletableIds.length, archived: archivedIds.length };
+    } finally {
+      invalidateCatalog('products', 'menus');
     }
-
-    const orderItemCount = await prisma.orderItem.count({
-      where: { productId: id }
-    });
-
-    if (orderItemCount > 0) {
-      await prisma.menuProduct.deleteMany({
-        where: { productId: id }
-      });
-      await prisma.favorite.deleteMany({
-        where: { productId: id }
-      });
-      await prisma.product.update({
-        where: { id },
-        data: { available: false }
-      });
-      return { archived: true };
-    }
-
-    await prisma.product.delete({
-      where: { id }
-    });
-    return { deleted: true };
   },
 
   /** One action applied to many products at once. */
@@ -365,56 +421,63 @@ export const productService = {
     action: 'setAvailable' | 'adjustPrice' | 'setCategory' | 'addToMenu' | 'removeFromMenu';
     value?: any;
   }) {
-    const ids = Array.from(new Set((input.ids || []).map(Number).filter((n) => Number.isInteger(n))));
-    if (!ids.length) throw new AppError('No products selected', 400);
+    const parsed = parseOrThrow(bulkSchema, {
+      ...input,
+      ids: Array.from(new Set((input?.ids || []).map(Number).filter((n) => Number.isInteger(n))))
+    });
+    const ids = parsed.ids;
     const where = { id: { in: ids } };
 
-    switch (input.action) {
-      case 'setAvailable':
-        await prisma.product.updateMany({ where, data: { available: Boolean(input.value) } });
-        break;
-      case 'setCategory': {
-        const category = normalizeCategory(String(input.value || ''));
-        if (!category) throw new AppError('Category required', 400);
-        await prisma.product.updateMany({ where, data: { category } });
-        break;
-      }
-      case 'adjustPrice': {
-        // value: { mode: 'percent' | 'amount', amount: number } — positive raises, negative lowers
-        const mode = input.value?.mode === 'amount' ? 'amount' : 'percent';
-        const amount = Number(input.value?.amount);
-        if (!Number.isFinite(amount) || Math.abs(amount) > (mode === 'percent' ? 100 : 1000)) {
-          throw new AppError('Invalid price change', 400);
+    try {
+      switch (parsed.action) {
+        case 'setAvailable':
+          await prisma.product.updateMany({ where, data: { available: Boolean(input.value) } });
+          break;
+        case 'setCategory': {
+          const category = normalizeCategory(String(input.value || ''));
+          if (!category) throw new AppError('Category required', 400);
+          await prisma.product.updateMany({ where, data: { category } });
+          break;
         }
-        const products = await prisma.product.findMany({ where, select: { id: true, price: true } });
-        await prisma.$transaction(
-          products.map((product) => {
-            const next = mode === 'percent' ? product.price * (1 + amount / 100) : product.price + amount;
-            return prisma.product.update({
-              where: { id: product.id },
-              data: { price: Math.max(0, Math.round(next * 100) / 100) }
-            });
-          })
-        );
-        break;
+        case 'adjustPrice': {
+          // value: { mode: 'percent' | 'amount', amount: number } — positive raises, negative lowers
+          const mode = input.value?.mode === 'amount' ? 'amount' : 'percent';
+          const amount = Number(input.value?.amount);
+          if (!Number.isFinite(amount) || Math.abs(amount) > (mode === 'percent' ? 100 : 1000)) {
+            throw new AppError('Invalid price change', 400);
+          }
+          // single statement instead of one UPDATE per product
+          const next = mode === 'percent'
+            ? Prisma.sql`"price" * (1 + ${amount}::float8 / 100.0)`
+            : Prisma.sql`"price" + ${amount}::float8`;
+          await prisma.$executeRaw(
+            Prisma.sql`UPDATE "products" SET "price" = GREATEST(0, ROUND((${next})::numeric, 2))::float8, "updatedAt" = NOW() WHERE "id" IN (${Prisma.join(ids)})`
+          );
+          break;
+        }
+        case 'addToMenu': {
+          const menuId = Number(input.value);
+          if (!Number.isInteger(menuId)) throw new AppError('Menu required', 400);
+          await assertMenusExist([menuId]);
+          const existing = await prisma.product.findMany({ where, select: { id: true } });
+          await prisma.menuProduct.createMany({
+            data: existing.map(({ id: productId }) => ({ menuId, productId })),
+            skipDuplicates: true
+          });
+          break;
+        }
+        case 'removeFromMenu': {
+          const menuId = Number(input.value);
+          if (!Number.isInteger(menuId)) throw new AppError('Menu required', 400);
+          await prisma.menuProduct.deleteMany({ where: { menuId, productId: { in: ids } } });
+          break;
+        }
+        default:
+          throw new AppError('Unknown action', 400);
       }
-      case 'addToMenu': {
-        const menuId = Number(input.value);
-        if (!Number.isInteger(menuId)) throw new AppError('Menu required', 400);
-        await prisma.menuProduct.createMany({
-          data: ids.map((productId) => ({ menuId, productId })),
-          skipDuplicates: true
-        });
-        break;
-      }
-      case 'removeFromMenu': {
-        const menuId = Number(input.value);
-        if (!Number.isInteger(menuId)) throw new AppError('Menu required', 400);
-        await prisma.menuProduct.deleteMany({ where: { menuId, productId: { in: ids } } });
-        break;
-      }
-      default:
-        throw new AppError('Unknown action', 400);
+    } finally {
+      // products embed their menu ids and menus embed their product ids
+      invalidateCatalog('products', 'menus');
     }
     return { updated: ids.length };
   },
@@ -422,7 +485,7 @@ export const productService = {
   async duplicateProduct(id: number) {
     const source = await prisma.product.findUnique({ where: { id }, include: { menuProducts: true } });
     if (!source) throw new AppError('Product not found', 404);
-    return prisma.product.create({
+    const created = await prisma.product.create({
       data: {
         name: `${source.name} (Kopie)`,
         description: source.description,
@@ -442,5 +505,7 @@ export const productService = {
       },
       include: { menuProducts: true }
     });
+    invalidateCatalog('products', 'menus');
+    return created;
   }
 };

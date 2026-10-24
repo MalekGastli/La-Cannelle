@@ -686,6 +686,8 @@ export default function OrderPage() {
   const [bankDetailsOpen, setBankDetailsOpen] = useState(false);
   const [productDetailsOpen, setProductDetailsOpen] = useState(false);
   const [productDetailsItem, setProductDetailsItem] = useState<any>(null);
+  // One key per checkout page load: a double click or network retry returns the same order instead of a duplicate
+  const idempotencyKeyRef = useRef<string>(typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const [orderSummaryModalOpen, setOrderSummaryModalOpen] = useState(false);
   const [extraNoticeOpen, setExtraNoticeOpen] = useState(false);
   const [extraNoticeData, setExtraNoticeData] = useState({ label: '', extra: 0 });
@@ -2275,6 +2277,7 @@ export default function OrderPage() {
         houseNumber: orderData.houseNumber,
         city: orderData.city,
         captchaToken: isCaptchaEnabled ? captchaToken : undefined,
+        idempotencyKey: idempotencyKeyRef.current,
         items: orderItems,
         subtotal: subtotal,
         serviceFee: flatServiceFee,

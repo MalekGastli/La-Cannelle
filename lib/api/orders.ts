@@ -9,6 +9,7 @@ export interface OrderItem {
 }
 
 export interface CreateOrderData {
+  idempotencyKey?: string;
   clientName: string;
   contactEmail: string;
   phone: string;

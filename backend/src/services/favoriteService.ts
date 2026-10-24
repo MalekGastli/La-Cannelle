@@ -7,7 +7,9 @@ export const favoriteService = {
       where: { userId },
       include: {
         product: true
-      }
+      },
+      orderBy: { id: 'desc' },
+      take: 500
     });
 
     return favorites.map(fav => fav.product);

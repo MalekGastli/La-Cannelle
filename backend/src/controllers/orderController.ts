@@ -1,56 +1,24 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { orderService } from '../services/orderService';
+import { orderService, createOrderSchema, normalizeIdempotencyKey } from '../services/orderService';
+import { parsePagination, setTotalCount } from '../utils/pagination';
 import { systemService } from '../services/systemService';
 import { AppError } from '../middleware/errorHandler';
+import { clientIp } from '../utils/clientIp';
 import { captchaService } from '../services/captchaService';
 
 export const orderController = {
   async createOrder(req: AuthRequest, res: Response) {
-    const {
-      clientName,
-      contactEmail,
-      phone,
-      eventType,
-      eventDate,
-      eventTime,
-      guests,
-      location,
-      specialRequests,
-      businessType,
-      serviceType,
-      serviceId,
-      postalCode,
-      street,
-      houseNumber,
-      city,
-      captchaToken,
-      items,
-      subtotal,
-      serviceFee,
-      total
-    } = req.body;
+    const body = req.body || {};
 
-    // Relax validation: only require contact details
-    if (!contactEmail || !phone) {
-      throw new AppError('Contact email and phone are required', 400);
+    // Cheap shape/limit validation first (zod, inside the service) so junk never reaches the
+    // DB, captcha provider or the system-status lookups below.
+    const parsed = createOrderSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0]?.message || 'Invalid order', 400);
     }
-
-    // Counting rules shared with the order UI (minimum guests, minimum net order value)
-    const guestsNumber = parseInt(guests, 10);
-    if (!Number.isFinite(guestsNumber) || guestsNumber < 10) {
-      throw new AppError('A minimum of 10 guests is required', 400);
-    }
-    const subtotalNumber = parseFloat(subtotal);
-    const totalNumber = parseFloat(total);
-    if (!Number.isFinite(subtotalNumber) || subtotalNumber < 199) {
-      throw new AppError('The minimum order value is 199 EUR (excl. VAT)', 400);
-    }
-    if (!Number.isFinite(totalNumber) || totalNumber < subtotalNumber) {
-      throw new AppError('Order total is inconsistent', 400);
-    }
-
-    const eventDateObj = eventDate ? new Date(eventDate) : new Date();
+    const idempotencyKey = normalizeIdempotencyKey(req.headers['idempotency-key'] ?? body.idempotencyKey);
+    const eventDateObj = parsed.data.eventDate;
 
     const systemStatus = await systemService.getSystemStatus();
     if (systemStatus?.orderingPaused) {
@@ -67,34 +35,27 @@ export const orderController = {
       return res.status(403).json({ error: 'Selected date is closed for orders' });
     }
 
-    const ipHeader = (req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || '') as string;
-    const ip = ipHeader ? String(ipHeader).split(',')[0].trim() : (req.ip ? String(req.ip) : undefined);
-    await captchaService.verify(captchaToken, { ip });
+    // A replayed request was already captcha-verified the first time; tokens are single use.
+    if (idempotencyKey) {
+      const replay = await orderService.findByIdempotencyKey(parsed.data.contactEmail, idempotencyKey);
+      if (replay) {
+        res.setHeader('Idempotent-Replay', 'true');
+        return res.status(200).json(replay);
+      }
+    }
 
-    const order = await orderService.createOrder({
+    const ip = clientIp(req);
+    await captchaService.verify(body.captchaToken, { ip });
+
+    const { order, replayed } = await orderService.createOrder(body, {
       userId: req.user?.id,
-      serviceId: serviceId === '' || serviceId === null || serviceId === undefined ? undefined : parseInt(serviceId, 10),
-      clientName: clientName || 'Guest',
-      contactEmail,
-      phone,
-      eventType: eventType || serviceType || businessType || 'Custom Event',
-      eventDate: eventDateObj,
-      eventTime: eventTime || 'TBD',
-      guests: parseInt(guests) || 1,
-      location: location || postalCode || 'Not provided',
-      specialRequests,
-      businessType,
-      serviceType,
-      postalCode,
-      street,
-      houseNumber,
-      city,
-      items: Array.isArray(items) ? items : [],
-      subtotal: parseFloat(subtotal) || 0,
-      serviceFee: parseFloat(serviceFee) || 0,
-      total: parseFloat(total) || 0
+      idempotencyKey
     });
 
+    if (replayed) {
+      res.setHeader('Idempotent-Replay', 'true');
+      return res.status(200).json(order);
+    }
     res.status(201).json(order);
   },
 
@@ -128,10 +89,17 @@ export const orderController = {
     }
 
     if (search) {
-      filters.search = search as string;
+      filters.search = String(search).slice(0, 100);
     }
 
-    const orders = await orderService.getOrders(filters);
+    const page = parsePagination(req.query as Record<string, unknown>);
+    const { orders, total } = await orderService.getOrders({
+      ...filters,
+      take: page.take,
+      skip: page.skip,
+      withTotal: page.paginated
+    });
+    if (total !== undefined) setTotalCount(res, total);
     res.json(orders);
   },
 

@@ -2,6 +2,8 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { menuService } from '../services/menuService';
 import { legacyBackupRestoreService } from '../services/legacyBackupRestoreService';
+import { sendCachedJson } from '../utils/httpCache';
+import { isStaffRequest, parsePaging } from '../utils/requestContext';
 
 export const menuController = {
   async duplicateMenu(req: AuthRequest, res: Response) {
@@ -12,7 +14,7 @@ export const menuController = {
   async getMenus(req: AuthRequest, res: Response) {
     const { isActive, search, serviceId, includeImages } = req.query;
 
-    const filters: any = {};
+    const filters: any = { ...parsePaging(req.query) };
     if (isActive !== undefined) filters.isActive = isActive === 'true';
     if (search) filters.search = search as string;
     if (serviceId !== undefined) {
@@ -23,15 +25,15 @@ export const menuController = {
       filters.includeImages = String(includeImages) === 'true' || String(includeImages) === '1';
     }
 
-    const menus = await menuService.getMenus(filters);
-    res.json(menus);
+    const menus = await menuService.getMenus(filters, { bypassCache: isStaffRequest(req) });
+    sendCachedJson(req, res, menus);
   },
 
   async getMenuById(req: AuthRequest, res: Response) {
     const { id } = req.params;
     const includeImages = String(req.query.includeImages ?? '') === 'true' || String(req.query.includeImages ?? '') === '1';
-    const menu = await menuService.getMenuById(parseInt(id), { includeImages });
-    res.json(menu);
+    const menu = await menuService.getMenuById(parseInt(id, 10), { includeImages, bypassCache: isStaffRequest(req) });
+    sendCachedJson(req, res, menu);
   },
 
   async createMenu(req: AuthRequest, res: Response) {

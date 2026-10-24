@@ -4,13 +4,31 @@ import { normalizeImageValue } from '../utils/uploads';
 import { translationService } from './translationService';
 import { translationBackfillService } from './translationBackfillService';
 import { DEFAULT_ACCESSORIES } from '../data/defaultAccessories';
+import { cache, invalidateCatalog } from '../utils/cache';
+import { isOwnImageUrl, withImageUrls } from '../utils/catalogImages';
+import { accessorySchemas, parseOrThrow } from '../utils/catalogSchemas';
 
-const isDeeplAutoTranslateOnReadEnabled = () => {
-  const raw = process.env.DEEPL_AUTO_TRANSLATE_ON_READ;
-  if (raw === undefined) return true;
-  const normalized = String(raw).trim().toLowerCase();
-  return normalized === 'true' || normalized === '1' || normalized === 'yes';
-};
+const CACHE_TTL_MS = 30_000;
+const LIST_HARD_CAP = 1000;
+
+/** Everything the public site reads; `image` is added separately so base64 blobs never leave the database. */
+const accessorySelect = {
+  id: true,
+  nameEn: true,
+  nameDe: true,
+  descriptionEn: true,
+  descriptionDe: true,
+  detailsEn: true,
+  detailsDe: true,
+  unitEn: true,
+  unitDe: true,
+  price: true,
+  quantityMode: true,
+  fixedQuantity: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true
+} as const;
 
 const toOptionalString = (value: unknown) => {
   if (value === null || value === undefined) return undefined;
@@ -59,48 +77,54 @@ export type AccessoryCreateInput = {
 export type AccessoryUpdateInput = Partial<AccessoryCreateInput>;
 
 export const accessoryService = {
-  async getAccessories(filters?: { isActive?: boolean; search?: string }) {
+  async getAccessories(filters?: { isActive?: boolean; search?: string }, options: { bypassCache?: boolean } = {}) {
     const where: any = {};
 
     if (filters?.isActive !== undefined) {
       where.isActive = filters.isActive;
     }
 
-    if (filters?.search) {
+    const search = filters?.search?.trim().slice(0, 100);
+    if (search) {
       where.OR = [
-        { nameEn: { contains: filters.search, mode: 'insensitive' } },
-        { nameDe: { contains: filters.search, mode: 'insensitive' } },
-        { descriptionEn: { contains: filters.search, mode: 'insensitive' } },
-        { descriptionDe: { contains: filters.search, mode: 'insensitive' } }
+        { nameEn: { contains: search, mode: 'insensitive' } },
+        { nameDe: { contains: search, mode: 'insensitive' } },
+        { descriptionEn: { contains: search, mode: 'insensitive' } },
+        { descriptionDe: { contains: search, mode: 'insensitive' } }
       ];
     }
 
-    const accessories = await prisma.accessory.findMany({
-      where,
-      orderBy: { updatedAt: 'desc' }
-    });
+    const load = async () => {
+      const rows = await prisma.accessory.findMany({
+        where,
+        select: accessorySelect,
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        take: LIST_HARD_CAP
+      });
+      const accessories = await withImageUrls('accessories', rows);
+      // Optional, off by default, fire-and-forget: never awaited, never able to fail this request.
+      translationBackfillService.scheduleOnRead('accessories', accessories, () => invalidateCatalog('accessories'));
+      return accessories;
+    };
 
-    if (isDeeplAutoTranslateOnReadEnabled()) {
-      await translationBackfillService.backfillAccessoriesDe(accessories as any);
-    }
-
-    return accessories;
+    if (options.bypassCache || search) return load();
+    return cache.wrap(`accessories:list:${JSON.stringify([filters?.isActive ?? null])}`, load, { ttlMs: CACHE_TTL_MS });
   },
 
-  async getAccessoryById(id: number) {
-    const accessory = await prisma.accessory.findUnique({ where: { id } });
-    if (!accessory) {
-      throw new AppError('Accessory not found', 404);
-    }
-
-    if (isDeeplAutoTranslateOnReadEnabled()) {
-      await translationBackfillService.backfillAccessoriesDe([accessory] as any);
-    }
-
-    return accessory;
+  async getAccessoryById(id: number, options: { bypassCache?: boolean } = {}) {
+    if (!Number.isInteger(id)) throw new AppError('Accessory not found', 404);
+    const load = async () => {
+      const row = await prisma.accessory.findUnique({ where: { id }, select: accessorySelect });
+      if (!row) throw new AppError('Accessory not found', 404);
+      const [accessory] = await withImageUrls('accessories', [row]);
+      return accessory;
+    };
+    if (options.bypassCache) return load();
+    return cache.wrap(`accessories:byId:${id}`, load, { ttlMs: CACHE_TTL_MS });
   },
 
   async createAccessory(data: AccessoryCreateInput) {
+    parseOrThrow(accessorySchemas.create, data);
     const nameEn = toOptionalString(data.nameEn);
     const descriptionEn = toOptionalText(data.descriptionEn);
     if (!nameEn) throw new AppError('nameEn is required', 400);
@@ -146,7 +170,7 @@ export const accessoryService = {
     }
     const image = await normalizeImageValue(toOptionalString(data.image), { prefix: 'accessory' });
 
-    return prisma.accessory.create({
+    const created = await prisma.accessory.create({
       data: {
         nameEn,
         nameDe: providedNameDe ?? (translationMap.get('nameDe') || null),
@@ -163,9 +187,13 @@ export const accessoryService = {
         isActive: data.isActive ?? true
       }
     });
+    invalidateCatalog('accessories');
+    return created;
   },
 
   async updateAccessory(id: number, data: AccessoryUpdateInput) {
+    parseOrThrow(accessorySchemas.update, data);
+    if (isOwnImageUrl(data.image)) data = { ...data, image: undefined };
     const existing = await prisma.accessory.findUnique({ where: { id } });
     if (!existing) throw new AppError('Accessory not found', 404);
 
@@ -246,28 +274,40 @@ export const accessoryService = {
       throw new AppError('descriptionEn cannot be empty', 400);
     }
 
-    return prisma.accessory.update({
-      where: { id },
-      data: update
-    });
+    try {
+      return await prisma.accessory.update({
+        where: { id },
+        data: update
+      });
+    } finally {
+      invalidateCatalog('accessories');
+    }
   },
 
   async deleteAccessory(id: number) {
     const existing = await prisma.accessory.findUnique({ where: { id } });
     if (!existing) throw new AppError('Accessory not found', 404);
-    await prisma.accessory.delete({ where: { id } });
+    try {
+      await prisma.accessory.delete({ where: { id } });
+    } finally {
+      invalidateCatalog('accessories');
+    }
     return { deleted: true };
   },
 
   async restoreDefaultAccessories() {
-    let created = 0;
+    // one lookup + one insert instead of a find/create pair per default
+    const existing = await prisma.accessory.findMany({ select: { nameEn: true } });
+    const known = new Set(existing.map((row) => row.nameEn));
+    const missing = DEFAULT_ACCESSORIES.filter((item) => {
+      if (known.has(item.nameEn)) return false;
+      known.add(item.nameEn);
+      return true;
+    });
 
-    for (const item of DEFAULT_ACCESSORIES) {
-      const existing = await prisma.accessory.findFirst({ where: { nameEn: item.nameEn } });
-      if (existing) continue;
-
-      await prisma.accessory.create({
-        data: {
+    if (missing.length) {
+      await prisma.accessory.createMany({
+        data: missing.map((item) => ({
           nameEn: item.nameEn,
           nameDe: item.nameDe,
           descriptionEn: item.descriptionEn,
@@ -281,12 +321,11 @@ export const accessoryService = {
           fixedQuantity: null,
           image: item.image,
           isActive: item.isActive
-        }
+        }))
       });
-
-      created += 1;
+      invalidateCatalog('accessories');
     }
 
-    return { created, totalDefaults: DEFAULT_ACCESSORIES.length };
+    return { created: missing.length, totalDefaults: DEFAULT_ACCESSORIES.length };
   }
 };

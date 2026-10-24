@@ -9,7 +9,70 @@ const chunk = <T,>(items: T[], size: number) => {
   return out;
 };
 
+/**
+ * Public GET requests must never call DeepL or write to the database. On-read translation is therefore OFF
+ * unless DEEPL_AUTO_TRANSLATE_ON_READ is explicitly enabled, and even then it only runs fire-and-forget,
+ * deduplicated and rate-limited, never inside (or able to fail) the request.
+ */
+export const isAutoTranslateOnReadEnabled = () => {
+  const raw = process.env.DEEPL_AUTO_TRANSLATE_ON_READ;
+  if (raw === undefined) return false;
+  const normalized = String(raw).trim().toLowerCase();
+  return normalized === 'true' || normalized === '1' || normalized === 'yes';
+};
+
+type BackfillKind = 'products' | 'services' | 'accessories';
+
+const ON_READ_MIN_INTERVAL_MS = 60_000; // at most one background run per kind per minute per instance
+const ON_READ_MAX_ITEMS = 20; // and at most this many rows per run
+const onReadRunning = new Set<BackfillKind>();
+const onReadLastStart: Partial<Record<BackfillKind, number>> = {};
+
+const hasStrings = (value: unknown) => Array.isArray(value) && value.some((v) => String(v ?? '').trim());
+
+const needsTranslation: Record<BackfillKind, (row: any) => boolean> = {
+  products: (p) => (!p.ingredientsDe && hasStrings(p.ingredients)) || (!p.allergensDe && hasStrings(p.allergens)),
+  services: (s) => (!s.nameDe && s.name) || (!s.descriptionDe && s.description),
+  accessories: (a) =>
+    (!a.nameDe && a.nameEn) || (!a.descriptionDe && a.descriptionEn) || (!a.detailsDe && a.detailsEn) || (!a.unitDe && a.unitEn),
+};
+
 export const translationBackfillService = {
+  /**
+   * Fire-and-forget. Returns immediately; errors are swallowed. `onDone` runs after rows were written
+   * (callers use it to invalidate their in-memory cache).
+   */
+  scheduleOnRead(kind: BackfillKind, rows: any[], onDone?: () => void) {
+    try {
+      if (!isAutoTranslateOnReadEnabled()) return;
+      if (!(process.env.DEEPL_AUTH_KEY || process.env.DEEPL_API_KEY)) return;
+      if (onReadRunning.has(kind)) return;
+      const now = Date.now();
+      if (now - (onReadLastStart[kind] ?? 0) < ON_READ_MIN_INTERVAL_MS) return;
+
+      // copies, so the background job never mutates objects that live in the response cache
+      const pending = rows.filter(needsTranslation[kind]).slice(0, ON_READ_MAX_ITEMS).map((row) => ({ ...row }));
+      if (!pending.length) return;
+
+      onReadRunning.add(kind);
+      onReadLastStart[kind] = now;
+      setImmediate(() => {
+        const run =
+          kind === 'products'
+            ? this.backfillProductsDe(pending as any)
+            : kind === 'services'
+            ? this.backfillServicesDe(pending as any)
+            : this.backfillAccessoriesDe(pending as any);
+        run
+          .then(() => onDone?.())
+          .catch((error) => console.warn(`On-read translation (${kind}) failed:`, (error as Error)?.message ?? error))
+          .finally(() => onReadRunning.delete(kind));
+      });
+    } catch (error) {
+      console.warn('Could not schedule on-read translation:', (error as Error)?.message ?? error);
+    }
+  },
+
   async backfillProductsDe(products: Array<{
     id: number;
     name: string;

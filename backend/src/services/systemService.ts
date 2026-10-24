@@ -1,13 +1,13 @@
-import { prisma } from '../prisma';
+import { prisma, withRetry } from '../prisma';
 import { AppError } from '../middleware/errorHandler';
-// Temporary any-cast to allow compilation before regenerating Prisma client after schema changes.
-const capacityRepo = (prisma as any).capacitySetting;
+const capacityRepo = prisma.capacitySetting;
 
 export const systemService = {
   async getSystemStatus() {
-    let status = await prisma.systemStatus.findFirst({
+    // Hot path (checked on every order and by the public ordering UI): retry transient errors.
+    let status = await withRetry(() => prisma.systemStatus.findFirst({
       orderBy: { id: 'desc' }
-    });
+    }));
 
     if (!status) {
       status = await prisma.systemStatus.create({
@@ -18,9 +18,9 @@ export const systemService = {
     // Fetch capacity settings from dedicated table (create default if missing)
     // Guard in case Prisma client wasn't regenerated yet.
     if (capacityRepo) {
-      let capacity = await capacityRepo.findFirst({
+      let capacity = await withRetry(() => capacityRepo.findFirst({
         orderBy: { id: 'desc' }
-      });
+      }));
 
       if (!capacity) {
         capacity = await capacityRepo.create({
@@ -122,11 +122,12 @@ export const systemService = {
   },
 
   async getClosedDates() {
-    const dates = await prisma.closedDate.findMany({
+    const dates = await withRetry(() => prisma.closedDate.findMany({
       orderBy: {
         date: 'asc'
-      }
-    });
+      },
+      take: 2000
+    }));
 
     return dates;
   },

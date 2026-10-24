@@ -1,4 +1,4 @@
-import { prisma } from '../prisma';
+import { prisma, withRetry } from '../prisma';
 
 export const dashboardService = {
   async getDashboardStats() {
@@ -13,35 +13,31 @@ export const dashboardService = {
     const monthAgo = new Date(today);
     monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-    // Orders count
-    const [totalOrders, pendingOrders, confirmedOrders, completedOrders] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({ where: { status: 'PENDING' } }),
-      prisma.order.count({ where: { status: 'CONFIRMED' } }),
-      prisma.order.count({ where: { status: 'COMPLETED' } })
-    ]);
+    const prevWeekStart = new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // Revenue
-    const [todayRevenue, weekRevenue, monthRevenue] = await Promise.all([
-      prisma.order.aggregate({
-        where: {
-          createdAt: { gte: today }
-        },
-        _sum: { total: true }
-      }),
-      prisma.order.aggregate({
-        where: {
-          createdAt: { gte: weekAgo }
-        },
-        _sum: { total: true }
-      }),
-      prisma.order.aggregate({
-        where: {
-          createdAt: { gte: monthAgo }
-        },
-        _sum: { total: true }
-      })
+    // Two grouped round trips instead of 8 separate count()/aggregate() queries.
+    const [statusCounts, revenueRows] = await Promise.all([
+      withRetry(() =>
+        prisma.order.groupBy({ by: ['status'], _count: { _all: true } })
+      ),
+      withRetry(() =>
+        prisma.$queryRaw<Array<{ today: number | null; week: number | null; month: number | null; prev_week: number | null }>>`
+          SELECT
+            SUM("total") FILTER (WHERE "createdAt" >= ${today})::float8 AS today,
+            SUM("total") FILTER (WHERE "createdAt" >= ${weekAgo})::float8 AS week,
+            SUM("total") FILTER (WHERE "createdAt" >= ${monthAgo})::float8 AS month,
+            SUM("total") FILTER (WHERE "createdAt" >= ${prevWeekStart} AND "createdAt" < ${weekAgo})::float8 AS prev_week
+          FROM "orders"
+          WHERE "createdAt" >= ${monthAgo < prevWeekStart ? monthAgo : prevWeekStart}
+        `
+      )
     ]);
+    const countOf = (status: string) => statusCounts.find((row) => row.status === status)?._count._all ?? 0;
+    const totalOrders = statusCounts.reduce((sum, row) => sum + row._count._all, 0);
+    const pendingOrders = countOf('PENDING');
+    const confirmedOrders = countOf('CONFIRMED');
+    const completedOrders = countOf('COMPLETED');
+    const revenue = revenueRows[0] ?? { today: null, week: null, month: null, prev_week: null };
 
     // Today's events
     const todaysEvents = await prisma.order.findMany({
@@ -79,19 +75,9 @@ export const dashboardService = {
       }
     });
 
-    // Calculate growth (simplified - compare with previous period)
-    const previousWeekRevenue = await prisma.order.aggregate({
-      where: {
-        createdAt: {
-          gte: new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000),
-          lt: weekAgo
-        }
-      },
-      _sum: { total: true }
-    });
-
-    const currentWeekTotal = weekRevenue._sum.total || 0;
-    const previousWeekTotal = previousWeekRevenue._sum.total || 0;
+    // Growth: this 7 days vs the 7 days before
+    const currentWeekTotal = revenue.week || 0;
+    const previousWeekTotal = revenue.prev_week || 0;
     const growth = previousWeekTotal > 0
       ? ((currentWeekTotal - previousWeekTotal) / previousWeekTotal) * 100
       : 0;
@@ -104,9 +90,9 @@ export const dashboardService = {
         completed: completedOrders
       },
       revenue: {
-        today: todayRevenue._sum.total || 0,
-        week: weekRevenue._sum.total || 0,
-        month: monthRevenue._sum.total || 0,
+        today: revenue.today || 0,
+        week: revenue.week || 0,
+        month: revenue.month || 0,
         growth: Math.round(growth * 10) / 10
       },
       todaysEvents: todaysEvents.map(event => ({

@@ -71,7 +71,13 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
+    let target = endpoint;
+    // Team members must never see CDN-cached catalogue data: mark their reads so the proxy skips the cache
+    if (typeof window !== 'undefined' && (options.method || 'GET') === 'GET'
+      && (/(?:^|; )admin_hint=1/.test(document.cookie) || /^\/(dashboard|orders|customers|menu_management|services_management|accessories|system_control|reports|team)(\/|$)/.test(window.location.pathname))) {
+      target += (target.includes('?') ? '&' : '?') + '_adm=1';
+    }
+    const url = `${this.baseURL}${target}`;
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,

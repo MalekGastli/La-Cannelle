@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { applyClientIp } from '@/lib/server/clientIp'
 
 const backendBase = () =>
   (process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '')
@@ -21,11 +22,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Email and password required' }, { status: 400 })
   }
 
+  const forwardHeaders = new Headers({ 'Content-Type': 'application/json' })
+  applyClientIp(forwardHeaders, req.headers)
+
   let backend: Response
   try {
     backend = await fetch(`${backendBase()}/auth/admin-login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: forwardHeaders,
       body: JSON.stringify({ email, password }),
       cache: 'no-store',
     })
@@ -35,6 +39,9 @@ export async function POST(req: Request) {
 
   if (backend.status === 401 || backend.status === 403) {
     return NextResponse.json({ ok: false, error: 'Invalid credentials' }, { status: 401 })
+  }
+  if (backend.status === 429) {
+    return NextResponse.json({ ok: false, error: 'Too many attempts. Please wait a few minutes and try again.' }, { status: 429 })
   }
   if (!backend.ok) {
     return NextResponse.json({ ok: false, error: `Login failed (${backend.status})` }, { status: 502 })
@@ -52,6 +59,14 @@ export async function POST(req: Request) {
     secure: req.headers.get('x-forwarded-proto') === 'https' || new URL(req.url).protocol === 'https:',
     path: '/',
     maxAge: 60 * 60 * 24, // 1 day, same as the token
+  })
+  // Readable by the browser so admin screens can bypass the public CDN cache (contains no secret)
+  res.cookies.set('admin_hint', '1', {
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: req.headers.get('x-forwarded-proto') === 'https' || new URL(req.url).protocol === 'https:',
+    path: '/',
+    maxAge: 60 * 60 * 24,
   })
   return res
 }

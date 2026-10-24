@@ -28,7 +28,8 @@ export const todoService = {
       orderBy: [
         { completed: 'asc' },
         { updatedAt: 'desc' }
-      ]
+      ],
+      take: 500
     });
   },
 

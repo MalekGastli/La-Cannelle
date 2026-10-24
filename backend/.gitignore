@@ -28,3 +28,6 @@ Thumbs.db
 
 # Prisma
 # Keep migrations under version control.
+
+# Local database dumps
+backups/

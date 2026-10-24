@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { applyClientIp } from '@/lib/server/clientIp'
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -22,6 +23,9 @@ const HOP_BY_HOP_HEADERS = new Set([
   'etag',
 ]);
 
+// Public catalogue reads may be cached by the CDN; everything else (and every signed-in request) is never cached.
+const CACHEABLE_PREFIXES = new Set(['products', 'menus', 'services', 'accessories']);
+
 const forward = async (
   req: NextRequest,
   context: { params: Promise<{ path: string[] }> }
@@ -38,10 +42,20 @@ const forward = async (
   const adminToken = req.cookies.get('admin_token')?.value;
   if (adminToken) headers.set('authorization', `Bearer ${adminToken}`);
   headers.delete('accept-encoding');
-  headers.delete('if-none-match');
-  headers.delete('if-modified-since');
+  applyClientIp(headers, req.headers);
 
   const method = req.method.toUpperCase();
+  const cacheable =
+    (method === 'GET' || method === 'HEAD') &&
+    CACHEABLE_PREFIXES.has(path[0]) &&
+    !adminToken &&
+    !req.headers.get('authorization') &&
+    !req.nextUrl.searchParams.has('_adm');
+  if (!cacheable) {
+    headers.delete('if-none-match');
+    headers.delete('if-modified-since');
+  }
+
   const maybeBody = method === 'GET' || method === 'HEAD' ? null : req.body;
   const body = maybeBody ?? undefined;
 
@@ -59,9 +73,17 @@ const forward = async (
 
     const responseHeaders = new Headers(backendResponse.headers);
     for (const headerName of HOP_BY_HOP_HEADERS) responseHeaders.delete(headerName);
-    responseHeaders.set('Cache-Control', 'no-store');
+    if (cacheable && (backendResponse.ok || backendResponse.status === 304)) {
+      // keep the backend's Cache-Control and ETag so browsers and the CDN can revalidate cheaply
+      const etag = backendResponse.headers.get('etag');
+      if (etag) responseHeaders.set('ETag', etag);
+      if (!responseHeaders.get('Cache-Control')) responseHeaders.set('Cache-Control', 'no-store');
+    } else {
+      responseHeaders.set('Cache-Control', 'no-store');
+    }
 
-    const responseBody = method === 'HEAD' ? null : await backendResponse.arrayBuffer();
+    const bodyless = method === 'HEAD' || [204, 205, 304].includes(backendResponse.status);
+    const responseBody = bodyless ? null : await backendResponse.arrayBuffer();
 
     return new Response(responseBody, {
       status: backendResponse.status,

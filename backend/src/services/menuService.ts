@@ -1,7 +1,52 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma';
 import { AppError } from '../middleware/errorHandler';
 import { normalizeImageValue } from '../utils/uploads';
 import { DEFAULT_MENUS } from '../data/defaultMenus';
+import { cache, invalidateCatalog } from '../utils/cache';
+import { isOwnImageUrl, loadImageUrls } from '../utils/catalogImages';
+import { menuSchemas, parseOrThrow } from '../utils/catalogSchemas';
+
+export const LIST_DEFAULT_LIMIT = 500;
+export const LIST_MAX_LIMIT = 1000;
+const CACHE_TTL_MS = 30_000;
+
+/** Only what the public site reads. `image` is added separately so base64 blobs never leave the database. */
+const menuSelect = {
+  id: true,
+  name: true,
+  description: true,
+  isActive: true,
+  startDate: true,
+  endDate: true,
+  price: true,
+  minPeople: true,
+  steps: true,
+  createdAt: true,
+  updatedAt: true,
+  menuProducts: { select: { productId: true } },
+  menuServices: { select: { serviceId: true } }
+} as const;
+
+const assertProductsExist = async (ids: number[]) => {
+  const unique = Array.from(new Set(ids));
+  if (!unique.length) return;
+  const found = await prisma.product.count({ where: { id: { in: unique } } });
+  if (found !== unique.length) throw new AppError('Unknown product id', 400);
+};
+
+const assertServicesExist = async (ids: number[]) => {
+  const unique = Array.from(new Set(ids));
+  if (!unique.length) return;
+  const found = await prisma.service.count({ where: { id: { in: unique } } });
+  if (found !== unique.length) throw new AppError('Unknown service id', 400);
+};
+
+const withMenuImages = async <T extends { id: number }>(menus: T[]) => {
+  const images = await loadImageUrls('menus', menus.map((menu) => menu.id));
+  return menus.map((menu) => ({ ...menu, image: images.get(menu.id) ?? null }));
+};
+
 
 const sanitizeMenuSteps = (steps: any) => {
   if (!Array.isArray(steps)) return steps;
@@ -15,22 +60,28 @@ const sanitizeMenuSteps = (steps: any) => {
 };
 
 export const menuService = {
-  async getMenus(filters?: {
-    isActive?: boolean;
-    search?: string;
-    serviceId?: number;
-    includeImages?: boolean;
-  }) {
+  async getMenus(
+    filters?: {
+      isActive?: boolean;
+      search?: string;
+      serviceId?: number;
+      includeImages?: boolean;
+      limit?: number;
+      offset?: number;
+    },
+    options: { bypassCache?: boolean } = {}
+  ) {
     const where: any = {};
 
     if (filters?.isActive !== undefined) {
       where.isActive = filters.isActive;
     }
 
-    if (filters?.search) {
+    const search = filters?.search?.trim().slice(0, 100);
+    if (search) {
       where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -39,73 +90,46 @@ export const menuService = {
     }
 
     const includeImages = Boolean(filters?.includeImages);
+    const take = Number.isInteger(filters?.limit) && (filters!.limit as number) > 0
+      ? Math.min(filters!.limit as number, LIST_MAX_LIMIT)
+      : LIST_DEFAULT_LIMIT;
+    const skip = Number.isInteger(filters?.offset) && (filters!.offset as number) > 0 ? (filters!.offset as number) : 0;
 
-    const select: any = {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-      startDate: true,
-      endDate: true,
-      price: true,
-      minPeople: true,
-      steps: true,
-      createdAt: true,
-      updatedAt: true,
-      menuProducts: { select: { productId: true } },
-      menuServices: { select: { serviceId: true } }
+    const load = async () => {
+      const menus = await prisma.menu.findMany({
+        where,
+        select: menuSelect,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take,
+        skip
+      });
+      const rows = includeImages ? await withMenuImages(menus) : menus;
+      return rows.map((menu: any) => ({
+        ...menu,
+        steps: sanitizeMenuSteps(menu?.steps),
+      }));
     };
-    if (includeImages) {
-      select.image = true;
-    }
 
-    const menus = await prisma.menu.findMany({
-      where,
-      select,
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    // Free-text searches have unbounded key space: never cache them.
+    if (options.bypassCache || search) return load();
 
-    return menus.map((menu: any) => ({
-      ...menu,
-      steps: sanitizeMenuSteps(menu?.steps),
-    }));
+    const key = `menus:list:${JSON.stringify([filters?.isActive ?? null, filters?.serviceId ?? null, includeImages, take, skip])}`;
+    return cache.wrap(key, load, { ttlMs: CACHE_TTL_MS });
   },
 
-  async getMenuById(id: number, options?: { includeImages?: boolean }) {
-    const select: any = {
-      id: true,
-      name: true,
-      description: true,
-      isActive: true,
-      startDate: true,
-      endDate: true,
-      price: true,
-      minPeople: true,
-      steps: true,
-      createdAt: true,
-      updatedAt: true,
-      menuProducts: { select: { productId: true } },
-      menuServices: { select: { serviceId: true } }
+  async getMenuById(id: number, options?: { includeImages?: boolean; bypassCache?: boolean }) {
+    if (!Number.isInteger(id)) throw new AppError('Menu not found', 404);
+    const load = async () => {
+      const menu = await prisma.menu.findUnique({ where: { id }, select: menuSelect });
+      if (!menu) throw new AppError('Menu not found', 404);
+      const [row] = options?.includeImages ? await withMenuImages([menu]) : [menu];
+      return {
+        ...(row as any),
+        steps: sanitizeMenuSteps((row as any)?.steps),
+      };
     };
-    if (options?.includeImages) {
-      select.image = true;
-    }
-
-    const menu = await prisma.menu.findUnique({
-      where: { id },
-      select
-    });
-
-    if (!menu) {
-      throw new AppError('Menu not found', 404);
-    }
-
-    return {
-      ...(menu as any),
-      steps: sanitizeMenuSteps((menu as any)?.steps),
-    };
+    if (options?.bypassCache) return load();
+    return cache.wrap(`menus:byId:${options?.includeImages ? 1 : 0}:${id}`, load, { ttlMs: CACHE_TTL_MS });
   },
 
   async createMenu(data: {
@@ -122,7 +146,13 @@ export const menuService = {
     serviceIds?: number[];
     services?: number[];
   }) {
-    const image = await normalizeImageValue(data.image, { prefix: 'menu' });
+    parseOrThrow(menuSchemas.create, data);
+    const productIds = data.productIds ? Array.from(new Set(data.productIds)) : undefined;
+    const serviceIds = (data.serviceIds || data.services) ? Array.from(new Set(data.serviceIds || data.services || [])) : undefined;
+    if (productIds) await assertProductsExist(productIds);
+    if (serviceIds) await assertServicesExist(serviceIds);
+
+    const image = await normalizeImageValue(isOwnImageUrl(data.image) ? undefined : data.image, { prefix: 'menu' });
 
     const steps = sanitizeMenuSteps(data.steps ?? undefined);
 
@@ -137,11 +167,11 @@ export const menuService = {
         image,
         minPeople: data.minPeople ?? null,
         steps,
-        menuProducts: data.productIds ? {
-          create: data.productIds.map(productId => ({ productId }))
+        menuProducts: productIds ? {
+          create: productIds.map(productId => ({ productId }))
         } : undefined,
-        menuServices: (data.serviceIds || data.services) ? {
-          create: (data.serviceIds || data.services || []).map(serviceId => ({ serviceId }))
+        menuServices: serviceIds ? {
+          create: serviceIds.map(serviceId => ({ serviceId }))
         } : undefined
       },
       include: {
@@ -150,6 +180,7 @@ export const menuService = {
       }
     });
 
+    invalidateCatalog('menus', 'products');
     return menu;
   },
 
@@ -168,6 +199,7 @@ export const menuService = {
     serviceIds: number[];
     services: number[];
   }>) {
+    parseOrThrow(menuSchemas.update, data);
     const updateData: any = { ...data };
     delete updateData.productIds;
     delete updateData.products;
@@ -181,51 +213,64 @@ export const menuService = {
     delete updateData.nameDe;
     delete updateData.descriptionDe;
 
+    // Echoed back by the admin UI for legacy base64 rows: keep the stored image untouched.
+    if (isOwnImageUrl(updateData.image)) delete updateData.image;
     if (updateData.image !== undefined) {
       updateData.image = await normalizeImageValue(updateData.image, { prefix: 'menu' });
     }
 
     if (updateData.steps !== undefined) {
-      updateData.steps = sanitizeMenuSteps(updateData.steps);
+      updateData.steps = updateData.steps === null ? Prisma.DbNull : sanitizeMenuSteps(updateData.steps);
     }
 
-    const menu = await prisma.menu.update({
-      where: { id },
-      data: updateData,
-      include: {
-        menuProducts: { select: { productId: true } },
-        menuServices: { select: { serviceId: true } }
+    const productIds = data.productIds !== undefined || data.products !== undefined
+      ? Array.from(new Set(data.productIds ?? data.products ?? []))
+      : undefined;
+    const serviceIdsInput = data.serviceIds ?? data.services;
+    const serviceIds = serviceIdsInput !== undefined ? Array.from(new Set(serviceIdsInput)) : undefined;
+    if (productIds) await assertProductsExist(productIds);
+    if (serviceIds) await assertServicesExist(serviceIds);
+
+    try {
+      // menu fields + association replacement succeed or fail together
+      const results = await prisma.$transaction([
+        prisma.menu.update({
+          where: { id },
+          data: updateData,
+          include: {
+            menuProducts: { select: { productId: true } },
+            menuServices: { select: { serviceId: true } }
+          }
+        }),
+        ...(productIds !== undefined
+          ? [
+              prisma.menuProduct.deleteMany({ where: { menuId: id } }),
+              ...(productIds.length
+                ? [prisma.menuProduct.createMany({ data: productIds.map(productId => ({ menuId: id, productId })), skipDuplicates: true })]
+                : [])
+            ]
+          : []),
+        ...(serviceIds !== undefined
+          ? [
+              prisma.menuService.deleteMany({ where: { menuId: id } }),
+              ...(serviceIds.length
+                ? [prisma.menuService.createMany({ data: serviceIds.map(serviceId => ({ menuId: id, serviceId })), skipDuplicates: true })]
+                : [])
+            ]
+          : [])
+      ]);
+
+      invalidateCatalog('menus', 'products');
+      if (productIds !== undefined || serviceIds !== undefined) {
+        return this.getMenuById(id, { includeImages: true, bypassCache: true });
       }
-    });
-
-    // Update product / service associations if provided
-    if (data.productIds !== undefined || data.products !== undefined) {
-      const productIds = data.productIds ?? data.products ?? [];
-      await prisma.menuProduct.deleteMany({ where: { menuId: id } });
-      if (productIds.length > 0) {
-        await prisma.menuProduct.createMany({
-          data: productIds.map(productId => ({ menuId: id, productId })),
-          skipDuplicates: true
-        });
-      }
+      return results[0];
+    } catch (error) {
+      if ((error as any)?.code === 'P2025') throw new AppError('Menu not found', 404);
+      throw error;
+    } finally {
+      invalidateCatalog('menus', 'products');
     }
-
-    const serviceIds = data.serviceIds ?? data.services;
-    if (serviceIds !== undefined) {
-      await prisma.menuService.deleteMany({ where: { menuId: id } });
-      if (serviceIds.length > 0) {
-        await prisma.menuService.createMany({
-          data: serviceIds.map(serviceId => ({ menuId: id, serviceId })),
-          skipDuplicates: true
-        });
-      }
-    }
-
-    if (data.productIds !== undefined || data.products !== undefined || serviceIds !== undefined) {
-      return this.getMenuById(id, { includeImages: true });
-    }
-
-    return menu;
   },
 
   async duplicateMenu(id: number) {
@@ -234,7 +279,7 @@ export const menuService = {
       include: { menuProducts: true, menuServices: true }
     });
     if (!source) throw new AppError('Menu not found', 404);
-    return prisma.menu.create({
+    const created = await prisma.menu.create({
       data: {
         name: `${source.name} (Kopie)`,
         description: source.description,
@@ -249,22 +294,38 @@ export const menuService = {
         menuServices: { create: source.menuServices.map((ms) => ({ serviceId: ms.serviceId })) }
       }
     });
+    invalidateCatalog('menus', 'products');
+    return created;
   },
 
   async deleteMenu(id: number) {
-    await prisma.menu.delete({
-      where: { id }
-    });
+    try {
+      await prisma.menu.delete({
+        where: { id }
+      });
+    } catch (error) {
+      if ((error as any)?.code === 'P2025') throw new AppError('Menu not found', 404);
+      throw error;
+    } finally {
+      invalidateCatalog('menus', 'products');
+    }
   },
 
   async restoreDefaultMenus() {
-    const services = await prisma.service.findMany({
-      select: { id: true, name: true }
-    });
-    const activeProducts = await prisma.product.findMany({
-      where: { available: true },
-      select: { id: true, category: true }
-    });
+    const [services, activeProducts, existingMenus] = await Promise.all([
+      prisma.service.findMany({ select: { id: true, name: true } }),
+      prisma.product.findMany({ where: { available: true }, select: { id: true, category: true } }),
+      prisma.menu.findMany({
+        where: { name: { in: DEFAULT_MENUS.map((def) => def.name) } },
+        select: { id: true, name: true },
+        orderBy: { id: 'asc' }
+      })
+    ]);
+
+    const existingByName = new Map<string, number>();
+    for (const menu of existingMenus) {
+      if (!existingByName.has(menu.name)) existingByName.set(menu.name, menu.id);
+    }
 
     const pickServiceIdsForMenu = (serviceName?: string) => {
       if (serviceName) {
@@ -290,50 +351,54 @@ export const menuService = {
 
     let created = 0;
     let updated = 0;
+    const operations: any[] = [];
 
     for (const def of DEFAULT_MENUS) {
       const productIds = pickProductIdsForMenu(def);
       const serviceIds = pickServiceIdsForMenu(def.serviceName);
+      const fields = {
+        description: def.description,
+        isActive: def.isActive,
+        price: def.price,
+        image: def.image,
+        minPeople: def.minPeople,
+        steps: sanitizeMenuSteps(def.steps as any)
+      };
+      const existingId = existingByName.get(def.name);
 
-      const existing = await prisma.menu.findFirst({ where: { name: def.name }, select: { id: true } });
-
-      if (!existing) {
-        await prisma.menu.create({
-          data: {
-            name: def.name,
-            description: def.description,
-            isActive: def.isActive,
-            price: def.price,
-            image: def.image,
-            minPeople: def.minPeople,
-            steps: sanitizeMenuSteps(def.steps as any)
-          }
-        });
+      if (existingId === undefined) {
+        operations.push(
+          prisma.menu.create({
+            data: {
+              name: def.name,
+              ...fields,
+              menuProducts: { create: productIds.map((productId) => ({ productId })) },
+              menuServices: { create: serviceIds.map((serviceId) => ({ serviceId })) }
+            }
+          })
+        );
         created += 1;
       } else {
-        await prisma.menu.update({
-          where: { id: existing.id },
-          data: {
-            description: def.description,
-            isActive: def.isActive,
-            price: def.price,
-            image: def.image,
-            minPeople: def.minPeople,
-            steps: sanitizeMenuSteps(def.steps as any)
-          }
-        });
+        operations.push(
+          prisma.menu.update({ where: { id: existingId }, data: fields }),
+          prisma.menuProduct.deleteMany({ where: { menuId: existingId } }),
+          prisma.menuService.deleteMany({ where: { menuId: existingId } })
+        );
+        if (productIds.length) {
+          operations.push(prisma.menuProduct.createMany({ data: productIds.map((productId) => ({ menuId: existingId, productId })) }));
+        }
+        if (serviceIds.length) {
+          operations.push(prisma.menuService.createMany({ data: serviceIds.map((serviceId) => ({ menuId: existingId, serviceId })) }));
+        }
         updated += 1;
       }
+    }
 
-      const menu = await prisma.menu.findFirst({ where: { name: def.name }, select: { id: true } });
-      if (!menu) continue;
-
-      await prisma.$transaction([
-        prisma.menuProduct.deleteMany({ where: { menuId: menu.id } }),
-        prisma.menuService.deleteMany({ where: { menuId: menu.id } }),
-        productIds.length ? prisma.menuProduct.createMany({ data: productIds.map((productId) => ({ menuId: menu.id, productId })) }) : prisma.menuProduct.deleteMany({ where: { menuId: menu.id } }),
-        serviceIds.length ? prisma.menuService.createMany({ data: serviceIds.map((serviceId) => ({ menuId: menu.id, serviceId })) }) : prisma.menuService.deleteMany({ where: { menuId: menu.id } })
-      ]);
+    try {
+      // one round trip, all-or-nothing
+      await prisma.$transaction(operations);
+    } finally {
+      invalidateCatalog('menus', 'products');
     }
 
     return {

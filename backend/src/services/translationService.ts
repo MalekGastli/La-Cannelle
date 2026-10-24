@@ -45,6 +45,7 @@ export const translationService = {
         'Authorization': `DeepL-Auth-Key ${authKey}`, // Add header-based authentication
       },
       body: JSON.stringify(payload), // Send data as JSON
+      signal: AbortSignal.timeout(8000), // never let a slow translation API hold a serverless request open
     });
 
     if (!response.ok) {

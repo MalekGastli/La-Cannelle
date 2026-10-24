@@ -1,16 +1,18 @@
 import express from 'express';
 import { accessoryController } from '../controllers/accessoryController';
 import { authenticate, requireResource } from '../middleware/auth';
+import { sendStoredImage } from '../utils/catalogImages';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-// Public routes
+// Public routes (authenticate is soft: it only identifies team members so they get uncached, private responses)
+router.use(authenticate);
 router.get('/', asyncHandler(accessoryController.getAccessories));
+router.get('/:id/image', asyncHandler(sendStoredImage('accessories')));
 router.get('/:id', asyncHandler(accessoryController.getAccessoryById));
 
 // Admin routes
-router.use(authenticate);
 router.use(requireResource('accessories'));
 
 router.post('/restore-defaults', asyncHandler(accessoryController.restoreDefaultAccessories));

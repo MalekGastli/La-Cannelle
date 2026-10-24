@@ -3,7 +3,8 @@ import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { prisma } from '../prisma';
 import { AppError } from '../middleware/errorHandler';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const JWT_SECRET = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) throw new Error('JWT_SECRET must be set');
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 export interface RegisterData {
@@ -41,7 +42,10 @@ export const authService = {
       throw new AppError('Invalid email or password', 401);
     }
 
-    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    // Bookkeeping only: a failed write must not block a valid sign-in.
+    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch((error) => {
+      console.error('lastLoginAt update failed', (error as Error)?.message ?? error);
+    });
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },

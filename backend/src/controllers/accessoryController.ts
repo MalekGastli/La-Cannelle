@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { accessoryService } from '../services/accessoryService';
+import { sendCachedJson } from '../utils/httpCache';
+import { isStaffRequest } from '../utils/requestContext';
 
 export const accessoryController = {
   async getAccessories(req: AuthRequest, res: Response) {
@@ -8,14 +10,14 @@ export const accessoryController = {
     const filters: any = {};
     if (isActive !== undefined) filters.isActive = isActive === 'true';
     if (search) filters.search = String(search);
-    const accessories = await accessoryService.getAccessories(filters);
-    res.json(accessories);
+    const accessories = await accessoryService.getAccessories(filters, { bypassCache: isStaffRequest(req) });
+    sendCachedJson(req, res, accessories);
   },
 
   async getAccessoryById(req: AuthRequest, res: Response) {
     const { id } = req.params;
-    const accessory = await accessoryService.getAccessoryById(parseInt(id, 10));
-    res.json(accessory);
+    const accessory = await accessoryService.getAccessoryById(parseInt(id, 10), { bypassCache: isStaffRequest(req) });
+    sendCachedJson(req, res, accessory);
   },
 
   async createAccessory(req: AuthRequest, res: Response) {
