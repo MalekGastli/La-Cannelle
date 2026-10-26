@@ -16,3 +16,15 @@ if (existingEnvPath) {
 } else {
   dotenv.config();
 }
+
+// Vercel-managed Neon database (connected through the Vercel Storage integration): when present it wins over
+// DATABASE_URL, so the site runs on the permanent database instead of an old/temporary one.
+const managedDatabaseUrl = process.env.LACANNELLEDB_DATABASE_URL;
+if (managedDatabaseUrl) {
+  let url = managedDatabaseUrl;
+  // Neon's pooled endpoint is PgBouncer in transaction mode: Prisma needs pgbouncer=true there
+  if (/-pooler\./.test(url) && !/[?&]pgbouncer=/.test(url)) {
+    url += `${url.includes('?') ? '&' : '?'}pgbouncer=true&connect_timeout=15`;
+  }
+  process.env.DATABASE_URL = url;
+}
