@@ -55,7 +55,8 @@ async function main() {
   await prisma.user.create({
     data: {
       email,
-      password: await bcrypt.hash(password, 10),
+      // a forced password (reset:...) also applies when the owner is created on a fresh database
+      password: await bcrypt.hash(forced || password, 10),
       firstName: 'Admin',
       lastName: 'User',
       role: UserRole.ADMIN,
