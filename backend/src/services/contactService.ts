@@ -84,7 +84,9 @@ const buildAutoReply = (payload: ContactPayload) => {
 
 export const contactService = {
   async sendContactEmail(payload: ContactPayload) {
-    const receiver = getEnv('CONTACT_RECEIVER', 'bouzidioussema16@gmail.com');
+    // Never fall back to a hard-coded person: use CONTACT_RECEIVER, else the owner's admin e-mail
+    const receiver = getEnv('CONTACT_RECEIVER') || getEnv('ADMIN_EMAIL');
+    if (!receiver) throw new Error('CONTACT_RECEIVER (or ADMIN_EMAIL) must be set to receive contact messages');
     const from = getEnv('SMTP_FROM', 'La Cannelle <no-reply@la-cannelle.com>');
     const transporter = getTransporter();
 
