@@ -9,7 +9,8 @@ export const CLIENT_IP_HEADER = 'x-client-ip';
 export const CLIENT_IP_SIG_HEADER = 'x-client-ip-sig';
 
 export function visitorIp(headers: Headers): string {
-  const vercel = headers.get('x-vercel-forwarded-for');
+  // Only Vercel's own edge may set this header; on a self-hosted server a visitor could forge it
+  const vercel = process.env.VERCEL ? headers.get('x-vercel-forwarded-for') : null;
   const forwarded = headers.get('x-forwarded-for');
   return (vercel || forwarded || '').split(',')[0].trim();
 }

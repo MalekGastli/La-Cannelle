@@ -35,19 +35,37 @@ export default function DatenschutzPage() {
       </p>
 
       <h2>3. Hosting und Server-Logfiles</h2>
-      <p>
-        Die Website und die zugehörige Schnittstelle werden bei Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723,
-        USA, betrieben. Beim Aufruf der Seiten werden technisch notwendige Daten in Server-Logfiles verarbeitet
-        (IP-Adresse, Datum und Uhrzeit, aufgerufene URL, übertragene Datenmenge, Browsertyp). Rechtsgrundlage ist
-        Art. 6 Abs. 1 lit. f DSGVO (sicherer und stabiler Betrieb). Eine Übermittlung in die USA stützt sich auf den
-        Angemessenheitsbeschluss zum EU-US Data Privacy Framework bzw. auf EU-Standardvertragsklauseln. Mit dem
-        Anbieter besteht ein Auftragsverarbeitungsvertrag.
-      </p>
-      <p>
-        Bestell- und Anfragedaten speichern wir in einer Datenbank bei einem Hosting-Dienstleister (Auftragsverarbeiter);
-        hochgeladene Bilder der Speisekarte liegen bei Vercel Blob. Bitte nennen Sie hier den aktuell eingesetzten
-        Datenbank-Anbieter und dessen Standort: <Field value={null} />
-      </p>
+      {LEGAL.hostingName ? (
+        <>
+          <p>
+            Die Website und die zugehörige Schnittstelle werden bei {LEGAL.hostingName}
+            {LEGAL.hostingAddress ? `, ${LEGAL.hostingAddress}` : ""}
+            {LEGAL.hostingLocation ? ` (${LEGAL.hostingLocation})` : ""} betrieben. Beim Aufruf der Seiten werden technisch
+            notwendige Daten in Server-Logfiles verarbeitet (IP-Adresse, Datum und Uhrzeit, aufgerufene URL,
+            übertragene Datenmenge, Browsertyp). Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (sicherer und stabiler
+            Betrieb). Mit dem Anbieter besteht ein Auftragsverarbeitungsvertrag.
+          </p>
+          <p>
+            Bestell- und Anfragedaten sowie hochgeladene Bilder der Speisekarte speichern wir auf demselben Server.
+          </p>
+        </>
+      ) : (
+        <>
+          <p>
+            Die Website und die zugehörige Schnittstelle werden bei Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723,
+            USA, betrieben. Beim Aufruf der Seiten werden technisch notwendige Daten in Server-Logfiles verarbeitet
+            (IP-Adresse, Datum und Uhrzeit, aufgerufene URL, übertragene Datenmenge, Browsertyp). Rechtsgrundlage ist
+            Art. 6 Abs. 1 lit. f DSGVO (sicherer und stabiler Betrieb). Eine Übermittlung in die USA stützt sich auf den
+            Angemessenheitsbeschluss zum EU-US Data Privacy Framework bzw. auf EU-Standardvertragsklauseln. Mit dem
+            Anbieter besteht ein Auftragsverarbeitungsvertrag.
+          </p>
+          <p>
+            Bestell- und Anfragedaten speichern wir in einer Datenbank bei einem Hosting-Dienstleister (Auftragsverarbeiter);
+            hochgeladene Bilder der Speisekarte liegen bei Vercel Blob. Bitte nennen Sie hier den aktuell eingesetzten
+            Datenbank-Anbieter und dessen Standort: <Field value={null} />
+          </p>
+        </>
+      )}
 
       <h2>4. Kontaktformular und Anfragen</h2>
       <p>

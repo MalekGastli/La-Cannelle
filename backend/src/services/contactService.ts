@@ -12,7 +12,8 @@ type ContactPayload = {
   language?: 'EN' | 'DE';
 };
 
-const getEnv = (key: string, fallback?: string) => process.env[key] ?? fallback;
+// empty values (e.g. from docker compose) count as unset
+const getEnv = (key: string, fallback?: string) => process.env[key] || fallback;
 
 const getTransporter = () => {
   const host = getEnv('SMTP_HOST', 'smtp.sendgrid.net');

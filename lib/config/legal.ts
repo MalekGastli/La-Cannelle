@@ -21,6 +21,10 @@ export const LEGAL = {
   registerNumber: env(process.env.NEXT_PUBLIC_LEGAL_REGISTER_NUMBER),
   vatId: env(process.env.NEXT_PUBLIC_LEGAL_VAT_ID), // USt-IdNr. nach § 27a UStG, if assigned
   emailProvider: env(process.env.NEXT_PUBLIC_LEGAL_EMAIL_PROVIDER), // SMTP provider used for contact mails
+  // Hosting provider named in the privacy policy. When unset, the text of the original Vercel setup is shown.
+  hostingName: env(process.env.NEXT_PUBLIC_LEGAL_HOSTING_NAME), // e.g. "STRATO AG"
+  hostingAddress: env(process.env.NEXT_PUBLIC_LEGAL_HOSTING_ADDRESS), // e.g. "Otto-Ostrowski-Straße 7, 10249 Berlin"
+  hostingLocation: env(process.env.NEXT_PUBLIC_LEGAL_HOSTING_LOCATION), // e.g. "Rechenzentrum in Deutschland"
   /** true = "willing to take part in consumer arbitration", false = "not willing / not obliged" */
   disputeResolutionWilling: process.env.NEXT_PUBLIC_LEGAL_ARBITRATION === 'yes',
   lastUpdated: '2026-10-23',
